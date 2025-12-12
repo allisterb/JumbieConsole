@@ -67,8 +67,8 @@ public class ConsoleGuiAnsiConsole : IAnsiConsole, IDisposable
             if (segment.IsControlCode) continue;
 
             var style = segment.Style;
-            var fg = StyleAdapter.ToConsoleColor(style.Foreground);
-            var bg = StyleAdapter.ToConsoleColor(style.Background);
+            var fg = SpectreControl.ToConsoleColor(style.Foreground);
+            var bg = SpectreControl.ToConsoleColor(style.Background);
 
             foreach (char c in segment.Text)
             {

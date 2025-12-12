@@ -52,9 +52,9 @@ class Program
         quux.AddNode("Corgi");
         
         // --- Wrap Spectre.Console Controls for ConsoleGUI ---
-        var tableControl = new SpectreWidgetControl(table);
-        var chartControl = new SpectreWidgetControl(barChart);
-        var treeControl = new SpectreWidgetControl(root);
+        var tableControl = new SpectreControl(table);
+        var chartControl = new SpectreControl(barChart);
+        var treeControl = new SpectreControl(root);
 
         // --- ConsoleGUI Controls ---
         // Spinner

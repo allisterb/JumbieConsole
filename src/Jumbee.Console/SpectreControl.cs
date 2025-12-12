@@ -2,29 +2,27 @@ namespace Jumbee.Console;
 
 using System;
 
-using ConsoleGUI.Api;
 using ConsoleGUI.Common;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
-
 using Spectre.Console.Rendering;
+
 using ConsoleGuiSize = ConsoleGUI.Space.Size;
+using ConsoleGUIColor = ConsoleGUI.Data.Color;
+using SpectreConsoleColor = Spectre.Console.Color;
 
-
-
-public class SpectreWidgetControl : Control
-{
-    private readonly BufferConsole _bufferConsole;
-    private readonly ConsoleGuiAnsiConsole _ansiConsole;
-    private IRenderable _content;
-
-    public SpectreWidgetControl(IRenderable content)
+public class SpectreControl : Control
+{   
+    #region Constructors
+    public SpectreControl(IRenderable content)
     {
         _content = content ?? throw new ArgumentNullException(nameof(content));
         _bufferConsole = new BufferConsole();
         _ansiConsole = new ConsoleGuiAnsiConsole(_bufferConsole);
     }
-    
+    #endregion
+
+    #region Properties
     public IRenderable Content 
     {
         get => _content;
@@ -34,17 +32,26 @@ public class SpectreWidgetControl : Control
             Redraw();
         }
     }
+    #endregion
 
+    #region Indexers
     public override Cell this[Position position]
     {
         get
         {
-            if (_bufferConsole.Buffer == null) return new Cell(Character.Empty);
-            if (position.X < 0 || position.X >= Size.Width || position.Y < 0 || position.Y >= Size.Height) return new Cell(Character.Empty);
-            return _bufferConsole.Buffer[position.X, position.Y];
+            if (_bufferConsole.Buffer == null || position.X < 0 || position.X >= Size.Width || position.Y < 0 || position.Y >= Size.Height)
+            {
+                return _emptyCell;
+            }
+            else
+            {
+                return _bufferConsole.Buffer[position.X, position.Y];
+            }
         }
     }
+    #endregion
 
+    #region Methods
     protected override void Initialize()
     {
         // Resize the control to fill the available space
@@ -69,4 +76,22 @@ public class SpectreWidgetControl : Control
         // Spectre will look at the Profile.Width which comes from the IConsole.Size (BufferConsole.Size)
         _ansiConsole.Write(_content);
     }
+
+    public static ConsoleGUIColor? ToConsoleColor(SpectreConsoleColor color)
+    {
+        if (color == SpectreConsoleColor.Default)
+        {
+            return null;
+        }
+
+        return new ConsoleGUIColor(color.R, color.G, color.B);
+    }
+    #endregion
+
+    #region Fields
+    private readonly BufferConsole _bufferConsole;
+    private readonly ConsoleGuiAnsiConsole _ansiConsole;
+    private IRenderable _content;
+    private static readonly Cell _emptyCell = new Cell(Character.Empty);
+    #endregion
 }
