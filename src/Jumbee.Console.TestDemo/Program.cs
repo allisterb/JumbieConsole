@@ -67,7 +67,7 @@ class Program
         spinner.Start();
 
         // The TextPrompt control
-        var prompt = new ConsoleGuiTextPrompt<string>("[yellow]What is your name?[/]", enableCursorBlink: true);
+        var prompt = new ConsoleGUITextPrompt<string>("[yellow]What is your name?[/]", enableCursorBlink: true);
         prompt.Committed += (sender, name) => 
         {
             spinner.Text = $"Hello, [blue]{name}[/]!";

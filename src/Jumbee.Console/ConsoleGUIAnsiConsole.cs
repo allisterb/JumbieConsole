@@ -12,18 +12,18 @@ using ConsoleGUI.Space;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
-public class ConsoleGuiAnsiConsole : IAnsiConsole, IDisposable
+public class ConsoleGUIAnsiConsole : IAnsiConsole, IDisposable
 {
     #region Constructors
-    public ConsoleGuiAnsiConsole(IConsole console)
+    public ConsoleGUIAnsiConsole(IConsole console)
     {
         _console = console ?? throw new ArgumentNullException(nameof(console));
-        _cursor = new ConsoleGuiCursor(this);
-        _input = new ConsoleGuiInput(console);
-        _exclusivityMode = new ConsoleGuiExclusivityMode();
+        _cursor = new ConsoleGUICursor(this);
+        _input = new ConsoleGUIInput(console);
+        _exclusivityMode = new ConsoleGUIExclusivityMode();
         _pipeline = new RenderPipeline();
         
-        var output = new ConsoleGuiOutput(console);
+        var output = new ConsoleGUIOutput(console);
         _profile = new Profile(output, Encoding.UTF8);
         
         _profile.Capabilities.Ansi = true;
@@ -120,9 +120,9 @@ public class ConsoleGuiAnsiConsole : IAnsiConsole, IDisposable
 
     #region Fields
     private readonly IConsole _console;
-    private readonly ConsoleGuiCursor _cursor;
-    private readonly ConsoleGuiInput _input;
-    private readonly ConsoleGuiExclusivityMode _exclusivityMode;
+    private readonly ConsoleGUICursor _cursor;
+    private readonly ConsoleGUIInput _input;
+    private readonly ConsoleGUIExclusivityMode _exclusivityMode;
     private readonly RenderPipeline _pipeline;
     private readonly Profile _profile;
 
@@ -131,11 +131,11 @@ public class ConsoleGuiAnsiConsole : IAnsiConsole, IDisposable
     #endregion
 }
 
-internal class ConsoleGuiOutput : IAnsiConsoleOutput
+internal class ConsoleGUIOutput : IAnsiConsoleOutput
 {
     private readonly IConsole _console;
     
-    public ConsoleGuiOutput(IConsole console) => _console = console;
+    public ConsoleGUIOutput(IConsole console) => _console = console;
 
     public TextWriter Writer => System.Console.Out; 
     public bool IsTerminal => true;
@@ -145,11 +145,11 @@ internal class ConsoleGuiOutput : IAnsiConsoleOutput
     public void SetEncoding(Encoding encoding) { }
 }
 
-internal class ConsoleGuiCursor : IAnsiConsoleCursor
+internal class ConsoleGUICursor : IAnsiConsoleCursor
 {
-    private readonly ConsoleGuiAnsiConsole _parent;
+    private readonly ConsoleGUIAnsiConsole _parent;
 
-    public ConsoleGuiCursor(ConsoleGuiAnsiConsole parent) => _parent = parent;
+    public ConsoleGUICursor(ConsoleGUIAnsiConsole parent) => _parent = parent;
 
     public void Show(bool show) { } // StandardConsole manages this partially, but we might not have control via IConsole interface easily without casting. StandardConsole hides it by default.
 
@@ -178,11 +178,11 @@ internal class ConsoleGuiCursor : IAnsiConsoleCursor
     }
 }
 
-internal class ConsoleGuiInput : IAnsiConsoleInput
+internal class ConsoleGUIInput : IAnsiConsoleInput
 {
     private readonly IConsole _console;
 
-    public ConsoleGuiInput(IConsole console) => _console = console;
+    public ConsoleGUIInput(IConsole console) => _console = console;
 
     public bool IsKeyAvailable() => _console.KeyAvailable;
 
@@ -209,7 +209,7 @@ internal class ConsoleGuiInput : IAnsiConsoleInput
     }
 }
 
-internal class ConsoleGuiExclusivityMode : IExclusivityMode
+internal class ConsoleGUIExclusivityMode : IExclusivityMode
 {
     public T Run<T>(Func<T> func) => func();
     public Task<T> RunAsync<T>(Func<Task<T>> func) => func();

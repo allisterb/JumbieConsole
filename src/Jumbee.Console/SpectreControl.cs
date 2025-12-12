@@ -18,7 +18,7 @@ public class SpectreControl : Control
     {
         _content = content ?? throw new ArgumentNullException(nameof(content));
         _bufferConsole = new BufferConsole();
-        _ansiConsole = new ConsoleGuiAnsiConsole(_bufferConsole);
+        _ansiConsole = new ConsoleGUIAnsiConsole(_bufferConsole);
     }
     #endregion
 
@@ -90,7 +90,7 @@ public class SpectreControl : Control
 
     #region Fields
     private readonly BufferConsole _bufferConsole;
-    private readonly ConsoleGuiAnsiConsole _ansiConsole;
+    private readonly ConsoleGUIAnsiConsole _ansiConsole;
     private IRenderable _content;
     private static readonly Cell _emptyCell = new Cell(Character.Empty);
     #endregion
