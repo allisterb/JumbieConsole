@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+
 using ConsoleGUI;
 using ConsoleGUI.Controls;
 using ConsoleGUI.Space;
@@ -7,12 +8,14 @@ using ConsoleGUI.Input;
 using Jumbee.Console;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using Jumbee.Console.Prompts;
+
 using ConsoleGuiSize = ConsoleGUI.Space.Size;
 using ConsoleGuiColor = ConsoleGUI.Data.Color;
 using SpectreColor = Spectre.Console.Color;
 using LayoutGrid = ConsoleGUI.Controls.Grid;
-using Jumbee.Console.Prompts;
-using Jumbee.Console.Controls;
+
+
 
 class Program
 {
@@ -59,9 +62,9 @@ class Program
 
         // --- ConsoleGUI Controls ---
         // Spinner
-        var spinner = new ConsoleGuiSpinner
+        var spinner = new Jumbee.Console.Spinner
         {
-            Spinner = Spinner.Known.Dots,
+            SpinnerType = Spectre.Console.Spinner.Known.Dots,
             Text = "Waiting for input...",
             Style = Spectre.Console.Style.Parse("green bold")
         };
@@ -102,7 +105,7 @@ class Program
         ConsoleManager.Content = grid;
 
         // Start the global animation timer
-        ConsoleGuiTimer.Start();
+        UIUpdate.StartTimer();
 
         // Main loop
         while (true)

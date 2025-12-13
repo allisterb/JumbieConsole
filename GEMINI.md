@@ -33,11 +33,11 @@ NOTE: If in plan mode, do not implement the plan. You are only allowed to plan. 
 The project Jumbee.Console at @src/Jumbee.Console is a .NET library for building advanced console user interfaces. It is intended to be a combination of the layout and windowing features from the retained-mode ConsoleGUI library at @ext/C-sharp-console-gui-framework/ConsoleGUI/  
 and the styling and formatting and widget features and controls from the immediate-mode Spectre.Console library at @ext/spectre.console/src/Spectre.Console. 
 
-The initial plan created a bridge between the two libraries by implementing IAnsiConsole from Spectre.Console in the ConsoleGuiAnsiConsole class to store Spectre.Console control output instead of writing it to the console immediately, 
+The initial plan created a bridge between the two libraries by implementing IAnsiConsole from Spectre.Console in the AnsiConsoleBuffer class to store Spectre.Console control output instead of writing it to the console immediately, 
 and a SpectreControl class for wrapping Spectre.Console controls as ConsoleGUI IControls to be used with ConsoleGUI layout and window classes.
 
-Support for animated controls was added by using a single background thread running a timer that fires Tick events at regular intervals that animated controls use to update
-their state. Drawing conflicts are mitigated by using a single lock object that gets passed to all animated controls in Tic events to synchronize access to their internal state
+Support for animated controls was added by using a single background thread started by the UIUpdate class running a timer that fires Tick events at regular intervals that animated controls use to update
+their state. Drawing conflicts during updates are mitigated by using a single lock object that gets passed to all animated controls in Tick events to synchronize access to their internal state
 so that they can be properly updated and drawn by ConsoleGUI. Tick events are only raised when the lock is not held by any control.
 
 ## Coding instructions:

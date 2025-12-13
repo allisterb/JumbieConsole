@@ -19,7 +19,7 @@ using Spectre.Console;
 using ConsoleGuiSize = ConsoleGUI.Space.Size;
 using Jumbee.Console;
 
-public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
+public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable where T : IConvertible
 {
     #region Constructors
     public ConsoleGUITextPrompt(string prompt, StringComparer? comparer = null, bool enableCursorBlink = false)
@@ -31,7 +31,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
 
         if (enableCursorBlink)
         {
-            ConsoleGuiTimer.Tick += OnCursorBlink;
+            UIUpdate.Tick += OnCursorBlink;
         }
     }
     #endregion
@@ -47,7 +47,6 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
     public bool ShowChoices { get; set; } = true;
     public bool ShowDefaultValue { get; set; } = true;
     public bool AllowEmpty { get; set; }
-    public Func<T, string>? Converter { get; set; }
     public Func<T, ValidationResult>? Validator { get; set; }
     public Style? DefaultValueStyle { get; set; }
     public Style? ChoicesStyle { get; set; }
@@ -62,7 +61,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
         DefaultValue = new DefaultPromptValue<T>(value);
     }
 
-    private void OnCursorBlink(object? sender, ConsoleGuiTimerEventArgs e)
+    private void OnCursorBlink(object? sender, UIUpdateTimerEventArgs e)
     {
         lock (e.Lock)
         {
@@ -76,14 +75,14 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
 
     public void Dispose()
     {
-        ConsoleGuiTimer.Tick -= OnCursorBlink;
+        UIUpdate.Tick -= OnCursorBlink;
     }
 
     public override Cell this[Position position]
     {
         get
         {
-            lock (ConsoleGuiTimer.AnimationLock)
+            lock (UIUpdate.Lock)
             {
                 Cell cell = _emptyCell;
                 if (_bufferConsole.Buffer != null &&
@@ -112,7 +111,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
 
     protected override void Initialize()
     {
-        lock (ConsoleGuiTimer.AnimationLock)
+        lock (UIUpdate.Lock)
         {
             var targetSize = MaxSize;
             if (targetSize.Width > 1000) targetSize = new ConsoleGuiSize(1000, targetSize.Height);
@@ -137,12 +136,11 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
         builder.Append(_prompt.TrimEnd());
 
         var appendSuffix = false;
-        var converter = Converter ?? TypeConverterHelper.ConvertToString;
-
+   
         if (ShowChoices && Choices.Count > 0)
         {
             appendSuffix = true;
-            var choices = string.Join("/", Choices.Select(choice => converter(choice)));
+            var choices = string.Join("/", Choices.Select(choice => choice.ToString()));
             var choicesStyle = ChoicesStyle?.ToMarkup() ?? "blue";
             builder.AppendFormat(CultureInfo.InvariantCulture, " [{0}][[{1}]][/]", choicesStyle, choices);
         }
@@ -151,7 +149,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
         {
             appendSuffix = true;
             var defaultValueStyle = DefaultValueStyle?.ToMarkup() ?? "green";
-            var defaultValue = converter(DefaultValue.Value.Value);
+            var defaultValue = DefaultValue.Value.Value.ToString() ?? "";
             var displayDefault = IsSecret && Mask.HasValue ? new string(Mask.Value, defaultValue.Length) : defaultValue;
 
             builder.AppendFormat(
@@ -193,7 +191,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
 
     void IInputListener.OnInput(InputEvent inputEvent)
     {
-        lock (ConsoleGuiTimer.AnimationLock)
+        lock (UIUpdate.Lock)
         {
             bool handled = false;
             string? newInput = null;
@@ -262,6 +260,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
 
     private void AttemptCommit()
     {
+        var result = (T) Convert.ChangeType(_input, typeof(T));
         if (string.IsNullOrWhiteSpace(_input))
         {
             if (DefaultValue != null)
@@ -271,20 +270,15 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
             }
 
             if (AllowEmpty)
-            {
-                if (TypeConverterHelper.TryConvertFromStringWithCulture<T>(_input, Culture, out var emptyResult))
-                {
-                    Committed?.Invoke(this, emptyResult!);
-                    return;
-                }
+            {                
+                Committed?.Invoke(this, default);
+                return;
+                
             }
             return;
         }
 
-        var converter = Converter ?? TypeConverterHelper.ConvertToString;
-        var choiceMap = Choices.ToDictionary(choice => converter(choice), choice => choice, _comparer);
-
-        T? result;
+        var choiceMap = Choices.ToDictionary(choice => choice.ToString()!, choice => choice, _comparer);
         if (Choices.Count > 0)
         {
             if (choiceMap.TryGetValue(_input, out result) && result != null)
@@ -298,14 +292,12 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
                 return;
             }
         }
-        else
-        {
-            if (!TypeConverterHelper.TryConvertFromStringWithCulture<T>(_input, Culture, out result) || result == null)
-            {
+        else if (result == null)
+        {                        
                 _validationError = ValidationErrorMessage;
                 Render();
                 return;
-            }
+            
         }
 
         if (Validator != null)
@@ -343,7 +335,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable
     #endregion
 
     #region Events
-    public event EventHandler<T>? Committed;
+    public event EventHandler<T?>? Committed;
     #endregion
 }
 

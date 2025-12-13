@@ -1,27 +1,20 @@
 namespace Jumbee.Console;
 
-public class ConsoleGuiTimerEventArgs : EventArgs
-{
-    public readonly object Lock;
+using System;
+using System.Threading;
 
-    public ConsoleGuiTimerEventArgs(object lockObject)
-    {
-        Lock = lockObject;
-    }
-}
-
-public static class ConsoleGuiTimer
+public static class UIUpdate
 {
     private static Timer? _timer;
     private static int _interval = 100;
     private static readonly object _internalLock = new object();
     private static bool _isRunning;
 
-    public static readonly object AnimationLock = new object();
+    public static readonly object Lock = new object();
 
-    public static event EventHandler<ConsoleGuiTimerEventArgs>? Tick;
+    public static event EventHandler<UIUpdateTimerEventArgs>? Tick;
 
-    public static void Start(int intervalMs = 100)
+    public static void StartTimer(int intervalMs = 100)
     {
         lock (_internalLock)
         {
@@ -32,7 +25,7 @@ public static class ConsoleGuiTimer
         }
     }
 
-    public static void Stop()
+    public static void StopTimer()
     {
         lock (_internalLock)
         {
@@ -44,10 +37,20 @@ public static class ConsoleGuiTimer
 
     private static void OnTick(object? state)
     {
-        if (Monitor.TryEnter(AnimationLock))
+        if (Monitor.TryEnter(Lock))
         {
-            Monitor.Exit(AnimationLock);
-            Tick?.Invoke(null, new ConsoleGuiTimerEventArgs(AnimationLock));
+            Monitor.Exit(Lock);
+            Tick?.Invoke(null, new UIUpdateTimerEventArgs(Lock));
         }
+    }
+}
+
+public class UIUpdateTimerEventArgs : EventArgs
+{
+    public readonly object Lock;
+
+    public UIUpdateTimerEventArgs(object lockObject)
+    {
+        Lock = lockObject;
     }
 }
