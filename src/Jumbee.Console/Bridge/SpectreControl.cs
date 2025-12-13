@@ -24,8 +24,10 @@ public class SpectreControl<T> : Control, IDisposable where T : IRenderable
     }
     #endregion
 
+    protected virtual T CloneContent() => throw new NotSupportedException($"Cloning not supported for type {typeof(T).Name}. Override CloneContent() in derived class.");
+
     #region Properties
-    public IRenderable Content 
+    public T Content 
     {
         get => _control;
         set 
@@ -93,6 +95,11 @@ public class SpectreControl<T> : Control, IDisposable where T : IRenderable
         }
     }
 
+    protected void RequestRender()
+    {
+        Interlocked.Increment(ref _updatesRequested);
+    }
+
     private void Render()
     {
         if (Size.Width <= 0 || Size.Height <= 0)
@@ -112,7 +119,7 @@ public class SpectreControl<T> : Control, IDisposable where T : IRenderable
     #region Fields
     private readonly BufferConsole _bufferConsole;
     private readonly AnsiConsoleBuffer _ansiConsole;
-    private IRenderable _control;
+    private T _control;
     private uint _updatesRequested;
     private static readonly Cell _emptyCell = new Cell(Character.Empty);
     #endregion

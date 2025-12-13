@@ -6,6 +6,7 @@ using ConsoleGUI.Controls;
 using ConsoleGUI.Space;
 using ConsoleGUI.Input;
 using Jumbee.Console;
+using Jumbee.Console.Controls;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using Jumbee.Console.Prompts;
@@ -38,13 +39,14 @@ class Program
         table.Border(TableBorder.DoubleEdge);
 
         // 2. Bar Chart
-        var barChart = new BarChart()
-            .Width(50)
-            .Label("[green bold]Activity[/]")
-            .CenterLabel()
+        var barChart = new Jumbee.Console.Controls.BarChart()
             .AddItem("Planning", 12, SpectreColor.Yellow)
             .AddItem("Coding", 54, SpectreColor.Green)
             .AddItem("Testing", 33, SpectreColor.Red);
+        
+        barChart.Width = 50;
+        barChart.Label = "[green bold]Activity[/]";
+        barChart.CenterLabel = true;
 
         // 3. Tree
         var root = new Tree("Root");
@@ -57,7 +59,7 @@ class Program
         
         // --- Wrap Spectre.Console Controls for ConsoleGUI ---
         var tableControl = new SpectreControl<Spectre.Console.Table>(table);
-        var chartControl = new SpectreControl<Spectre.Console.BarChart>(barChart);
+        // var chartControl = new SpectreControl<Spectre.Console.BarChart>(barChart); // No longer needed
         var treeControl = new SpectreControl<Spectre.Console.Tree>(root);
 
         // --- ConsoleGUI Controls ---
@@ -98,7 +100,7 @@ class Program
         // Add controls to grid
         grid.AddChild(0, 1, new Margin { Offset = new Offset(1, 1, 1, 1), Content = prompt }); // Top Left
         grid.AddChild(0, 0, new Margin { Offset = new Offset(1, 1, 1, 1), Content = spinner });  // Top Right
-        grid.AddChild(1, 0, new Margin { Offset = new Offset(1, 1, 1, 1), Content = chartControl }); // Bottom Left
+        grid.AddChild(1, 0, new Margin { Offset = new Offset(1, 1, 1, 1), Content = barChart }); // Bottom Left
         grid.AddChild(1, 1, new Margin { Offset = new Offset(1, 1, 1, 1), Content = tableControl }); // Bottom Left
         grid.AddChild(1, 2, new Margin { Offset = new Offset(1, 1, 1, 1), Content = treeControl }); // Bottom Left
         
@@ -116,15 +118,11 @@ class Program
             var newCoding = random.Next(40, 70);
             var newTesting = random.Next(20, 40);
 
-            var updatedBarChart = new BarChart()
-                .Width(50)
-                .Label("[green bold]Activity[/]")
-                .CenterLabel()
-                .AddItem("Planning", newPlanning, SpectreColor.Yellow)
-                .AddItem("Coding", newCoding, SpectreColor.Green)
-                .AddItem("Testing", newTesting, SpectreColor.Red);
-            
-            chartControl.Content = updatedBarChart;
+            // Update existing items using the indexer
+            barChart["Planning"] = newPlanning;
+            barChart["Coding"] = newCoding;
+            barChart["Testing"] = newTesting;
+
         }, null, 0, 100);
 
         // Main loop
