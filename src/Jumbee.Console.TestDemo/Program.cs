@@ -40,11 +40,12 @@ class Program
         table.Border(TableBorder.DoubleEdge);
 
         // 2. Bar Chart
-        var barChart = new Jumbee.Console.BarChart()
-            .AddItem("Planning", 12, SpectreColor.Yellow)
-            .AddItem("Coding", 54, SpectreColor.Green)
-            .AddItem("Testing", 33, SpectreColor.Red);
-        
+        var barChart = new Jumbee.Console.BarChart(
+            ("Planning", 12, SpectreColor.Yellow),
+            ("Coding", 54, SpectreColor.Green),
+            ("Testing", 33, SpectreColor.Red)
+        );
+                   
         barChart.Width = 50;
         barChart.Label = "[green bold]Activity[/]";
         barChart.CenterLabel = true;

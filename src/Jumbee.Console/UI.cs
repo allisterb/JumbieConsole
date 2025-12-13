@@ -18,8 +18,8 @@ public static class UI
             if (_isRunning) return;
             _interval = paintInterval;
             _isRunning = true;
-            _timer = new Timer(OnTick, null, _interval, _interval);
-            ConsoleManager.Content = root;  
+            ConsoleManager.Content = root;
+            _timer = new Timer(OnTick, null, _interval, _interval);             
         }
     }
 

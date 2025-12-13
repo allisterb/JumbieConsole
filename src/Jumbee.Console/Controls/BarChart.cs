@@ -8,6 +8,14 @@ public class BarChart : SpectreControl<Spectre.Console.BarChart>
 {
     public BarChart() : base(new Spectre.Console.BarChart()) {}
 
+    public BarChart(params (string Label, double Value, Color? Color)[] items) : this()
+    {
+        foreach (var (label, value, color) in items)
+        {
+            AddItem(label, value, color);
+        }
+    }
+
     public int? Width
     {
         get => Content.Width;
