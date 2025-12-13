@@ -78,6 +78,29 @@ class Program
             //spinner.Spinner = Spinner.Known.Ascii; // Change spinner style on success
         };
         
+        // Add live update for the BarChart
+        UIUpdate.Tick += (sender, e) =>
+        {
+            lock (e.Lock)
+            {
+                // Generate new random data for the bar chart
+                var random = new Random();
+                var newPlanning = random.Next(10, 30);
+                var newCoding = random.Next(40, 70);
+                var newTesting = random.Next(20, 40);
+
+                var updatedBarChart = new BarChart()
+                    .Width(50)
+                    .Label("[green bold]Activity[/]")
+                    .CenterLabel()
+                    .AddItem("Planning", newPlanning, SpectreColor.Yellow)
+                    .AddItem("Coding", newCoding, SpectreColor.Green)
+                    .AddItem("Testing", newTesting, SpectreColor.Red);
+                
+                chartControl.Content = updatedBarChart;
+            }
+        };
+        
         // --- ConsoleGUI Layout ---
         // Use a Grid for layout
         var grid = new LayoutGrid
