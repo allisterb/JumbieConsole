@@ -10,7 +10,7 @@ using ConsoleGUI.Input;
 using Jumbee.Console;
 
 using Spectre.Console;
-using Jumbee.Console.Prompts;
+
 
 using ConsoleGuiSize = ConsoleGUI.Space.Size;
 using ConsoleGuiColor = ConsoleGUI.Data.Color;
@@ -75,7 +75,7 @@ class Program
         spinner.Start();
 
         // The TextPrompt control
-        var prompt = new ConsoleGUITextPrompt<string>("[yellow]What is your name?[/]", enableCursorBlink: true);
+        var prompt = new Jumbee.Console.TextPrompt<string>("[yellow]What is your name?[/]", enableCursorBlink: true);
         prompt.Committed += (sender, name) => 
         {
             spinner.Text = $"Hello, [blue]{name}[/]!";

@@ -1,4 +1,4 @@
-namespace Jumbee.Console.Prompts;
+namespace Jumbee.Console;
 
 using System;
 using System.Collections.Generic;
@@ -19,16 +19,15 @@ using Spectre.Console;
 using ConsoleGuiSize = ConsoleGUI.Space.Size;
 using Jumbee.Console;
 
-public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable where T : IConvertible
+public class TextPrompt<T> : Control, IInputListener, IDisposable where T : IConvertible
 {
     #region Constructors
-    public ConsoleGUITextPrompt(string prompt, StringComparer? comparer = null, bool enableCursorBlink = false)
+    public TextPrompt(string prompt, bool enableCursorBlink = false, StringComparer ? comparer = null)
     {
-        _prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
+        _prompt = prompt;
         _comparer = comparer;
         _bufferConsole = new ConsoleBuffer();
         _ansiConsole = new AnsiConsoleBuffer(_bufferConsole);
-
         if (enableCursorBlink)
         {
             UI.Paint += OnCursorBlink;
@@ -38,18 +37,14 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable wher
 
     #region Properties
     public Style? PromptStyle { get; set; }
-    public List<T> Choices { get; } = new List<T>();
     public CultureInfo? Culture { get; set; }
-    public string InvalidChoiceMessage { get; set; } = "[red]Please select one of the available options[/]";
     public bool IsSecret { get; set; }
     public char? Mask { get; set; } = '*';
-    public string ValidationErrorMessage { get; set; } = "[red]Invalid input[/]";
-    public bool ShowChoices { get; set; } = true;
-    public bool ShowDefaultValue { get; set; } = true;
     public bool AllowEmpty { get; set; }
     public Func<T, ValidationResult>? Validator { get; set; }
+    public string ValidationErrorMessage { get; set; } = "Invalid input.";  
     public Style? DefaultValueStyle { get; set; }
-    public Style? ChoicesStyle { get; set; }
+
     public bool ShowCursor { get; set; } = true;
 
     internal DefaultPromptValue<T>? DefaultValue { get; set; }
@@ -119,8 +114,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable wher
 
             Resize(targetSize);
             _bufferConsole.Resize(Size);
-
-            Render();
+            Paint(); 
         }
     }
 
@@ -135,30 +129,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable wher
         var builder = new StringBuilder();
         builder.Append(_prompt.TrimEnd());
 
-        var appendSuffix = false;
-   
-        if (ShowChoices && Choices.Count > 0)
-        {
-            appendSuffix = true;
-            var choices = string.Join("/", Choices.Select(choice => choice.ToString()));
-            var choicesStyle = ChoicesStyle?.ToMarkup() ?? "blue";
-            builder.AppendFormat(CultureInfo.InvariantCulture, " [{0}][[{1}]][/]", choicesStyle, choices);
-        }
-
-        if (ShowDefaultValue && DefaultValue != null)
-        {
-            appendSuffix = true;
-            var defaultValueStyle = DefaultValueStyle?.ToMarkup() ?? "green";
-            var defaultValue = DefaultValue.Value.Value.ToString() ?? "";
-            var displayDefault = IsSecret && Mask.HasValue ? new string(Mask.Value, defaultValue.Length) : defaultValue;
-
-            builder.AppendFormat(
-                CultureInfo.InvariantCulture,
-                " [{0}]({1})[/]",
-                defaultValueStyle,
-                displayDefault);
-        }
-
+        var appendSuffix = false;           
         var markup = builder.ToString().Trim();
         if (appendSuffix)
         {
@@ -186,6 +157,12 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable wher
             _ansiConsole.MarkupLine(_validationError);
         }
 
+        
+    }
+
+    private void Paint()
+    {
+        Render();
         Redraw();
     }
 
@@ -253,7 +230,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable wher
             if (handled)
             {
                 inputEvent.Handled = true;
-                Render();
+                Paint();
             }
         }
     }
@@ -278,25 +255,12 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable wher
             return;
         }
 
-        var choiceMap = Choices.ToDictionary(choice => choice.ToString()!, choice => choice, _comparer);
-        if (Choices.Count > 0)
-        {
-            if (choiceMap.TryGetValue(_input, out result) && result != null)
-            {
-                // Valid choice
-            }
-            else
-            {
-                _validationError = InvalidChoiceMessage;
-                Render();
-                return;
-            }
-        }
-        else if (result == null)
+       
+        if (result == null)
         {                        
-                _validationError = ValidationErrorMessage;
-                Render();
-                return;
+            _validationError = ValidationErrorMessage;
+            Paint();
+            return;
             
         }
 
@@ -306,7 +270,7 @@ public class ConsoleGUITextPrompt<T> : Control, IInputListener, IDisposable wher
             if (!validationResult.Successful)
             {
                 _validationError = validationResult.Message ?? ValidationErrorMessage;
-                Render();
+                Paint();    
                 return;
             }
         }

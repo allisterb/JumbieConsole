@@ -36,15 +36,18 @@ The project Jumbee.Console at @src/Jumbee.Console is a .NET library for building
 The initial plan created a bridge between the two libraries by implementing IAnsiConsole from Spectre.Console in the AnsiConsoleBuffer class to store Spectre.Console control output instead of writing it to the console immediately, 
 and a SpectreControl class for wrapping Spectre.Console controls as ConsoleGUI IControls to be used with ConsoleGUI layout and window classes.
 
-Support for animated controls was added by using a single background thread started by the UIUpdate class running a timer that fires Tick events at regular intervals that animated controls use to update
-their state. Drawing conflicts during updates are mitigated by using a single lock object that gets passed to all animated controls in Tick events to synchronize access to their internal state
-so that they can be properly rendered and drawn by ConsoleGUI. Tick events are only raised when the lock is not held by any control.
+Support for updating and animating controls was added by using a single background thread started by the UI class running a timer that fires Paint events at regular intervals that controls use to update
+their state. Drawing conflicts during updates are mitigated by using a single lock object that gets passed to all controls derived from SpectreControl and AnimatedControl in Paint events to synchronize access to their internal state
+so that they can be properly rendered and drawn by ConsoleGUI. Paint events are only raised by the UI class when the lock is not held by any control.
 
 ## SpectreControl class
 The SpectreControl class is a generic class that wraps a Spectre.Console IRenderable control as a ConsoleGUI IControl. It uses the AnsiConsoleBuffer to render the Spectre control to a buffer, 
-which is used by ConsoleGUI to draw the control to the console screen.
-When deriving from this class, any public properties or methods that change the visual state of the control should call the Invalidate() method to notify ConsoleGUI that the control needs to be re-rendered.
-*Do not acquire the UIUpdate lock in public properties or methods* 
+which is used by ConsoleGUI to draw the control to the console screen. Note the follwing important considerations when deriving from this class:
+
+* Any public properties or methods that change the visual state of the control must call the Invalidate() method to notify ConsoleGUI that the control needs to be re-rendered.
+*Do not acquire the UI lock in publicly visible properties or methods of a control* as this will inevitably lead to deadlocks. Instead, call Invalidate() to signal that a control needs to be redrawn in the next Paint event.
+When modifying control state stored in collections, use a copy-on-write strategy using the CloneControl() method and setting the Content property to the cloned object, to avoid modifying collections while they might be enumerated during rendering.
+Since this is inefficient, try to batch multiple changes to control state collections into a single property or index setter when possible.
 
 ## Coding instructions:
 - When generating new C# code, please follow the existing coding style.
