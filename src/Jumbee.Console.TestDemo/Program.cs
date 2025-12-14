@@ -80,6 +80,7 @@ class Program
             spinner.SpinnerType = Spectre.Console.Spinner.Known.Ascii; // Change spinner style on success
         };
         
+        /*
         // --- ConsoleGUI Layout ---
         // Use a Grid for layout
         var grid = new LayoutGrid
@@ -103,14 +104,36 @@ class Program
         grid.AddChild(1, 0, new Margin { Offset = new Offset(1, 1, 1, 1), Content = barChart }); // Bottom Left
         grid.AddChild(1, 1, new Margin { Offset = new Offset(1, 1, 1, 1), Content = tableControl }); // Bottom Left
         grid.AddChild(1, 2, new Margin { Offset = new Offset(1, 1, 1, 1), Content = treeControl }); // Bottom Left
+        */
+        
+        var internalGrid = new LayoutGrid
+        {
+            Columns = new[]
+            {
+                new LayoutGrid.ColumnDefinition(40),
+                new LayoutGrid.ColumnDefinition(40),
+                new LayoutGrid.ColumnDefinition(50)
+            },
+            Rows = new[]
+            {
+                new LayoutGrid.RowDefinition(15),
+                new LayoutGrid.RowDefinition(20)
+            }
+        };
 
-        var grid2 = new Jumbee.Console.Grid([
-            [spinner.WithMargin(1), prompt.WithBorder(ConsoleGUI.Data.BorderStyle.Single).WithVerticalScrollBar(), barChart],
-            [tableControl, treeControl, treeControl]
-        ]);
+        internalGrid.AddChild(0, 0, new Jumbee.Console.Controls.Border { Content = spinner.WithMargin(1), BorderStyle = Jumbee.Console.Controls.BoxBorder.FromStyle(Jumbee.Console.Controls.BoxBorderStyle.Double) });
+        internalGrid.AddChild(1, 0, new Jumbee.Console.Controls.Border { Content = prompt.WithVerticalScrollBar(), BorderStyle = Jumbee.Console.Controls.BoxBorder.FromStyle(Jumbee.Console.Controls.BoxBorderStyle.Heavy), Foreground = new ConsoleGUI.Data.Color(255, 255, 0) });
+        internalGrid.AddChild(2, 0, new Jumbee.Console.Controls.Border { Content = barChart, BorderStyle = Jumbee.Console.Controls.BoxBorder.FromStyle(Jumbee.Console.Controls.BoxBorderStyle.Square), Foreground = new ConsoleGUI.Data.Color(0, 255, 255) });
+        
+        internalGrid.AddChild(0, 1, new Jumbee.Console.Controls.Border { Content = tableControl, BorderStyle = Jumbee.Console.Controls.BoxBorder.FromStyle(Jumbee.Console.Controls.BoxBorderStyle.Rounded), Foreground = new ConsoleGUI.Data.Color(0, 0, 255) });
+        internalGrid.AddChild(1, 1, new Jumbee.Console.Controls.Border { Content = treeControl, BorderStyle = Jumbee.Console.Controls.BoxBorder.FromStyle(Jumbee.Console.Controls.BoxBorderStyle.Ascii), Foreground = new ConsoleGUI.Data.Color(255, 0, 255) });
+        internalGrid.AddChild(2, 1, new Jumbee.Console.Controls.Border { Content = treeControl, BorderStyle = Jumbee.Console.Controls.BoxBorder.FromStyle(Jumbee.Console.Controls.BoxBorderStyle.None) });
+
+        var grid2 = new Jumbee.Console.Grid(internalGrid);
+        
         // Start the user interface
-        UI.Start(grid2, 130, 20);
-        //UI.Start(grid);
+        //UI.Start(grid2, 130, 20);
+        UI.Start(grid2);
         // Create a separate timer to update the chartControl content periodically
         var random = new Random();
         var chartTimer = new Timer(_ => 

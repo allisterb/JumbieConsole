@@ -75,13 +75,15 @@ public class SpectreControl<T> : Control, IDisposable where T : IRenderable
             // Resize the control to fill the available space
             // We clip it to avoid issues if MaxSize is 'infinite' (though unlikely in this specific layout)
             var targetSize = MaxSize;
+            targetSize = new ConsoleGuiSize(Math.Max(0, targetSize.Width), Math.Max(0, targetSize.Height));
+
             if (targetSize.Width > 1000) targetSize = new ConsoleGuiSize(1000, targetSize.Height);
             if (targetSize.Height > 1000) targetSize = new ConsoleGuiSize(targetSize.Width, 1000);
 
             Resize(targetSize);
 
-            // Resize buffer
-            _bufferConsole.Resize(Size);
+            // Resize buffer using safe dimensions (Size can be negative if Min/Max limits are invalid)
+            _bufferConsole.Resize(new ConsoleGuiSize(Math.Max(0, Size.Width), Math.Max(0, Size.Height)));
 
             Render();
             Redraw();

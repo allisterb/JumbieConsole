@@ -194,12 +194,21 @@ namespace Jumbee.Console.Controls
         {
             using (Freeze())
             {
+                var offset = BorderPlacement.AsOffset();
+                
                 ContentContext?.SetOffset(BorderPlacement.AsVector());
-                ContentContext?.SetLimits(
-                    MinSize.AsRect().Remove(BorderPlacement.AsOffset()).Size,
-                    MaxSize.AsRect().Remove(BorderPlacement.AsOffset()).Size);
 
-                Resize(Content?.Size.AsRect().Add(BorderPlacement.AsOffset()).Size ?? Size.Empty);
+                var minRect = MinSize.AsRect().Remove(offset);
+                var maxRect = MaxSize.AsRect().Remove(offset);
+
+                ContentContext?.SetLimits(
+                    new Size(Math.Max(0, minRect.Width), Math.Max(0, minRect.Height)),
+                    new Size(Math.Max(0, maxRect.Width), Math.Max(0, maxRect.Height)));
+
+                var contentSize = Content?.Size ?? Size.Empty;
+                var sizeRect = contentSize.AsRect().Add(offset);
+
+                Resize(new Size(Math.Max(0, sizeRect.Width), Math.Max(0, sizeRect.Height)));
             }
         }
 
