@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using ConsoleGUI.Common;
-using ConsoleGUI.Data;
 using ConsoleGUI.Controls;
 using ConsoleGUI.Space;
 
@@ -61,11 +60,24 @@ public static class ControlExtensions
         Content = control
     };
 
-    public static Border WithBorder(this Control control, BorderStyle style) => new Border
+    public static Border WithBorder(this Control control, BorderStyle style) => new Border(control, style);
+        
+    public static Border WithBorderColor(this Border border, Color? fgColor = null, Color? bgColor = null)
     {
-        BorderStyle = style,
-        Content = control
-    };
+        border.Foreground = fgColor ?? border.Foreground;
+        border.Background = bgColor ?? border.Background;
+        return border;
+    }
+
+    public static Border WithAsciiBorder(this Control control) => new Border(control, BorderStyle.Ascii);  
+
+    public static Border WithDoubleBorder(this Control control) => new Border(control, BorderStyle.Double);
+
+    public static Border WithHeavyBorder(this Control control) => new Border(control, BorderStyle.Heavy);
+
+    public static Border WithRoundedBorder(this Control control) => new Border(control, BorderStyle.Rounded);
+
+    public static Border WithSquareBorder(this Control control) => new Border(control, BorderStyle.Square);
 
     public static VerticalScrollPanel WithVerticalScrollBar(this Control control) => new VerticalScrollPanel
     {

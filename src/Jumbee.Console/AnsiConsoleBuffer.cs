@@ -140,7 +140,7 @@ internal class ConsoleGUIOutput : IAnsiConsoleOutput
     
     public ConsoleGUIOutput(IConsole console) => _console = console;
 
-    public TextWriter Writer => System.Console.Out; 
+    public TextWriter Writer => throw new NotSupportedException(); 
     public bool IsTerminal => true;
     public int Width => _console.Size.Width;
     public int Height => _console.Size.Height;
