@@ -89,15 +89,16 @@ public class TextPrompt : Prompt
                 }
 
                 // Render Cursor
-                if (ShowCursor && _blinkState &&
-                    position.X == _inputStartX + _caretPosition &&
-                    position.Y == _inputStartY)
+                if (ShowCursor && _blinkState)
                 {
-                    if (cell.Content == null || cell.Content == '\0')
+                    if (position.X == _cursorScreenX && position.Y == _cursorScreenY)
                     {
-                        return _cursorEmptyCell;
+                        if (cell.Content == null || cell.Content == '\0')
+                        {
+                            return _cursorEmptyCell;
+                        }
+                        return cell.WithBackground(_cursorBackgroundColor);
                     }
-                    return cell.WithBackground(_cursorBackgroundColor);
                 }
 
                 return cell;
@@ -131,13 +132,21 @@ public class TextPrompt : Prompt
         _inputStartY = ansiConsole.CursorY;
 
         // 2. Render Input
-        string displayInput = _input;
+        string preCaret = _input.Substring(0, _caretPosition);
+        string postCaret = _input.Substring(_caretPosition);
+
         if (IsSecret && Mask.HasValue)
         {
-            displayInput = new string(Mask.Value, _input.Length);
+            preCaret = new string(Mask.Value, preCaret.Length);
+            postCaret = new string(Mask.Value, postCaret.Length);
         }
 
-        ansiConsole.Write(displayInput);
+        ansiConsole.Write(preCaret);
+
+        _cursorScreenX = ansiConsole.CursorX;
+        _cursorScreenY = ansiConsole.CursorY;
+
+        ansiConsole.Write(postCaret);
 
         // 3. Render Error (if any)
         if (_validationError != null)
@@ -259,6 +268,8 @@ public class TextPrompt : Prompt
     private string? _validationError = null;
     private int _inputStartX = 0;
     private int _inputStartY = 0;
+    private int _cursorScreenX = 0;
+    private int _cursorScreenY = 0;
 
     private bool _blinkState = true;
 
