@@ -19,19 +19,16 @@ using Spectre.Console;
 using ConsoleGuiSize = ConsoleGUI.Space.Size;
 using Jumbee.Console;
 
-public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposable where T : IConvertible
+public class TextPrompt : Prompt
 {
     #region Constructors
-    public TextPrompt(string prompt, bool enableCursorBlink = false, StringComparer ? comparer = null)
+    public TextPrompt(string prompt, StringComparer? comparer = null, bool showCursor = true, bool blinkCursor = false)
     {
-        _prompt = prompt;
-        _comparer = comparer;
-        _bufferConsole = new ConsoleBuffer();
-        _ansiConsole = new AnsiConsoleBuffer(_bufferConsole);
-        if (enableCursorBlink)
-        {
-            UI.Paint += OnCursorBlink;
-        }
+        this._prompt = prompt;
+        this._comparer = comparer;
+        this._showCursor = showCursor;
+        this._blinkCursor = blinkCursor;
+
     }
     #endregion
 
@@ -41,37 +38,41 @@ public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposa
     public bool IsSecret { get; set; }
     public char? Mask { get; set; } = '*';
     public bool AllowEmpty { get; set; }
-    public Func<T, ValidationResult>? Validator { get; set; }
+    public Func<string, ValidationResult>? Validator { get; set; }
     public string ValidationErrorMessage { get; set; } = "Invalid input.";  
     public Style? DefaultValueStyle { get; set; }
-
-    public bool ShowCursor { get; set; } = true;
-
-    internal DefaultPromptValue<T>? DefaultValue { get; set; }
-    #endregion
-
-    #region Methods
-    public void SetDefaultValue(T value)
-    {
-        DefaultValue = new DefaultPromptValue<T>(value);
-    }
-
-    private void OnCursorBlink(object? sender, UI.PaintEventArgs e)
-    {
-        lock (e.Lock)
+    public bool ShowCursor 
+    { 
+        get => _showCursor; 
+        set
         {
-            _blinkState = !_blinkState;
-            if (ShowCursor)
+            _showCursor = value;
+            if (!_showCursor)
             {
-                Redraw();
+                _blinkState = false;
+            }
+            Invalidate();
+        } 
+    
+    }
+    public bool BlinkCursor 
+    { 
+        get => _blinkCursor;
+
+        set
+        {
+            _blinkCursor = value;
+            if (!_blinkCursor)
+            {
+                _blinkState = true;
             }
         }
     }
+    #endregion
 
-    public void Dispose()
-    {
-        UI.Paint -= OnCursorBlink;
-    }
+    #region Methods
+    
+    
 
     public override Cell this[Position position]
     {
@@ -80,11 +81,11 @@ public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposa
             lock (UI.Lock)
             {
                 Cell cell = _emptyCell;
-                if (_bufferConsole.Buffer != null &&
+                if (consoleBuffer.Buffer != null &&
                     position.X >= 0 && position.X < Size.Width &&
                     position.Y >= 0 && position.Y < Size.Height)
                 {
-                    cell = _bufferConsole.Buffer[position.X, position.Y];
+                    cell = consoleBuffer.Buffer[position.X, position.Y];
                 }
 
                 // Render Cursor
@@ -104,28 +105,14 @@ public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposa
         }
     }
 
-    protected override void Initialize()
-    {
-        lock (UI.Lock)
-        {
-            var targetSize = MaxSize;
-            targetSize = new ConsoleGuiSize(Math.Max(0, targetSize.Width), Math.Max(0, targetSize.Height));
+    
 
-            if (targetSize.Width > 1000) targetSize = new ConsoleGuiSize(1000, targetSize.Height);
-            if (targetSize.Height > 1000) targetSize = new ConsoleGuiSize(targetSize.Width, 1000);
-
-            Resize(targetSize);
-            _bufferConsole.Resize(new ConsoleGuiSize(Math.Max(0, Size.Width), Math.Max(0, Size.Height)));
-            Paint(); 
-        }
-    }
-
-    private void Render()
+    protected override void Render()
     {
         // Assumes lock is held by caller (Initialize or OnInput)
         if (Size.Width <= 0 || Size.Height <= 0) return;
 
-        _ansiConsole.Clear(true);
+        ansiConsole.Clear(true);
 
         // 1. Build Prompt Markup
         var builder = new StringBuilder();
@@ -138,10 +125,10 @@ public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposa
             markup += ":";
         }
 
-        _ansiConsole.Markup(markup + " ");
+        ansiConsole.Markup(markup + " ");
 
-        _inputStartX = _ansiConsole.CursorX;
-        _inputStartY = _ansiConsole.CursorY;
+        _inputStartX = ansiConsole.CursorX;
+        _inputStartY = ansiConsole.CursorY;
 
         // 2. Render Input
         string displayInput = _input;
@@ -150,25 +137,32 @@ public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposa
             displayInput = new string(Mask.Value, _input.Length);
         }
 
-        _ansiConsole.Write(displayInput);
+        ansiConsole.Write(displayInput);
 
         // 3. Render Error (if any)
         if (_validationError != null)
         {
-            _ansiConsole.WriteLine();
-            _ansiConsole.MarkupLine(_validationError);
+            ansiConsole.WriteLine();
+            ansiConsole.MarkupLine(_validationError);
         }
 
         
     }
 
-    private void Paint()
+    protected override void OnPaint(object? sender, UI.PaintEventArgs e)
     {
-        Render();
-        Redraw();
+        _blinkState = !_blinkState;
+        if (paintRequests > 0)
+        {
+            Paint();
+        }
+        else if (ShowCursor)
+        {
+            Redraw();
+        }
     }
 
-    void IInputListener.OnInput(InputEvent inputEvent)
+    public override void OnInput(InputEvent inputEvent)
     {
         lock (UI.Lock)
         {
@@ -238,37 +232,10 @@ public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposa
     }
 
     private void AttemptCommit()
-    {
-        var result = (T) Convert.ChangeType(_input, typeof(T));
-        if (string.IsNullOrWhiteSpace(_input))
-        {
-            if (DefaultValue != null)
-            {
-                Committed?.Invoke(this, DefaultValue.Value.Value);
-                return;
-            }
-
-            if (AllowEmpty)
-            {                
-                Committed?.Invoke(this, default);
-                return;
-                
-            }
-            return;
-        }
-
-       
-        if (result == null)
-        {                        
-            _validationError = ValidationErrorMessage;
-            Paint();
-            return;
-            
-        }
-
+    {                      
         if (Validator != null)
         {
-            var validationResult = Validator(result);
+            var validationResult = Validator(_input);
             if (!validationResult.Successful)
             {
                 _validationError = validationResult.Message ?? ValidationErrorMessage;
@@ -278,16 +245,15 @@ public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposa
         }
 
         _validationError = null;
-        Committed?.Invoke(this, result);
+        Committed?.Invoke(this, _input);
     }
     #endregion
 
     #region Fields
     private readonly string _prompt;
     private readonly StringComparer? _comparer;
-    private readonly ConsoleBuffer _bufferConsole;
-    private readonly AnsiConsoleBuffer _ansiConsole;
-
+    private bool _showCursor;
+    private bool _blinkCursor;
     private string _input = string.Empty;
     private int _caretPosition = 0;
     private string? _validationError = null;
@@ -295,19 +261,14 @@ public class TextPrompt<T> : ConsoleGUI.Common.Control, IInputListener, IDisposa
     private int _inputStartY = 0;
 
     private bool _blinkState = true;
-    private static readonly Cell _emptyCell = new Cell(Character.Empty);
+
     private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
     private static readonly Cell _cursorEmptyCell = new Cell(' ').WithBackground(_cursorBackgroundColor);
     #endregion
 
     #region Events
-    public event EventHandler<T?>? Committed;
+    public event EventHandler<string>? Committed;
     #endregion
 }
 
-internal struct DefaultPromptValue<T>
-{
-    public T Value { get; }
-    public DefaultPromptValue(T value) => Value = value;
-}
 

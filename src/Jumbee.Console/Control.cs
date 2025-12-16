@@ -45,6 +45,9 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
         UI.Paint -= OnPaint;
     }
 
+    /// <summary>
+    /// This method renders the control's content to the console buffer.
+    /// </summary>
     protected abstract void Render();
 
     protected sealed override void Initialize()
@@ -78,7 +81,7 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
             if (paintRequests > 0)
             {
                 Paint();
-                Interlocked.Exchange(ref paintRequests, 0u);
+                Validate();
             }
         }
     }
@@ -93,6 +96,11 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
     /// Indicates the control should be repainted on the next UI update tick.
     /// </summary>    
     protected void Invalidate() => Interlocked.Increment(ref paintRequests);
+
+    /// <summary>
+    /// Indicates that any pending paint requests have been handled.
+    /// </summary>
+    protected void Validate() => Interlocked.Exchange(ref paintRequests, 0u);
     #endregion
 
     #region Fields

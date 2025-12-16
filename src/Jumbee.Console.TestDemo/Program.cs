@@ -74,7 +74,7 @@ class Program
         spinner.Start();
 
         // The TextPrompt control
-        var prompt = new Jumbee.Console.TextPrompt<string>("[yellow]What is your name?[/]", enableCursorBlink: true);
+        var prompt = new TextPrompt("[yellow]What is your name?[/]", blinkCursor: true);
         prompt.Committed += (sender, name) => 
         {
             spinner.Text = $"Hello, [blue]{name}[/]!";
