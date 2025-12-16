@@ -80,8 +80,7 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
         {
             if (paintRequests > 0)
             {
-                Paint();
-                Validate();
+                Paint();                
             }
         }
     }
@@ -90,6 +89,7 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
     {
         Render();
         Redraw();
+        Validate();
     }
 
     /// <summary>

@@ -122,8 +122,9 @@ class Program
             }
         };
 
+        var borderedPrompt = prompt.WithHeavyBorder().WithBorderColor(Orange1).WithBorderTitle("Input");
         internalGrid.AddChild(0, 0, spinner.WithMargin(1).WithDoubleBorder().WithBorderTitle("Loading"));
-        internalGrid.AddChild(1, 0, prompt.WithHeavyBorder().WithBorderColor(Orange1).WithBorderTitle("Input"));
+        internalGrid.AddChild(1, 0, borderedPrompt);
         internalGrid.AddChild(2, 0, barChart.WithHeavyBorder().WithBorderColor(Yellow).WithBorderTitle("Stats"));
         
         internalGrid.AddChild(0, 1, tableControl.WithRoundedBorder().WithBorderColor(Aqua).WithBorderTitle("Data"));
@@ -155,7 +156,7 @@ class Program
         // Main loop
         while (true)
         {
-            ConsoleManager.ReadInput([prompt, new InputListener()]);
+            ConsoleManager.ReadInput([borderedPrompt, prompt, new InputListener()]);
             Thread.Sleep(50);
         }
     }
