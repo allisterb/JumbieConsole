@@ -48,6 +48,9 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
     /// <summary>
     /// This method renders the control's content to the console buffer.
     /// </summary>
+    /// <remarks>Note that this does not actually draw the control on the console screen. The <see cref="ConsoleGUI.Common.Control.Redraw"/> method indicates to
+    /// parent containers that the control has been updated and needs to be redrawn on the console screen.
+    /// </remarks>
     protected abstract void Render();
 
     protected sealed override void Initialize()
@@ -85,10 +88,16 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
         }
     }
 
+    /// <summary>
+    /// Renders the control and indicates to its parent that it should be redrawn and marks the control region as valid..
+    /// </summary>
     protected void Paint()
     {
+        // Render the control's content to the console buffer.
         Render();
+        // Notify parent containers that the control needs to be redrawn.
         Redraw();
+        // Mark the control region as valid.
         Validate();
     }
 

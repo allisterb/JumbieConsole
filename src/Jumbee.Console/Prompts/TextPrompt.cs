@@ -112,50 +112,14 @@ public class TextPrompt : Prompt
     {
         // Assumes lock is held by caller (Initialize or OnInput)
         if (Size.Width <= 0 || Size.Height <= 0) return;
-
-        ansiConsole.Clear(true);
-
-        // 1. Build Prompt Markup
-        var builder = new StringBuilder();
-        builder.Append(_prompt.TrimEnd());
-
-        var appendSuffix = false;           
-        var markup = builder.ToString().Trim();
-        if (appendSuffix)
-        {
-            markup += ":";
-        }
-
+        ansiConsole.Clear(true);       
+        var markup = _prompt.Trim();       
         ansiConsole.Markup(markup + " ");
-
         _inputStartX = ansiConsole.CursorX;
-        _inputStartY = ansiConsole.CursorY;
-
-        // 2. Render Input
-        string preCaret = _input.Substring(0, _caretPosition);
-        string postCaret = _input.Substring(_caretPosition);
-
-        if (IsSecret && Mask.HasValue)
-        {
-            preCaret = new string(Mask.Value, preCaret.Length);
-            postCaret = new string(Mask.Value, postCaret.Length);
-        }
-
-        ansiConsole.Write(preCaret);
-
+        _inputStartY = ansiConsole.CursorY;        
+        ansiConsole.Write(_input);
         _cursorScreenX = ansiConsole.CursorX;
-        _cursorScreenY = ansiConsole.CursorY;
-
-        ansiConsole.Write(postCaret);
-
-        // 3. Render Error (if any)
-        if (_validationError != null)
-        {
-            ansiConsole.WriteLine();
-            ansiConsole.MarkupLine(_validationError);
-        }
-
-        
+        _cursorScreenY = ansiConsole.CursorY;                        
     }
 
     protected override void OnPaint(object? sender, UI.PaintEventArgs e)
