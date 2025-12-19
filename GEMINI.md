@@ -11,7 +11,8 @@ Gemini's primary goal is to act like a senior engineer: understand the request, 
     *   Editing, creating, or deleting files.
     *   Running shell commands that make changes (e.g., `git commit`, `npm install`, `mkdir`).
     *   Altering system configurations or installing packages.
-
+*   **No commits or other modifications to source control** The user will handle running all git commands.
+  
 ## Steps
 
 1.  **Acknowledge and Analyze:** Confirm you are in Plan Mode. Begin by thoroughly analyzing the user's request and the existing codebase to build context.
@@ -26,12 +27,11 @@ Your output must be a well-formatted markdown response containing two distinct s
 1.  **Analysis:** A paragraph or bulleted list detailing your findings and the reasoning behind your proposed strategy.
 2.  **Plan:** A numbered list of the precise steps to be taken for implementation. The final step must always be presenting the plan for approval.
 
-
 NOTE: If in plan mode, do not implement the plan. You are only allowed to plan. Confirmation comes from a user message.
 
 # About this project
 The project Jumbee.Console at @src/Jumbee.Console is a .NET library for building advanced console user interfaces. It is intended to be a combination of the layout and windowing features from the retained-mode ConsoleGUI library at 
-@ext/C-sharp-console-gui-framework/ConsoleGUI/ and the styling and formatting and widget features and controls from the immediate-mode Spectre.Console library at @ext/spectre.console/src/Spectre.Console. 
+@ext/C-sharp-console-gui-framework/ConsoleGUI/ and the text styling and formatting and widget features and controls from the immediate-mode Spectre.Console library at @ext/spectre.console/src/Spectre.Console. 
 
 The initial plan created a bridge between the two libraries by implementing IAnsiConsole from Spectre.Console in the AnsiConsoleBuffer class to store Spectre.Console control output instead of writing it to the console immediately, 
 and a SpectreControl class for wrapping Spectre.Console controls as ConsoleGUI IControls to be used with ConsoleGUI control and layout classes.
@@ -40,20 +40,24 @@ Support for updating and animating controls was added by using a single backgrou
 their state. Drawing conflicts during updates are mitigated by using a single lock object that gets passed to all controls derived from SpectreControl and AnimatedControl in Paint events to synchronize access to their internal state
 so that they can be properly rendered and drawn by ConsoleGUI. Paint events are only raised by the UI class when the lock is not held by any control.
 
-# Conrol class
+ConsoleGUI classes like Border and Margin and VerticalScrollPanel that simply wrap other control content with adornments like borders and scroll bars are implemented by a single
+ControlFrame class.
+
+## Project design
+
+### Control class
 Controls are represented by the common Jumbee.Console.Control class. 
 
-# ControlFrame class
-The Jumbee.Console.ControlFrame class has a single Jumbee.Console.Control as its child and draws borders, margins, scrollbars, and a titlebar around its child control, combining the drawing logic
-of ConsoleGUI Border, Margin, and VerticalScrollPanel classes.
+### ControlFrame class
+The Jumbee.Console.ControlFrame class has a single Jumbee.Console.Control as its child and draws borders, margins, scrollbars, a titlebar, and other control adornments around its child control, combining the drawing logic
+of ConsoleGUI classes like Border, Margin, and VerticalScrollPanel.
 
-# Layout class
-Controls and ControlFrames can be placed in Jumbee.Console.Layout classes for arrangement. This class wraps existing ConsoleGUI layout classes like Grid.
+### Layout class
+Controls and ControlFrames can be placed in Jumbee.Console.Layout classes for arrangement. This class wraps existing ConsoleGUI layout controls like ConsoleGUI.Controls.Grid.
 
-## SpectreControl class
+### SpectreControl class
 The SpectreControl class is a generic class that wraps a Spectre.Console IRenderable control as a ConsoleGUI IControl. It uses the AnsiConsoleBuffer to render the Spectre control to a buffer, 
-which is used by ConsoleGUI to draw the control to the console screen. 
-Note the following important considerations when deriving from this class:
+which is used by ConsoleGUI to draw the control to the console screen. Note the following important considerations when deriving from this class:
 
 - Any public properties or methods that change the visual state of the control must call the Invalidate() method to notify ConsoleGUI that the control needs to be re-rendered. *Do not acquire the UI lock in publicly visible properties or methods of a control* as this will inevitably lead to deadlocks. Instead, call Invalidate() to signal that a control needs to be redrawn in the next Paint event.
 
@@ -68,7 +72,7 @@ Since this is inefficient, try to batch multiple changes to control state collec
 - Prefer concise code over more verbose constructs.
 - Do not modify external library code located in the @ext directory. Changes should be limited to the code in the @src directory only.
 
-## Coding Style:
+## Project coding Style:
 - Use 4 spaces for indentation.
 - Use camel-case for method and property names. Method and property names should begin with a capital letter.
 - Use camel-case for class fields. Field names should begin with lower-case letters unless they are backing fields for properties which should begin with an underscore.

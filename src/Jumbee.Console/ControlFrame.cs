@@ -175,143 +175,146 @@ public sealed class ControlFrame : ConsoleGUI.Common.Control, IDrawingContextLis
     {
         get
         {
-            // 1. Calculate Offsets & Viewport
-            // We replicate Initialize logic to ensure consistency
-            var borderOffset = BorderPlacement.AsOffset();
-            if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
-                 borderOffset = new Offset(borderOffset.Left, borderOffset.Top + 2, borderOffset.Right, borderOffset.Bottom);
-            
-            var totalOffset = new Offset(
-                borderOffset.Left + Margin.Left,
-                borderOffset.Top + Margin.Top,
-                borderOffset.Right + Margin.Right,
-                borderOffset.Bottom + Margin.Bottom);
-
-            var controlLeft = totalOffset.Left;
-            var controlTop = totalOffset.Top;
-            var controlRight = Size.Width - 1 - totalOffset.Right;
-            var controlBottom = Size.Height - 1 - totalOffset.Bottom;
-
-            // 2. Control & Scrollbar (Inside Viewport)
-            if (position.X >= controlLeft && position.X <= controlRight &&
-                position.Y >= controlTop && position.Y <= controlBottom)
+            lock (UI.Lock)
             {
-                // Scrollbar logic: always at the right edge of valid control area
-                if (position.X == controlRight)
+                // 1. Calculate Offsets & Viewport
+                // We replicate Initialize logic to ensure consistency
+                var borderOffset = BorderPlacement.AsOffset();
+                if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
+                     borderOffset = new Offset(borderOffset.Left, borderOffset.Top + 2, borderOffset.Right, borderOffset.Bottom);
+                
+                var totalOffset = new Offset(
+                    borderOffset.Left + Margin.Left,
+                    borderOffset.Top + Margin.Top,
+                    borderOffset.Right + Margin.Right,
+                    borderOffset.Bottom + Margin.Bottom);
+
+                var controlLeft = totalOffset.Left;
+                var controlTop = totalOffset.Top;
+                var controlRight = Size.Width - 1 - totalOffset.Right;
+                var controlBottom = Size.Height - 1 - totalOffset.Bottom;
+
+                // 2. Control & Scrollbar (Inside Viewport)
+                if (position.X >= controlLeft && position.X <= controlRight &&
+                    position.Y >= controlTop && position.Y <= controlBottom)
                 {
-                    if (Control == null) return ScrollBarForeground;
-
-                    var viewportHeight = controlBottom - controlTop + 1;
-                    var controlHeight = ControlContext.Size.Height;
-
-                    // Only draw scrollbar if control is larger than viewport
-                    if (controlHeight > viewportHeight)
+                    // Scrollbar logic: always at the right edge of valid control area
+                    if (position.X == controlRight)
                     {
-                        // Calculate thumb position
-                        // Relative Y in viewport
-                        var relY = position.Y - controlTop;
-                        
-                        long checkY = (long)relY * controlHeight;
-                        long startThumb = (long)_top * viewportHeight;
-                        long endThumb = (long)(_top + viewportHeight) * viewportHeight; 
+                        if (Control == null) return ScrollBarForeground;
 
-                        // Note: endThumb logic might need tweaking for exact pixel match, 
-                        // but this proportional logic is standard.
-                        // Ideally: 
-                        // thumbTop = (_top * viewportHeight) / controlHeight
-                        // thumbSize = (viewportHeight * viewportHeight) / controlHeight
-                        
-                        // Using the previous multiplication logic to avoid integer division issues:
-                        // if (relY * controlHeight < _top * viewportHeight) -> Background
-                        
-                        if (checkY < startThumb) return ScrollBarBackground;
-                        if (checkY >= endThumb) return ScrollBarBackground; 
-                        
-                        return ScrollBarForeground;
+                        var viewportHeight = controlBottom - controlTop + 1;
+                        var controlHeight = ControlContext.Size.Height;
+
+                        // Only draw scrollbar if control is larger than viewport
+                        if (controlHeight > viewportHeight)
+                        {
+                            // Calculate thumb position
+                            // Relative Y in viewport
+                            var relY = position.Y - controlTop;
+                            
+                            long checkY = (long)relY * controlHeight;
+                            long startThumb = (long)_top * viewportHeight;
+                            long endThumb = (long)(_top + viewportHeight) * viewportHeight; 
+
+                            // Note: endThumb logic might need tweaking for exact pixel match, 
+                            // but this proportional logic is standard.
+                            // Ideally: 
+                            // thumbTop = (_top * viewportHeight) / controlHeight
+                            // thumbSize = (viewportHeight * viewportHeight) / controlHeight
+                            
+                            // Using the previous multiplication logic to avoid integer division issues:
+                            // if (relY * controlHeight < _top * viewportHeight) -> Background
+                            
+                            if (checkY < startThumb) return ScrollBarBackground;
+                            if (checkY >= endThumb) return ScrollBarBackground; 
+                            
+                            return ScrollBarForeground;
+                        }
+                        else
+                        {
+                             // No scrollbar needed -> allow control to draw here?
+                             // Current design reserves the column. 
+                             // If we reserved the column in Initialize (limitWidth), control shouldn't be here.
+                             // But for aesthetic, maybe draw empty or background?
+                             // If we return Character.Empty, we see background.
+                             // Let's return Character.Empty so control *could* extend if we changed limits,
+                             // but currently it acts as padding.
+                             // Actually, if we don't return here, it falls through to ControlContext.Contains
+                             // which might return true if we didn't limit width.
+                        }
                     }
-                    else
-                    {
-                         // No scrollbar needed -> allow control to draw here?
-                         // Current design reserves the column. 
-                         // If we reserved the column in Initialize (limitWidth), control shouldn't be here.
-                         // But for aesthetic, maybe draw empty or background?
-                         // If we return Character.Empty, we see background.
-                         // Let's return Character.Empty so control *could* extend if we changed limits,
-                         // but currently it acts as padding.
-                         // Actually, if we don't return here, it falls through to ControlContext.Contains
-                         // which might return true if we didn't limit width.
-                    }
+
+                    if (ControlContext.Contains(position))
+                        return ControlContext[position];
+
+                    return Character.Empty;
                 }
 
-                if (ControlContext.Contains(position))
-                    return ControlContext[position];
+                // 3. Borders & Title (Outside Viewport)
+                var left = Margin.Left;
+                var top = Margin.Top;
+                var right = Size.Width - 1 - Margin.Right;
+                var bottom = Size.Height - 1 - Margin.Bottom;
+
+                if (position.X == left && position.Y == top && BorderPlacement.HasBorder(BorderPlacement.Top | BorderPlacement.Left))
+                    return GetCell(BoxBorderPart.TopLeft);
+
+                if (position.X == right && position.Y == top && BorderPlacement.HasBorder(BorderPlacement.Top | BorderPlacement.Right))
+                    return GetCell(BoxBorderPart.TopRight);
+
+                if (position.X == left && position.Y == bottom && BorderPlacement.HasBorder(BorderPlacement.Bottom | BorderPlacement.Left))
+                    return GetCell(BoxBorderPart.BottomLeft);
+
+                if (position.X == right && position.Y == bottom && BorderPlacement.HasBorder(BorderPlacement.Bottom | BorderPlacement.Right))
+                    return GetCell(BoxBorderPart.BottomRight);
+
+                if (position.X == left && position.Y >= top && position.Y <= bottom && BorderPlacement.HasBorder(BorderPlacement.Left))
+                    return GetCell(BoxBorderPart.Left);
+
+                if (position.X == right && position.Y >= top && position.Y <= bottom && BorderPlacement.HasBorder(BorderPlacement.Right))
+                    return GetCell(BoxBorderPart.Right);
+
+                if (position.Y == top && position.X >= left && position.X <= right && BorderPlacement.HasBorder(BorderPlacement.Top))
+                    return GetCell(BoxBorderPart.Top);
+
+                if (position.Y == bottom && position.X >= left && position.X <= right && BorderPlacement.HasBorder(BorderPlacement.Bottom))
+                    return GetCell(BoxBorderPart.Bottom);
+
+                if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
+                {
+                    if (position.Y == top + 1)
+                    {
+                        var startX = BorderPlacement.HasBorder(BorderPlacement.Left) ? left + 1 : left;
+                        var titleIndex = position.X - startX;
+
+                        if (titleIndex >= 0 && titleIndex < Title.Length)
+                        {
+                            var character = new Character(Title[titleIndex]);
+                            if (_foreground.HasValue) character = character.WithForeground(_foreground.Value);
+                            if (_background.HasValue) character = character.WithBackground(_background.Value);
+                            return new Cell(character);
+                        }
+                    }
+                    else if (position.Y == top + 2)
+                    {
+                        if (position.X == left) // Start character for separator
+                        {
+                            return GetCell(BoxBorderPart.TopLeft);
+                        }
+                        else if (position.X == right) // End character for separator
+                        {
+                            return GetCell(BoxBorderPart.TopRight);
+                        }
+                        else if (position.X > left && position.X < right) // Middle characters for separator
+                        {
+                            return GetCell(BoxBorderPart.Top);
+                        }
+                    }
+                }
 
                 return Character.Empty;
             }
-
-            // 3. Borders & Title (Outside Viewport)
-            var left = Margin.Left;
-            var top = Margin.Top;
-            var right = Size.Width - 1 - Margin.Right;
-            var bottom = Size.Height - 1 - Margin.Bottom;
-
-            if (position.X == left && position.Y == top && BorderPlacement.HasBorder(BorderPlacement.Top | BorderPlacement.Left))
-                return GetCell(BoxBorderPart.TopLeft);
-
-            if (position.X == right && position.Y == top && BorderPlacement.HasBorder(BorderPlacement.Top | BorderPlacement.Right))
-                return GetCell(BoxBorderPart.TopRight);
-
-            if (position.X == left && position.Y == bottom && BorderPlacement.HasBorder(BorderPlacement.Bottom | BorderPlacement.Left))
-                return GetCell(BoxBorderPart.BottomLeft);
-
-            if (position.X == right && position.Y == bottom && BorderPlacement.HasBorder(BorderPlacement.Bottom | BorderPlacement.Right))
-                return GetCell(BoxBorderPart.BottomRight);
-
-            if (position.X == left && position.Y >= top && position.Y <= bottom && BorderPlacement.HasBorder(BorderPlacement.Left))
-                return GetCell(BoxBorderPart.Left);
-
-            if (position.X == right && position.Y >= top && position.Y <= bottom && BorderPlacement.HasBorder(BorderPlacement.Right))
-                return GetCell(BoxBorderPart.Right);
-
-            if (position.Y == top && position.X >= left && position.X <= right && BorderPlacement.HasBorder(BorderPlacement.Top))
-                return GetCell(BoxBorderPart.Top);
-
-            if (position.Y == bottom && position.X >= left && position.X <= right && BorderPlacement.HasBorder(BorderPlacement.Bottom))
-                return GetCell(BoxBorderPart.Bottom);
-
-            if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
-            {
-                if (position.Y == top + 1)
-                {
-                    var startX = BorderPlacement.HasBorder(BorderPlacement.Left) ? left + 1 : left;
-                    var titleIndex = position.X - startX;
-
-                    if (titleIndex >= 0 && titleIndex < Title.Length)
-                    {
-                        var character = new Character(Title[titleIndex]);
-                        if (_foreground.HasValue) character = character.WithForeground(_foreground.Value);
-                        if (_background.HasValue) character = character.WithBackground(_background.Value);
-                        return new Cell(character);
-                    }
-                }
-                else if (position.Y == top + 2)
-                {
-                    if (position.X == left) // Start character for separator
-                    {
-                        return GetCell(BoxBorderPart.TopLeft);
-                    }
-                    else if (position.X == right) // End character for separator
-                    {
-                        return GetCell(BoxBorderPart.TopRight);
-                    }
-                    else if (position.X > left && position.X < right) // Middle characters for separator
-                    {
-                        return GetCell(BoxBorderPart.Top);
-                    }
-                }
-            }
-
-            return Character.Empty;
         }
     }
     #endregion
@@ -345,93 +348,96 @@ public sealed class ControlFrame : ConsoleGUI.Common.Control, IDrawingContextLis
 
     protected override void Initialize()
     {
-        using (Freeze())
+        lock (UI.Lock)
         {
-            var borderOffset = BorderPlacement.AsOffset();
-
-            if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
-                borderOffset = new Offset(borderOffset.Left, borderOffset.Top + 2, borderOffset.Right, borderOffset.Bottom);
-            
-            var totalOffset = new Offset(
-                borderOffset.Left + Margin.Left,
-                borderOffset.Top + Margin.Top,
-                borderOffset.Right + Margin.Right,
-                borderOffset.Bottom + Margin.Bottom);
-
-            // Available space for control (excluding scrollbar for now)
-            // We reserve 1 column for scrollbar at the right of control
-            var controlLimitsMin = MinSize.AsRect().Remove(totalOffset).Size;
-            var controlLimitsMax = MaxSize.AsRect().Remove(totalOffset).Size;
-            
-            // Allow infinite height for scrolling, but constrain width to make space for scrollbar
-            // If MaxSize.Width is infinite, we don't constrain width (except by MinSize/Control)
-            // But we generally want to fit in MaxSize.
-            
-            var limitWidth = Math.Max(0, controlLimitsMax.Width - 1);
-            ControlContext?.SetLimits(
-                new Size(Math.Max(0, controlLimitsMax.Width - 1), Math.Max(0, controlLimitsMax.Height)), 
-                new Size(limitWidth, int.MaxValue));
-
-            // Clamp Top
-            var viewportHeight = Math.Max(0, Size.Height - totalOffset.Top + totalOffset.Bottom); 
-            // Note: Size.Height is current size. During Resize sequence, this might be stale?
-            // VerticalScrollPanel uses Size.Height (which is current).
-            // But here we are about to Resize.
-            // If we are about to Resize to MaxSize (if control is large), then viewport will be larger.
-            // Let's rely on Redraw loop?
-            // Actually, we should probably use 'controlLimitsMax.Height' as the viewport constraint if we are expanding?
-            // But MaxSize might be infinite.
-            // Let's stick to simple clamping against current control size vs current viewport estimate?
-            // Or just allow Top to be set, and Resize will clip?
-            
-            if (ControlContext != null)
+            using (Freeze())
             {
-                var controlHeight = ControlContext.Size.Height;
-                // If we expand to MaxSize, the viewport height will be at most MaxSize - Offsets.
-                var maxViewportHeight = Math.Max(0, MaxSize.Height - totalOffset.Top + totalOffset.Bottom);
-                // If MaxSize is infinite, maxViewportHeight is infinite?
-                if (MaxSize.Height == int.MaxValue) maxViewportHeight = int.MaxValue;
-                
-                // Actual viewport height used for clamping depends on what size we WILL be.
-                // But we don't know yet.
-                // However, 'Top' only matters if we are scrolling.
-                // We scroll if ControlHeight > ViewportHeight.
-                
-                _top = Math.Max(0, Math.Min(_top, controlHeight - 1)); // Ensure at least within control? 
-                // Better: _top = Math.Max(0, Math.Min(_top, controlHeight - (currentViewportHeight)));
-                // But we don't know currentViewportHeight easily before Resize.
-            }
-            
-            ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
+                var borderOffset = BorderPlacement.AsOffset();
 
-            var controlSize = ControlContext?.Size ?? Size.Empty;
-            
-            // Calculate desired size including margins, borders, and scrollbar (1 extra width)
-            var desiredControlSize = controlSize.Expand(1, 0); // +1 Width for scrollbar
-            var sizeRect = desiredControlSize.AsRect().Add(totalOffset);
+                if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
+                    borderOffset = new Offset(borderOffset.Left, borderOffset.Top + 2, borderOffset.Right, borderOffset.Bottom);
+                
+                var totalOffset = new Offset(
+                    borderOffset.Left + Margin.Left,
+                    borderOffset.Top + Margin.Top,
+                    borderOffset.Right + Margin.Right,
+                    borderOffset.Bottom + Margin.Bottom);
 
-            Resize(Size.Clip(MinSize, sizeRect.Size, MaxSize));
-            
-            // Re-clamp Top after resize? 
-            // If we resized, Size.Height is now updated (if Resize is immediate? No, Resize schedules/updates Size property).
-            // Actually 'Control.Resize' updates 'Size' immediately in ConsoleGUI?
-            // Checking ConsoleGUI source (mental): Resize usually updates Size.
-            
-            // Post-Resize Clamping:
-            if (ControlContext != null)
-            {
-                 viewportHeight = Math.Max(0, Size.Height - totalOffset.Top + totalOffset.Bottom);
-                 if (ControlContext.Size.Height > viewportHeight)
-                 {
-                     _top = Math.Min(ControlContext.Size.Height - viewportHeight, Math.Max(0, _top));
-                     // Update offset again with clamped Top?
-                     ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
-                 }
-                 else
-                 {
-                     _top = 0;
-                     ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top));
-                 }
+                // Available space for control (excluding scrollbar for now)
+                // We reserve 1 column for scrollbar at the right of control
+                var controlLimitsMin = MinSize.AsRect().Remove(totalOffset).Size;
+                var controlLimitsMax = MaxSize.AsRect().Remove(totalOffset).Size;
+                
+                // Allow infinite height for scrolling, but constrain width to make space for scrollbar
+                // If MaxSize.Width is infinite, we don't constrain width (except by MinSize/Control)
+                // But we generally want to fit in MaxSize.
+                
+                var limitWidth = Math.Max(0, controlLimitsMax.Width - 1);
+                ControlContext?.SetLimits(
+                    new Size(Math.Max(0, controlLimitsMax.Width - 1), Math.Max(0, controlLimitsMax.Height)), 
+                    new Size(limitWidth, int.MaxValue));
+
+                // Clamp Top
+                var viewportHeight = Math.Max(0, Size.Height - totalOffset.Top + totalOffset.Bottom); 
+                // Note: Size.Height is current size. During Resize sequence, this might be stale?
+                // VerticalScrollPanel uses Size.Height (which is current).
+                // But here we are about to Resize.
+                // If we are about to Resize to MaxSize (if control is large), then viewport will be larger.
+                // Let's rely on Redraw loop?
+                // Actually, we should probably use 'controlLimitsMax.Height' as the viewport constraint if we are expanding?
+                // But MaxSize might be infinite.
+                // Let's stick to simple clamping against current control size vs current viewport estimate?
+                // Or just allow Top to be set, and Resize will clip?
+                
+                if (ControlContext != null)
+                {
+                    var controlHeight = ControlContext.Size.Height;
+                    // If we expand to MaxSize, the viewport height will be at most MaxSize - Offsets.
+                    var maxViewportHeight = Math.Max(0, MaxSize.Height - totalOffset.Top + totalOffset.Bottom);
+                    // If MaxSize is infinite, maxViewportHeight is infinite?
+                    if (MaxSize.Height == int.MaxValue) maxViewportHeight = int.MaxValue;
+                    
+                    // Actual viewport height used for clamping depends on what size we WILL be.
+                    // But we don't know yet.
+                    // However, 'Top' only matters if we are scrolling.
+                    // We scroll if ControlHeight > ViewportHeight.
+                    
+                    _top = Math.Max(0, Math.Min(_top, controlHeight - 1)); // Ensure at least within control? 
+                    // Better: _top = Math.Max(0, Math.Min(_top, controlHeight - (currentViewportHeight)));
+                    // But we don't know currentViewportHeight easily before Resize.
+                }
+                
+                ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
+
+                var controlSize = ControlContext?.Size ?? Size.Empty;
+                
+                // Calculate desired size including margins, borders, and scrollbar (1 extra width)
+                var desiredControlSize = controlSize.Expand(1, 0); // +1 Width for scrollbar
+                var sizeRect = desiredControlSize.AsRect().Add(totalOffset);
+
+                Resize(Size.Clip(MinSize, sizeRect.Size, MaxSize));
+                
+                // Re-clamp Top after resize? 
+                // If we resized, Size.Height is now updated (if Resize is immediate? No, Resize schedules/updates Size property).
+                // Actually 'Control.Resize' updates 'Size' immediately in ConsoleGUI?
+                // Checking ConsoleGUI source (mental): Resize usually updates Size.
+                
+                // Post-Resize Clamping:
+                if (ControlContext != null)
+                {
+                     viewportHeight = Math.Max(0, Size.Height - totalOffset.Top + totalOffset.Bottom);
+                     if (ControlContext.Size.Height > viewportHeight)
+                     {
+                         _top = Math.Min(ControlContext.Size.Height - viewportHeight, Math.Max(0, _top));
+                         // Update offset again with clamped Top?
+                         ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
+                     }
+                     else
+                     {
+                         _top = 0;
+                         ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top));
+                     }
+                }
             }
         }
     }
