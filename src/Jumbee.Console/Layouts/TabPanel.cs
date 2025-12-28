@@ -3,10 +3,17 @@
 using ConsoleGUI;
 using System;
 
+public enum TabBarDock
+{
+    Top,
+    Left,
+    Right,
+    Bottom
+}
 
 public class TabPanel : Layout<TabPanelDockPanel>
 {
-    public TabPanel(params (string, IControl)[] controls) : base(new TabPanelDockPanel()) {
+    public TabPanel(TabBarDock tabBarDock, params (string, IControl)[] controls) : base(new TabPanelDockPanel(tabBarDock)) {
         foreach (var (tabname, tabcontrol) in controls)
         {
             this.control.AddTab(tabname, tabcontrol);
@@ -27,6 +34,6 @@ public class TabPanel : Layout<TabPanelDockPanel>
             }
             return control[column];
         }
-    }
+    }       
 }
 
