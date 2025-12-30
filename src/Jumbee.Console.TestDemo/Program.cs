@@ -13,7 +13,7 @@ using static Jumbee.Console.Color;
 
 public class Program
 {
-    static void Main(string[] args) => Test2(args);
+    static void Main(string[] args) => Test1(args);
     
     static void Test1(string[] args)
     {

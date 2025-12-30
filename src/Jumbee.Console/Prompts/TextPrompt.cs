@@ -1,7 +1,6 @@
 namespace Jumbee.Console;
 
 using System;
-using System.Globalization;
 
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
@@ -11,55 +10,21 @@ using Spectre.Console;
 public class TextPrompt : Prompt
 {
     #region Constructors
-    public TextPrompt(string prompt, StringComparer? comparer = null, bool showCursor = true, bool blinkCursor = false)
+    public TextPrompt(string prompt, StringComparer? comparer = null, bool showCursor = true, bool blinkCursor = true)
     {
         this._prompt = prompt;
         this._comparer = comparer;
         this._showCursor = showCursor;
-        this._blinkCursor = blinkCursor;
+        this.blinkCursor = blinkCursor;
         this.newInput = "";
     }
     #endregion
 
-    #region Properties
-    public Style? PromptStyle { get; set; }
-    public CultureInfo? Culture { get; set; }
-    public bool IsSecret { get; set; }
-    public char? Mask { get; set; } = '*';
-    public bool AllowEmpty { get; set; }
-    public Func<string, ValidationResult>? Validator { get; set; }
-    public string ValidationErrorMessage { get; set; } = "Invalid input.";  
-    public Style? DefaultValueStyle { get; set; }
-    public bool ShowCursor 
-    { 
-        get => _showCursor; 
-        set
-        {
-            _showCursor = value;
-            if (!_showCursor)
-            {
-                _blinkState = false;
-            }
-            Invalidate();
-        } 
-    
-    }
-    public bool BlinkCursor 
-    { 
-        get => _blinkCursor;
-
-        set
-        {
-            _blinkCursor = value;
-            if (!_blinkCursor)
-            {
-                _blinkState = true;
-            }
-        }
-    }
+    #region Events
+    public event EventHandler<string>? Committed;
     #endregion
 
-    #region Methods
+    #region Indexers
     public override Cell this[Position position]
     {
         get
@@ -76,7 +41,6 @@ public class TextPrompt : Prompt
                 // Render Cursor
                 if (ShowCursor && _blinkState)
                 {
-                    _blinkState = false;
                     if (position.X == _cursorScreenX && position.Y == _cursorScreenY)
                     {
                         if (cell.Content == null || cell.Content == '\0')
@@ -86,28 +50,58 @@ public class TextPrompt : Prompt
                         return cell.WithBackground(_cursorBackgroundColor);
                     }
                 }
-
-
-
                 return cell;
             }
         }
     }
+    #endregion
+
+    #region Properties
+
+    public bool ShowCursor 
+    { 
+        get => _showCursor; 
+        set
+        {
+            _showCursor = value;
+            if (!_showCursor)
+            {
+                _blinkState = false;
+            }
+            Invalidate();
+        } 
     
+    }
+    public bool BlinkCursor 
+    { 
+        get => blinkCursor;
+
+        set
+        {
+            blinkCursor = value;
+            if (!blinkCursor)
+            {
+                _blinkState = true;
+            }
+        }
+    }
+    #endregion
+
+    #region Methods       
     protected override void Render()
     {
-        // Assumes lock is held by caller (Initialize or OnInput)
-        if (Size.Width <= 0 || Size.Height <= 0) return;
+        // Assume lock is held by caller (Initialize or OnInput)
+
         if (newInput is not null)
         {
-            _input = newInput;
+            input = newInput;
             newInput = null;
             ansiConsole.Clear(true);
             var markup = _prompt.Trim();
             ansiConsole.Markup(markup + " ");
             _inputStartX = ansiConsole.CursorX;
             _inputStartY = ansiConsole.CursorY;
-            ansiConsole.Write(_input);
+            ansiConsole.Write(input);
             _cursorScreenX = ansiConsole.CursorX;
             _cursorScreenY = ansiConsole.CursorY;
             
@@ -130,6 +124,7 @@ public class TextPrompt : Prompt
 
     protected override void OnPaint(object? sender, UI.PaintEventArgs e)
     {
+        _blinkState = !_blinkState;
         if (paintRequests > 0)
         {
             Paint();
@@ -153,7 +148,7 @@ public class TextPrompt : Prompt
                     handled = true;
                     break;
                 case ConsoleKey.RightArrow:
-                    _caretPosition = Math.Min(_input.Length, _caretPosition + 1);
+                    _caretPosition = Math.Min(input.Length, _caretPosition + 1);
                     handled = true;
                     break;
                 case ConsoleKey.Home:
@@ -161,21 +156,21 @@ public class TextPrompt : Prompt
                     handled = true;
                     break;
                 case ConsoleKey.End:
-                    _caretPosition = _input.Length;
+                    _caretPosition = input.Length;
                     handled = true;
                     break;
                 case ConsoleKey.Backspace:
                     if (_caretPosition > 0)
                     {
-                        newInput = _input.Remove(_caretPosition - 1, 1);
+                        newInput = input.Remove(_caretPosition - 1, 1);
                         _caretPosition--;
                         handled = true;
                     }
                     break;
                 case ConsoleKey.Delete:
-                    if (_caretPosition < _input.Length)
+                    if (_caretPosition < input.Length)
                     {
-                        newInput = _input.Remove(_caretPosition, 1);
+                        newInput = input.Remove(_caretPosition, 1);
                         handled = true;
                     }
                     break;
@@ -186,7 +181,7 @@ public class TextPrompt : Prompt
                 default:
                     if (!char.IsControl(inputEvent.Key.KeyChar))
                     {
-                        newInput = _input.Insert(_caretPosition, inputEvent.Key.KeyChar.ToString());
+                        newInput = input.Insert(_caretPosition, inputEvent.Key.KeyChar.ToString());
                         _caretPosition++;
                         handled = true;
                     }
@@ -205,19 +200,8 @@ public class TextPrompt : Prompt
 
     private void AttemptCommit()
     {                      
-        if (Validator != null)
-        {
-            var validationResult = Validator(_input);
-            if (!validationResult.Successful)
-            {
-                _validationError = validationResult.Message ?? ValidationErrorMessage;
-                Paint();    
-                return;
-            }
-        }
 
-        _validationError = null;
-        Committed?.Invoke(this, _input);
+        Committed?.Invoke(this, input);
     }
     #endregion
 
@@ -225,8 +209,8 @@ public class TextPrompt : Prompt
     private readonly string _prompt;
     private readonly StringComparer? _comparer;
     private bool _showCursor;
-    private bool _blinkCursor;
-    private string _input = string.Empty;
+    private bool blinkCursor;
+    private string input = string.Empty;
     private string? newInput = null;
 
     private int _caretPosition = 0;
@@ -240,11 +224,7 @@ public class TextPrompt : Prompt
 
     private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
     private static readonly Cell _cursorEmptyCell = new Cell(' ').WithBackground(_cursorBackgroundColor);
-    #endregion
-
-    #region Events
-    public event EventHandler<string>? Committed;
-    #endregion
+    #endregion    
 }
 
 
