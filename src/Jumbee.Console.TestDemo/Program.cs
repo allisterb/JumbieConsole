@@ -2,6 +2,7 @@ namespace Jumbee.Console.TestDemo;
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 using ConsoleGUI;
 using ConsoleGUI.Controls;
@@ -100,12 +101,16 @@ public class Program
 
         }, null, 0, 100);
 
-        // Main loop
-        while (true)
+        var t = Task.Run(() =>
         {
-            ConsoleManager.ReadInput([p, prompt, new InputListener()]);
-            Thread.Sleep(50);
-        }
+            // Main loop
+            while (true)
+            {
+                ConsoleManager.ReadInput([p, prompt, new InputListener()]);
+                Thread.Sleep(50);
+            }
+        });
+        t.Wait();
     }
     
     static void Main2(string[] args)

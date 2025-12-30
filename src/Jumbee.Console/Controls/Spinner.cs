@@ -14,7 +14,7 @@ public class Spinner : AnimatedControl
         {
             _spinner = value;
             frameCount = _spinner.Frames.Count;
-            interval = _spinner.Interval;
+            interval = _spinner.Interval.Ticks;
         }
     }
 

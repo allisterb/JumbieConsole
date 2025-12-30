@@ -2,13 +2,6 @@
 
 using System;
 
-using ConsoleGUI.Common;
-using ConsoleGUI.Data;
-using ConsoleGUI.Space;
-using Spectre.Console;
-
-using ConsoleGuiSize = ConsoleGUI.Space.Size;
-
 public abstract class AnimatedControl : Control
 {
     #region Constructors
@@ -20,8 +13,8 @@ public abstract class AnimatedControl : Control
     {
         if (isRunning) return;
         isRunning = true;
-        lastUpdate = DateTime.UtcNow;
-        accumulated = TimeSpan.Zero;
+        lastUpdate = DateTime.Now.Ticks;
+        accumulated = 0L;
     }
 
     public void Stop()
@@ -32,8 +25,8 @@ public abstract class AnimatedControl : Control
 
     public override void Dispose()
     {
-        base.Dispose();
         Stop();
+        base.Dispose();        
     }
         
     protected sealed override void OnPaint(object? sender, UI.PaintEventArgs e)
@@ -41,14 +34,13 @@ public abstract class AnimatedControl : Control
         lock (e.Lock)
         {
             if (!isRunning) return;
-
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now.Ticks;
             var delta = now - lastUpdate;
             lastUpdate = now;
             accumulated += delta;
             if (accumulated >= interval)
             {
-                accumulated = TimeSpan.Zero;
+                accumulated = 0L;
                 frameIndex = (frameIndex + 1) % frameCount;
                 Paint();
             }
@@ -59,9 +51,9 @@ public abstract class AnimatedControl : Control
     #region Fields
     protected int frameCount = 0;
     protected int frameIndex = 0;    
-    protected DateTime lastUpdate;
-    protected TimeSpan accumulated;
-    protected TimeSpan interval;
+    protected long lastUpdate;
+    protected long accumulated;
+    protected long interval;
     protected bool isRunning = false;
     #endregion
 }
