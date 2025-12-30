@@ -1,7 +1,7 @@
 namespace Jumbee.Console;
 
 using System;
-
+using System.Linq;
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
@@ -83,6 +83,7 @@ public class TextPrompt : Prompt
             {
                 _blinkState = true;
             }
+            Invalidate();  
         }
     }
     #endregion
@@ -95,44 +96,32 @@ public class TextPrompt : Prompt
         if (newInput is not null)
         {
             input = newInput;
-            newInput = null;
             ansiConsole.Clear(true);
             var markup = _prompt.Trim();
-            ansiConsole.Markup(markup + " ");
+            ansiConsole.Markup(markup + " ");                        
             _inputStartX = ansiConsole.CursorX;
             _inputStartY = ansiConsole.CursorY;
             ansiConsole.Write(input);
             _cursorScreenX = ansiConsole.CursorX;
-            _cursorScreenY = ansiConsole.CursorY;
-            
-            // Auto-scroll frame if present/
-            if (Frame is not null)
-            {
-                var viewportHeight = Frame.ViewportSize.Height;
-                if (_cursorScreenY < Frame.Top)
-                {
-                    Frame.Top = _cursorScreenY;
-                }
-                else if (_cursorScreenY >= Frame.Top + viewportHeight)
-                {
-                    Frame.Top = _cursorScreenY - viewportHeight + 1;
-                }
-            }
-        }
-       
+            _cursorScreenY = ansiConsole.CursorY;                       
+
+        }       
     }
 
     protected override void OnPaint(object? sender, UI.PaintEventArgs e)
     {
-        _blinkState = !_blinkState;
-        if (paintRequests > 0)
+        lock (e.Lock)
         {
-            Paint();
-        }
-        else if (ShowCursor)
-        {
-            Redraw();
-        }
+            _blinkState = !_blinkState;
+            if (paintRequests > 0)
+            {
+                Paint();
+            }
+            else if (ShowCursor)
+            {
+                Redraw();
+            }
+        }                       
     }
 
     public override void OnInput(InputEvent inputEvent)
@@ -140,7 +129,8 @@ public class TextPrompt : Prompt
         lock (UI.Lock)
         {
             bool handled = false;
-            _blinkState = true;
+            newInput = null;
+            _blinkState = true;            
             switch (inputEvent.Key.Key)
             {
                 case ConsoleKey.LeftArrow:
