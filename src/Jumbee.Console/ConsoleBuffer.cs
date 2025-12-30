@@ -5,7 +5,7 @@ using System;
 using ConsoleGUI.Api;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
-using ConsoleGuiSize = ConsoleGUI.Space.Size;
+
 
 /// <summary>
 /// A ConsoleGUI.IConsole implementation that writes to a buffer.
@@ -13,7 +13,7 @@ using ConsoleGuiSize = ConsoleGUI.Space.Size;
 public class ConsoleBuffer : IConsole
 {
     #region Properties
-    public ConsoleGuiSize Size 
+    public Size Size 
     {
         get => field;
         set
@@ -64,12 +64,22 @@ public class ConsoleBuffer : IConsole
     /// <returns></returns>
     public ConsoleKeyInfo ReadKey() => default;
     
+    public Position GetPosition(int distance)
+    {
+        if (Size.Width == 0)
+        {
+            return new Position(0, 0);
+        }
+        int x = distance % Size.Width;
+        int y = distance / Size.Width;
+        return new Position(x, y);
+    }
 
     /// <summary>
     /// Resizing the control dimensions resizes the console buffer.
     /// </summary>
     /// <param name="size"></param>
-    protected void Resize(ConsoleGuiSize size)
+    protected void Resize(Size size)
     {
         buffer = new Cell[size.Height][] ;
         for (int i = 0; i < size.Height; i++)

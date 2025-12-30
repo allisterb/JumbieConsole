@@ -42,6 +42,21 @@ public static class ControlExtensions
         return result;
     }
 
+    public static void Deconstruct(this Position position, out int X, out int Y)
+    { 
+        X = position.X;
+        Y = position.Y;
+    }
+
+    public static Position SubtractClamp(this Position position1, Position position2)
+    {
+        var x = position1.X - position2.X;  
+        var y = position1.Y - position2.Y;  
+        return new Position(Math.Max(0, x), Math.Max(0, y));
+    }
+
+    public static Position Add(this Position position, int x, int y) => new Position(position.X + x, position.Y + y);
+
     public static ControlFrame WithFrame(this Control control, BorderStyle? borderStyle = null, Offset? margin = null, Color? fgColor = null, Color? bgColor = null, string? title = null) 
         => new ControlFrame(control, borderStyle, margin, fgColor, bgColor, title); 
 

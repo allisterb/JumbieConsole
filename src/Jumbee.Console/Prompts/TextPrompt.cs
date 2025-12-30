@@ -104,7 +104,6 @@ public class TextPrompt : Prompt
             ansiConsole.Write(input);
             _cursorScreenX = ansiConsole.CursorX;
             _cursorScreenY = ansiConsole.CursorY;                       
-
         }       
     }
 
@@ -181,6 +180,11 @@ public class TextPrompt : Prompt
             {
                 Paint();
             }
+            else
+            {
+                (_cursorScreenX, _cursorScreenY) = consoleBuffer.GetPosition(_caretPosition).Add(_inputStartX, _inputStartY);   
+            }
+
             if (handled)
             {
                 inputEvent.Handled = true;
