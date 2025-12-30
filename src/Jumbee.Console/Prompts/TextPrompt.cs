@@ -17,6 +17,7 @@ public class TextPrompt : Prompt
         this._comparer = comparer;
         this._showCursor = showCursor;
         this._blinkCursor = blinkCursor;
+        this.newInput = "";
     }
     #endregion
 
@@ -72,10 +73,10 @@ public class TextPrompt : Prompt
                 {
                     cell = consoleBuffer[position];
                 }
-
                 // Render Cursor
                 if (ShowCursor && _blinkState)
                 {
+                    _blinkState = false;
                     if (position.X == _cursorScreenX && position.Y == _cursorScreenY)
                     {
                         if (cell.Content == null || cell.Content == '\0')
@@ -86,6 +87,8 @@ public class TextPrompt : Prompt
                     }
                 }
 
+
+
                 return cell;
             }
         }
@@ -95,33 +98,38 @@ public class TextPrompt : Prompt
     {
         // Assumes lock is held by caller (Initialize or OnInput)
         if (Size.Width <= 0 || Size.Height <= 0) return;
-        ansiConsole.Clear(true);       
-        var markup = _prompt.Trim();       
-        ansiConsole.Markup(markup + " ");
-        _inputStartX = ansiConsole.CursorX;
-        _inputStartY = ansiConsole.CursorY;        
-        ansiConsole.Write(_input);
-        _cursorScreenX = ansiConsole.CursorX;
-        _cursorScreenY = ansiConsole.CursorY;
-
-        // Auto-scroll frame if present/
-        if (Frame is not null)
+        if (newInput is not null)
         {
-            var viewportHeight = Frame.ViewportSize.Height;
-            if (_cursorScreenY < Frame.Top)
+            _input = newInput;
+            newInput = null;
+            ansiConsole.Clear(true);
+            var markup = _prompt.Trim();
+            ansiConsole.Markup(markup + " ");
+            _inputStartX = ansiConsole.CursorX;
+            _inputStartY = ansiConsole.CursorY;
+            ansiConsole.Write(_input);
+            _cursorScreenX = ansiConsole.CursorX;
+            _cursorScreenY = ansiConsole.CursorY;
+            
+            // Auto-scroll frame if present/
+            if (Frame is not null)
             {
-                Frame.Top = _cursorScreenY;
-            }
-            else if (_cursorScreenY >= Frame.Top + viewportHeight)
-            {
-                Frame.Top = _cursorScreenY - viewportHeight + 1;
+                var viewportHeight = Frame.ViewportSize.Height;
+                if (_cursorScreenY < Frame.Top)
+                {
+                    Frame.Top = _cursorScreenY;
+                }
+                else if (_cursorScreenY >= Frame.Top + viewportHeight)
+                {
+                    Frame.Top = _cursorScreenY - viewportHeight + 1;
+                }
             }
         }
+       
     }
 
     protected override void OnPaint(object? sender, UI.PaintEventArgs e)
     {
-        _blinkState = !_blinkState;
         if (paintRequests > 0)
         {
             Paint();
@@ -137,10 +145,7 @@ public class TextPrompt : Prompt
         lock (UI.Lock)
         {
             bool handled = false;
-            string? newInput = null;
-
             _blinkState = true;
-
             switch (inputEvent.Key.Key)
             {
                 case ConsoleKey.LeftArrow:
@@ -187,16 +192,13 @@ public class TextPrompt : Prompt
                     }
                     break;
             }
-
-            if (newInput != null)
+            if (newInput is not null)
             {
-                _input = newInput;
+                Paint();
             }
-
             if (handled)
             {
                 inputEvent.Handled = true;
-                Paint();
             }
         }
     }
@@ -225,6 +227,8 @@ public class TextPrompt : Prompt
     private bool _showCursor;
     private bool _blinkCursor;
     private string _input = string.Empty;
+    private string? newInput = null;
+
     private int _caretPosition = 0;
     private string? _validationError = null;
     private int _inputStartX = 0;

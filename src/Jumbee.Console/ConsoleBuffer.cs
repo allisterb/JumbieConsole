@@ -27,6 +27,8 @@ public class ConsoleBuffer : IConsole
 
     #region Indexers
     public Cell this[Position position] => buffer[position.Y][position.X];
+    
+    public Cell this[int x, int y] => buffer[y][x];
     #endregion
 
     #region Methods
