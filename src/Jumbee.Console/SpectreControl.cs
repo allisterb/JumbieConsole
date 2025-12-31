@@ -2,15 +2,15 @@ namespace Jumbee.Console;
 
 using System;
 
-using ConsoleGUI.Space;
 using Spectre.Console.Rendering;
 
 /// <summary>
-/// Wraps a Spectre.Console <see cref="IRenderable"/> control for use with ConsoleGUI layout types. 
+/// Wraps a Spectre.Console <see cref="IRenderable"/> control for use with ConsoleGUI control and layout types. 
 /// </summary>
 /// <remarks>
 /// Uses an <see cref="AnsiConsoleBuffer"/> to render the control to a buffer.
-/// Public property setters and methods that affect a control's visual state should call <see cref="Invalidate"/> to request a re-render on the next UI update tick.
+/// Public property setters and methods that change a control's visual state should call <see cref="Invalidate"/> to request a re-render on the next UI update tick.
+/// Non thread-safe changes should use CloneContent to create a copy of the IRenderable and modify that before replacing the control's content with the modified copy.
 /// </remarks>
 /// <typeparam name="T"></typeparam>
 public class SpectreControl<T> : Control where T : IRenderable
@@ -48,20 +48,8 @@ public class SpectreControl<T> : Control where T : IRenderable
     /// <summary>
     /// Renders the control's content to the console buffer.
     /// </summary>
-    /// <remarks>This method clears the console buffer and writes the control's content using the full width
-    /// of the control.  If the control's size is invalid (width or height less than or equal to zero), the method exits
-    /// without performing any rendering.
-    /// This does not actually draw to the console screen, it just updates the buffer. The ConsoleGUI <see cref="ConsoleGUI.ConsoleManager"/> 
-    /// handles drawing the buffer on the console screen.
-    /// </remarks>
     protected sealed override void Render()
-    {
-        if (Size.Width <= 0 || Size.Height <= 0)
-        {
-            return;
-        }
-        
-        // Render Spectre content to buffer
+    {  
         ansiConsole.Clear(true);
         // We probably want to render with the full width of the control
         // Spectre will look at the Profile.Width which comes from the IConsole.Size (BufferConsole.Size)

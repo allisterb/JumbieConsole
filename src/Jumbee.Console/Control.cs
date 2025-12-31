@@ -24,9 +24,9 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
         {
             lock (UI.Lock)
             {
-                if (position.X < 0 || position.X >= Size.Width || position.Y < 0 || position.Y >= Size.Height)
+                if (position.X >= Size.Width || position.Y >= Size.Height)
                 {
-                    return _emptyCell;
+                    return emptyCell;
                 }
                 else
                 {
@@ -115,7 +115,7 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
     #endregion
 
     #region Fields
-    protected static readonly Cell _emptyCell = new Cell(Character.Empty);
+    protected static readonly Cell emptyCell = new Cell(Character.Empty);
     protected internal uint paintRequests;
     protected readonly ConsoleBuffer consoleBuffer;
     protected readonly AnsiConsoleBuffer ansiConsole;

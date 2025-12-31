@@ -31,7 +31,7 @@ public class TextPrompt : Prompt
         {
             lock (UI.Lock)
             {
-                Cell cell = _emptyCell;
+                Cell cell = emptyCell;
                 if (
                     position.X >= 0 && position.X < Size.Width &&
                     position.Y >= 0 && position.Y < Size.Height)
@@ -99,8 +99,7 @@ public class TextPrompt : Prompt
             ansiConsole.Clear(true);
             var markup = _prompt.Trim();
             ansiConsole.Markup(markup + " ");                        
-            _inputStartX = ansiConsole.CursorX;
-            _inputStartY = ansiConsole.CursorY;
+            inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
             ansiConsole.Write(input);
             _cursorScreenX = ansiConsole.CursorX;
             _cursorScreenY = ansiConsole.CursorY;                       
@@ -182,7 +181,7 @@ public class TextPrompt : Prompt
             }
             else
             {
-                (_cursorScreenX, _cursorScreenY) = consoleBuffer.GetPosition(_caretPosition).Add(_inputStartX, _inputStartY);   
+                (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);   
             }
 
             if (handled)
@@ -208,9 +207,7 @@ public class TextPrompt : Prompt
     private string? newInput = null;
 
     private int _caretPosition = 0;
-    private string? _validationError = null;
-    private int _inputStartX = 0;
-    private int _inputStartY = 0;
+    private Position inputStart = default;
     private int _cursorScreenX = 0;
     private int _cursorScreenY = 0;
 

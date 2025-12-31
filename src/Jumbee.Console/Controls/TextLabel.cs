@@ -110,6 +110,5 @@ public class TextLabel : Control
     private Color _bgcolor;
     private Size size;
     private Cell[] chars = [];
-    protected static readonly Cell emptyCell = new Cell(Character.Empty);
     #endregion
 }

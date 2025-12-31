@@ -75,6 +75,19 @@ public class ConsoleBuffer : IConsole
         return new Position(x, y);
     }
 
+    public Position AddX(Position pos1, int x)
+    {
+        if (Size.Width == 0)
+        {
+            return new Position(0, 0);
+        }
+
+        int linear_pos1 = pos1.Y * Size.Width + pos1.X;
+        int total_linear_distance = linear_pos1 + x;
+
+        return GetPosition(total_linear_distance);
+    }
+
     /// <summary>
     /// Resizing the control dimensions resizes the console buffer.
     /// </summary>
