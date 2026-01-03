@@ -51,22 +51,14 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
     /// </remarks>
     protected abstract void Render();
 
-    protected sealed override void Initialize()
+    protected override void Initialize()
     {
         lock (UI.Lock)
         {
             // Handle the case when negative or overflow sizes may get passed down by parent containers
             int width = Math.Min(1000, Math.Max(0, MaxSize.Width));
             int height = Math.Min(1000, Math.Max(0, MaxSize.Height));
-
-            if (Size.Width > 0 && Size.Width <= width)
-            {
-                width = Size.Width;
-            }
-            if (Size.Height > 0 && Size.Height <= height)
-            {
-                height = Size.Height;
-            }
+            
             var size = new Size(width, height);                             
             Resize(size);
             consoleBuffer.Size = Size;

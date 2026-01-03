@@ -20,19 +20,18 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
     #region Constructors
     public AnsiConsoleBuffer(IConsole console)
     {
-        _console = console ?? throw new ArgumentNullException(nameof(console));
+        _console = console; 
         _cursor = new ConsoleGUICursor(this);
         _input = new ConsoleGUIInput(console);
         _exclusivityMode = new ConsoleGUIExclusivityMode();
-        _pipeline = new RenderPipeline();
-        
+        _pipeline = new RenderPipeline();        
         var output = new ConsoleGUIOutput(console);
-        _profile = new Profile(output, Encoding.UTF8);
-        
-        _profile.Capabilities.Ansi = true;
-        _profile.Capabilities.ColorSystem = ColorSystem.TrueColor;
-        _profile.Capabilities.Interactive = true;
-        _profile.Capabilities.Unicode = true;
+
+        _profile = new Profile(output, Encoding.UTF8);        
+        _profile.Capabilities.Ansi = AnsiConsole.Profile.Capabilities.Ansi;
+        _profile.Capabilities.ColorSystem = AnsiConsole.Profile.Capabilities.ColorSystem;
+        _profile.Capabilities.Interactive = AnsiConsole.Profile.Capabilities.Interactive;
+        _profile.Capabilities.Unicode = AnsiConsole.Profile.Capabilities.Unicode;
         
         _cursorX = 0;
         _cursorY = 0;
@@ -189,11 +188,8 @@ internal class ConsoleGUIInput : IAnsiConsoleInput
 
     public bool IsKeyAvailable() => _console.KeyAvailable;
 
-    public ConsoleKeyInfo? ReadKey(bool intercept)
-    {
-        return _console.ReadKey();
-    }
-
+    public ConsoleKeyInfo? ReadKey(bool intercept) => _console.ReadKey();
+    
     public Task<ConsoleKeyInfo?> ReadKeyAsync(bool intercept, CancellationToken cancellationToken)
     {
         // Simple polling simulation for async

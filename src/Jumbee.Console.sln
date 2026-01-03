@@ -16,8 +16,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{C9B2828B-DAC4-4D99-B75E-890596A0B988}"
 	ProjectSection(SolutionItems) = preProject
 		..\docs\ConsoleGUI Control Rendering.md = ..\docs\ConsoleGUI Control Rendering.md
+		..\docs\Control Integration.md = ..\docs\Control Integration.md
 		..\GEMINI.md = ..\GEMINI.md
 		..\README.md = ..\README.md
+		README.md = README.md
+		..\docs\Spectre.Console Control Rendering.md = ..\docs\Spectre.Console Control Rendering.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{28E2EEB4-6314-439F-A73B-2B95203051D2}"
