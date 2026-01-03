@@ -41,20 +41,22 @@ public class Program
         barChart.CenterLabel = true;
 
         // 3. Tree
-        var root = new Tree("Root");
-        var foo = root.AddNode("[yellow]Foo[/]");
-        var bar = foo.AddNode("[blue]Bar[/]");
-        bar.AddNode("Baz");
-        bar.AddNode("Qux");
-        var quux = root.AddNode("Quux");
-        quux.AddNode("Corgi");
+        var treeControl = new Jumbee.Console.Tree("Root");
+        treeControl.AddNode("[yellow]Foo[/]");
+        treeControl.AddNodes("[blue]Bar[/]", "Baz", "Qux");
+        
+        // Example of adding a subtree (since AddNode takes IRenderable)
+        var subTree = new Spectre.Console.Tree("Subtree");
+        subTree.AddNode("Leaf 1");
+        subTree.AddNode("Leaf 2");
+        treeControl.AddNode(subTree);
 
         // --- Wrap Spectre.Console Controls for ConsoleGUI ---
         var tableControl = new SpectreControl<Spectre.Console.Table>(table);
 
         tableControl.Content.Border = TableBorder.Rounded;
         // var chartControl = new SpectreControl<Spectre.Console.BarChart>(barChart); // No longer needed
-        var treeControl = new SpectreControl<Spectre.Console.Tree>(root);
+        // var treeControl = new SpectreControl<Spectre.Console.Tree>(root); // Replaced by Jumbee.Console.Tree above
 
         // --- ConsoleGUI Controls ---
         // Spinner
@@ -79,7 +81,7 @@ public class Program
             .WithTitle("Write here");
         var grid = new Jumbee.Console.Grid([15, 15], [40, 80], [
             [spinner.WithFrame(borderStyle: BorderStyle.Rounded, fgColor: Red, title: "Spinna benz"), prompt],
-            [tableControl, barChart]
+            [treeControl, barChart]
         ]);
 
         // Start the user interface
