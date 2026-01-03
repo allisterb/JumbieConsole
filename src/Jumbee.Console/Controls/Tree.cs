@@ -12,7 +12,7 @@ using Spectre.Console.Rendering;
 public class Tree : SpectreControl<Spectre.Console.Tree>
 {
     #region Fields
-    protected readonly IRenderable _rootLabel;
+    public readonly IRenderable rootLabel;
     
     private static readonly PropertyInfo renderableProp = 
         typeof(TreeNode).GetProperty("Renderable", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public) 
@@ -27,21 +27,20 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     /// Initializes a new instance of the <see cref="Tree"/> class.
     /// </summary>
     /// <param name="rootLabel">The tree root label.</param>
-    public Tree(IRenderable rootLabel) : base(new Spectre.Console.Tree(rootLabel))
+    public Tree(IRenderable rootLabel, Style? style = null, TreeGuide? guide = null, bool expanded = true) : base(new Spectre.Console.Tree(rootLabel))
     {
-        _rootLabel = rootLabel;        
+        this.rootLabel = rootLabel;
+        Content.Style = style;
+        Content.Guide = guide ?? TreeGuide.Line;
+        Content.Expanded = expanded;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Tree"/> class.
     /// </summary>
     /// <param name="root">The tree root label as a string.</param>
-    public Tree(string root) : this(new Markup(root))
-    {
-    }
-
-
-    public IRenderable RootLabel => _rootLabel;
+    public Tree(string root, Style? style = null, TreeGuide? guide = null, bool expanded = true) : 
+        this(new Markup(root), style, guide, expanded) {}
 
     /// <summary>
     /// Gets or sets the tree guide lines.
@@ -97,7 +96,7 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     /// <param name="node">The node renderable.</param>
     public void AddNode(IRenderable node)
     {
-        UpdateContent(c => c.Nodes.Add(new TreeNode(node)));
+        UpdateContent(c => c.AddNode(new TreeNode(node)));
      
     }
 
@@ -109,10 +108,7 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     {
         UpdateContent(c =>
         {
-            foreach (var node in nodes)
-            {
-                c.Nodes.Add(new TreeNode(new Markup(node)));
-            }
+            c.AddNodes(nodes);
         });       
     }
 
@@ -124,41 +120,21 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     {
         UpdateContent(c =>
         {
-            foreach (var node in nodes)
-            {
-                c.Nodes.Add(new TreeNode(node));
-            }
+            c.AddNodes(nodes);
         });        
-    }
-
-    protected override void UpdateContentBuffer(Spectre.Console.Tree contentBuffer)
-    {                               
-        contentBuffer.Style = Content.Style;
-        contentBuffer.Guide = Content.Guide;
-        contentBuffer.Expanded = Content.Expanded;        
-        contentBuffer.Nodes.Clear();
-        foreach (var child in Content.Nodes)
-        {
-            // For Tree, we must deep copy nodes because TreeNode is mutable.
-            contentBuffer.Nodes.Add(CloneNode(child));
-        }
     }
 
     /// <inheritdoc/>
     protected override Spectre.Console.Tree CloneContent()
     {
-        var root = rootField.GetValue(Content);
-        var rootRenderable = (IRenderable?) renderableProp.GetValue(root)!;
-        var newTree = new Spectre.Console.Tree(rootRenderable);
+        var newTree = new Spectre.Console.Tree(rootLabel);
         newTree.Style = Content.Style;
         newTree.Guide = Content.Guide;
         newTree.Expanded = Content.Expanded;
-
         foreach (var child in Content.Nodes)
         {
-            newTree.Nodes.Add(CloneNode(child));
+            newTree.AddNode(CloneNode(child));
         }
-
         return newTree;
     }
 

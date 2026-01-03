@@ -145,27 +145,16 @@ public class BarChart : SpectreControl<Spectre.Console.BarChart>
         }
     }
 
-    protected override Spectre.Console.BarChart CloneContent() => new Spectre.Console.BarChart
-    {
-        Width = Content.Width,
-        Label = Content.Label,
-        LabelAlignment = Content.LabelAlignment,
-        ShowValues = Content.ShowValues,
-        Culture = Content.Culture,
-        MaxValue = Content.MaxValue,
-        ValueFormatter = Content.ValueFormatter
-    };
-    
-    protected override void UpdateContentBuffer(Spectre.Console.BarChart contentBuffer)
-    {
-        contentBuffer.Width = Content.Width;
-        contentBuffer.Label = Content.Label;
-        contentBuffer.LabelAlignment = Content.LabelAlignment;
-        contentBuffer.ShowValues = Content.ShowValues;
-        contentBuffer.Culture = Content.Culture;
-        contentBuffer.MaxValue = Content.MaxValue;
-        contentBuffer.ValueFormatter = Content.ValueFormatter;
-        contentBuffer.Data.Clear();
-        contentBuffer.AddItems(Content.Data);
-    }
+    protected override Spectre.Console.BarChart CloneContent() => 
+        new Spectre.Console.BarChart
+        {
+            Width = Content.Width,
+            Label = Content.Label,
+            LabelAlignment = Content.LabelAlignment,
+            ShowValues = Content.ShowValues,
+            Culture = Content.Culture,
+            MaxValue = Content.MaxValue,
+            ValueFormatter = Content.ValueFormatter
+        }
+        .AddItems(Content.Data);
 }

@@ -41,7 +41,7 @@ public class Program
         barChart.CenterLabel = true;
 
         // 3. Tree
-        var treeControl = new Jumbee.Console.Tree("Root");
+        var treeControl = new Jumbee.Console.Tree("Root", guide: TreeGuide.Ascii);
         treeControl.AddNode("[yellow]Foo[/]");
         treeControl.AddNodes("[blue]Bar[/]", "Baz", "Qux");
         
