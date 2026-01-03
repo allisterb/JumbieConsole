@@ -21,6 +21,7 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     public Tree(IRenderable rootLabel) : base(new Spectre.Console.Tree(rootLabel))
     {
         _rootLabel = rootLabel;
+        contentBuffer = CloneContent();
     }
 
     /// <summary>
@@ -85,9 +86,9 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     /// <param name="node">The node renderable.</param>
     public void AddNode(IRenderable node)
     {
-        var newTree = CloneContent();
-        newTree.Nodes.Add(new TreeNode(node));
-        Content = newTree;
+        UpdateContentBuffer();
+        contentBuffer.Nodes.Add(new TreeNode(node));
+        SwapContentBuffer();
     }
 
     /// <summary>
@@ -96,12 +97,12 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     /// <param name="nodes">The node labels.</param>
     public void AddNodes(params string[] nodes)
     {
-        var newTree = CloneContent();
+        UpdateContentBuffer();
         foreach (var node in nodes)
         {
-            newTree.Nodes.Add(new TreeNode(new Markup(node)));
+            contentBuffer!.Nodes.Add(new TreeNode(new Markup(node)));
         }
-        Content = newTree;
+        SwapContentBuffer();
     }
 
     /// <summary>
@@ -110,12 +111,26 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     /// <param name="nodes">The node renderables.</param>
     public void AddNodes(params IRenderable[] nodes)
     {
-        var newTree = CloneContent();
-        foreach (var node in nodes)
+        UpdateContent(c =>
         {
-            newTree.Nodes.Add(new TreeNode(node));
+            foreach (var node in nodes)
+            {
+                c.Nodes.Add(new TreeNode(node));
+            }
+        });        
+    }
+
+    protected override void UpdateContentBuffer()
+    {                               
+        contentBuffer.Style = Content.Style;
+        contentBuffer.Guide = Content.Guide;
+        contentBuffer.Expanded = Content.Expanded;        
+        contentBuffer.Nodes.Clear();
+        foreach (var child in Content.Nodes)
+        {
+            // For Tree, we must deep copy nodes because TreeNode is mutable.
+            contentBuffer.Nodes.Add(CloneNode(child));
         }
-        Content = newTree;
     }
 
     /// <inheritdoc/>

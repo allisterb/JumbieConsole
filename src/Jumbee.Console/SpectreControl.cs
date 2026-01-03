@@ -13,12 +13,13 @@ using Spectre.Console.Rendering;
 /// Non thread-safe changes should use CloneContent to create a copy of the IRenderable content and modify that before replacing the control's content with the modified copy.
 /// </remarks>
 /// <typeparam name="T"></typeparam>
-public class SpectreControl<T> : Control where T : IRenderable
+public abstract class SpectreControl<T> : Control where T : IRenderable
 {
     #region Constructors
     public SpectreControl(T content) : base()
     {
-        _content = content;        
+        _content = content;
+        contentBuffer = CloneContent();
     }
     #endregion
     
@@ -43,7 +44,29 @@ public class SpectreControl<T> : Control where T : IRenderable
     /// </remarks>
     /// <returns>A new instance of type <typeparamref name="T"/> that is a copy of the current instance's content.</returns>
     /// <exception cref="NotImplementedException">Thrown if the method is not overridden in a derived class.</exception>
-    protected virtual T CloneContent() => throw new NotImplementedException($"Cloning not implemented for type {typeof(T).Name}. Override CloneContent() in derived class.");
+    protected abstract T CloneContent(); //throw new NotImplementedException($"Cloning not implemented for type {typeof(T).Name}. Override CloneContent() in derived class.");
+
+    /// <summary>
+    /// Updates the content buffer to match the current content state.
+    /// </summary>
+    protected abstract void UpdateContentBuffer();
+
+    /// <summary>
+    /// Swaps the current content with the content buffer.
+    /// </summary>
+    protected void SwapContentBuffer()
+    {
+        var temp = _content;                                                                                                                                                                                                      
+        Content = contentBuffer;
+        contentBuffer = temp;
+    }
+                       
+    protected void UpdateContent(Action<T> update)
+    {
+        UpdateContentBuffer();
+        update(contentBuffer);
+        SwapContentBuffer();
+    }
 
     protected override void Initialize()
     {
@@ -95,5 +118,6 @@ public class SpectreControl<T> : Control where T : IRenderable
 
     #region Fields
     private T _content;
+    protected T contentBuffer;
     #endregion
 }

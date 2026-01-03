@@ -52,9 +52,9 @@ public class Program
         treeControl.AddNode(subTree);
 
         // --- Wrap Spectre.Console Controls for ConsoleGUI ---
-        var tableControl = new SpectreControl<Spectre.Console.Table>(table);
+        //var tableControl = new SpectreControl<Spectre.Console.Table>(table);
 
-        tableControl.Content.Border = TableBorder.Rounded;
+        //tableControl.Content.Border = TableBorder.Rounded;
         // var chartControl = new SpectreControl<Spectre.Console.BarChart>(barChart); // No longer needed
         // var treeControl = new SpectreControl<Spectre.Console.Tree>(root); // Replaced by Jumbee.Console.Tree above
 
@@ -100,6 +100,11 @@ public class Program
             barChart["Planning", "Coding", "Testing"] = [newPlanning, newCoding, newTesting];
 
         }, null, 0, 100);
+
+        //var treeTimer = new Timer(_ =>
+        //{
+        //    treeControl.AddNode("lll");
+        //}, null, 0, 1000);
 
         var t = Task.Run(() =>
         {

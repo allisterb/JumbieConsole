@@ -1,8 +1,9 @@
 namespace Jumbee.Console;
 
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
-using Spectre.Console;
+using System.Text.RegularExpressions;
 
 public class BarChart : SpectreControl<Spectre.Console.BarChart>
 {
@@ -48,31 +49,30 @@ public class BarChart : SpectreControl<Spectre.Console.BarChart>
 
     public BarChart AddItem(string label, double value, Color? color = null)
     {
-        var newChart = CloneContent();
-        newChart.Data.AddRange(Content.Data);
-        newChart.AddItem(label, value, color);
-        Content = newChart;
+        UpdateContent(c =>
+        {            
+            c.AddItem(label, value, color);
+        });
         return this;
     }
     
     public BarChart RemoveItem(string label)
     {
-        var newChart = CloneContent();
-        newChart.Data.AddRange(Content.Data);
-        var itemToRemove = newChart.Data.Find(item => item.Label == label);
-        if (itemToRemove != null)
-        {
-            newChart.Data.Remove(itemToRemove);
-            Content = newChart;
-        }
+        UpdateContent(c =>
+        {            
+            var itemToRemove = c.Data.Find(item => item.Label == label);
+            if (itemToRemove != null)
+            {
+                c.Data.Remove(itemToRemove);
+
+            }
+        });
         return this;
     }
 
     public BarChart ClearData()
     {
-        var newChart = CloneContent();
-        // Data is empty by default
-        Content = newChart;
+        UpdateContent(c => c.Data.Clear());
         return this;
     }
 
@@ -86,20 +86,19 @@ public class BarChart : SpectreControl<Spectre.Console.BarChart>
         }
         set
         {
-            var newChart = CloneContent();
-            newChart.Data.AddRange(Content.Data);
-
-            var index = newChart.Data.FindIndex(i => i.Label == label);
-            if (index != -1)
-            {
-                var oldItem = newChart.Data[index];
-                newChart.Data[index] = new BarChartItem(label, value, oldItem.Color);
-            }
-            else
-            {
-                newChart.Data.Add(new BarChartItem(label, value, null));
-            }
-            Content = newChart;
+            UpdateContent(c =>
+            {    
+                var index = c.Data.FindIndex(i => i.Label == label);
+                if (index != -1)
+                {
+                    var oldItem = contentBuffer.Data[index];
+                    contentBuffer.Data[index] = new BarChartItem(label, value, oldItem.Color);
+                }
+                else
+                {
+                    c.Data.Add(new BarChartItem(label, value, null));
+                }
+            });
         }
     }
 
@@ -124,26 +123,25 @@ public class BarChart : SpectreControl<Spectre.Console.BarChart>
                 throw new ArgumentException("The number of values must match the number of labels.");
             }
 
-            var newChart = CloneContent();
-            newChart.Data.AddRange(Content.Data);
-
-            for (int i = 0; i < labels.Length; i++)
-            {
-                var label = labels[i];
-                var val = value[i];
-                var index = newChart.Data.FindIndex(item => item.Label == label);
-
-                if (index != -1)
+            UpdateContent(c =>
+            {                
+                for (int i = 0; i < labels.Length; i++)
                 {
-                    var oldItem = newChart.Data[index];
-                    newChart.Data[index] = new BarChartItem(label, val, oldItem.Color);
+                    var label = labels[i];
+                    var val = value[i];
+                    var index = c.Data.FindIndex(item => item.Label == label);
+
+                    if (index != -1)
+                    {
+                        var oldItem = contentBuffer.Data[index];
+                        contentBuffer.Data[index] = new BarChartItem(label, val, oldItem.Color);
+                    }
+                    else
+                    {
+                        c.Data.Add(new BarChartItem(label, val, null));
+                    }
                 }
-                else
-                {
-                    newChart.Data.Add(new BarChartItem(label, val, null));
-                }
-            }
-            Content = newChart;
+            });            
         }
     }
 
@@ -159,5 +157,18 @@ public class BarChart : SpectreControl<Spectre.Console.BarChart>
             MaxValue = Content.MaxValue,
             ValueFormatter = Content.ValueFormatter
         };
+    }
+
+    protected override void UpdateContentBuffer()
+    {
+        contentBuffer.Width = Content.Width;
+        contentBuffer.Label = Content.Label;
+        contentBuffer.LabelAlignment = Content.LabelAlignment;
+        contentBuffer.ShowValues = Content.ShowValues;
+        contentBuffer.Culture = Content.Culture;
+        contentBuffer.MaxValue = Content.MaxValue;
+        contentBuffer.ValueFormatter = Content.ValueFormatter;
+        contentBuffer.Data.Clear();
+        contentBuffer.AddItems(Content.Data);
     }
 }
