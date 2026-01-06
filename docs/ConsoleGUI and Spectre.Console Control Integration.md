@@ -1,4 +1,4 @@
-# Spectre.Console Control Integration
+# ConsoleGUI and Spectre.Console Control Integration
 
 This document outlines the architectural pattern for integrating `Spectre.Console` widgets into the ConsoleGUI framework. It specifically addresses how the layout and rendering pipelines of the two libraries bridge via the Jumbee.Console `SpectreControl` and `AnsiConsoleBuffer` classes.
 

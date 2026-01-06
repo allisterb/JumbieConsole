@@ -1,38 +1,38 @@
 namespace Jumbee.Console;
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
+
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using Spectre.Console.Interop;
+
+using CircularTreeException = Spectre.Console.Interop.CircularTreeException;
 
 /// <summary>
-/// A wrapper for the Spectre.Console Tree control.
+/// Displays hierarchical data in a tree layout.
 /// </summary>
-public class Tree : SpectreControl<Spectre.Console.Tree>
+/// <remarks>
+/// Based on <see cref="Spectre.Console.Tree"/> but modified to support mutable tree nodes, concurrent updates, and node selection via user input.
+/// </remarks>
+public class Tree : RenderableControl
 {
-    #region Fields
-    public readonly IRenderable rootLabel;
-    
-    private static readonly PropertyInfo renderableProp = 
-        typeof(TreeNode).GetProperty("Renderable", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public) 
-        ?? throw new InvalidOperationException("Could not find 'Renderable' property on TreeNode.");
-    
-    private static readonly FieldInfo rootField = 
-        typeof(Spectre.Console.Tree).GetField("_root", BindingFlags.Instance | BindingFlags.NonPublic)
-        ?? throw new InvalidOperationException("Could not find '_root' field on Tree.");
-    #endregion
-
+    #region Constructors
     /// <summary>
     /// Initializes a new instance of the <see cref="Tree"/> class.
     /// </summary>
     /// <param name="rootLabel">The tree root label.</param>
-    public Tree(IRenderable rootLabel, Style? style = null, TreeGuide? guide = null, bool expanded = true) : base(new Spectre.Console.Tree(rootLabel))
+    public Tree(IRenderable rootLabel, Style? style = null, TreeGuide? guide = null, bool expanded = true) : base()
     {
-        this.rootLabel = rootLabel;
-        Content.Style = style;
-        Content.Guide = guide ?? TreeGuide.Line;
-        Content.Expanded = expanded;
+        this._rootLabel = rootLabel;
+        this._root = new TreeNode(this, 0, _rootLabel);
+        this._style = style ?? Style.Plain;
+        this._guide = guide ?? TreeGuide.Line;
+        this._expanded = expanded;
     }
 
     /// <summary>
@@ -41,115 +41,142 @@ public class Tree : SpectreControl<Spectre.Console.Tree>
     /// <param name="root">The tree root label as a string.</param>
     public Tree(string root, Style? style = null, TreeGuide? guide = null, bool expanded = true) : 
         this(new Markup(root), style, guide, expanded) {}
+    #endregion
 
+
+    #region Properties
+
+    public TreeNode Root => _root;
+
+    /// <summary>
+    /// Gets or sets the tree style.
+    /// </summary>
+    public Style Style
+    {
+        get => _style;
+        set
+        {
+            _style = value;
+            Invalidate();
+        }
+    }
     /// <summary>
     /// Gets or sets the tree guide lines.
     /// </summary>
     public TreeGuide Guide
     {
-        get => Content.Guide;
+        get => _guide;
         set
         {
-            Content.Guide = value;
+            _guide = value;
             Invalidate();
         }
     }
-
-    /// <summary>
-    /// Gets or sets the tree style.
-    /// </summary>
-    public Style? Style
-    {
-        get => Content.Style;
-        set
-        {
-            Content.Style = value;
-            Invalidate();
-        }
-    }
-
+    
     /// <summary>
     /// Gets or sets a value indicating whether or not the tree is expanded or not.
     /// </summary>
     public bool Expanded
     {
-        get => Content.Expanded;
+        get => _expanded;
         set
         {
-            Content.Expanded = value;
+            _expanded = value;
             Invalidate();
         }
     }
 
-    /// <summary>
-    /// Adds a node to the tree.
-    /// </summary>
-    /// <param name="node">The node label.</param>
-    public void AddNode(string node)
-    {
-        AddNode(new Markup(node));
-    }
+    internal ICollection<TreeNode> Nodes => _root.Children;
 
-    /// <summary>
-    /// Adds a node to the tree.
-    /// </summary>
-    /// <param name="node">The node renderable.</param>
-    public void AddNode(IRenderable node)
-    {
-        UpdateContent(c => c.AddNode(new TreeNode(node)));
-     
-    }
+    #endregion
 
-    /// <summary>
-    /// Adds multiple nodes to the tree.
-    /// </summary>
-    /// <param name="nodes">The node labels.</param>
-    public void AddNodes(params string[] nodes)
+    #region Methods
+    internal void UpdateNodes() => this.Invalidate();
+
+    protected override IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
     {
-        UpdateContent(c =>
+        var result = new List<Segment>();
+        var visitedNodes = new HashSet<TreeNode>();
+
+        var stack = new Stack<Queue<TreeNode>>();
+        stack.Push(new Queue<TreeNode>(new[] { _root }));
+
+        var levels = new List<Segment>();
+        levels.Add(GetGuide(options, TreeGuidePart.Continue));
+
+        while (stack.Count > 0)
         {
-            c.AddNodes(nodes);
-        });       
-    }
+            var stackNode = stack.Pop();
+            if (stackNode.Count == 0)
+            {
+                //Spectre.Console.
+                levels.RemoveLast();
+                if (levels.Count > 0)
+                {
+                    levels.AddOrReplaceLast(GetGuide(options, TreeGuidePart.Fork));
+                }
 
-    /// <summary>
-    /// Adds multiple nodes to the tree.
-    /// </summary>
-    /// <param name="nodes">The node renderables.</param>
-    public void AddNodes(params IRenderable[] nodes)
-    {
-        UpdateContent(c =>
-        {
-            c.AddNodes(nodes);
-        });        
-    }
+                continue;
+            }
 
-    /// <inheritdoc/>
-    protected override Spectre.Console.Tree CloneContent()
-    {
-        var newTree = new Spectre.Console.Tree(rootLabel);
-        newTree.Style = Content.Style;
-        newTree.Guide = Content.Guide;
-        newTree.Expanded = Content.Expanded;
-        foreach (var child in Content.Nodes)
-        {
-            newTree.AddNode(CloneNode(child));
+            var isLastChild = stackNode.Count == 1;
+            var current = stackNode.Dequeue();
+            if (!visitedNodes.Add(current))
+            {
+                throw new CircularTreeException("Cycle detected in tree - unable to render.");
+            }
+
+            stack.Push(stackNode);
+
+            if (isLastChild)
+            {
+                levels.AddOrReplaceLast(GetGuide(options, TreeGuidePart.End));
+            }
+
+            var prefix = levels.Skip(1).ToList();
+            var renderableLines = Segment.SplitLines(current.Renderable.Render(options, maxWidth - Segment.CellCount(prefix)));
+
+            foreach (var (_, isFirstLine, _, line) in renderableLines.Enumerate())
+            {
+                if (prefix.Count > 0)
+                {
+                    result.AddRange(prefix.ToList());
+                }
+
+                result.AddRange(line);
+                result.Add(Segment.LineBreak);
+
+                if (isFirstLine && prefix.Count > 0)
+                {
+                    var part = isLastChild ? TreeGuidePart.Space : TreeGuidePart.Continue;
+                    prefix.AddOrReplaceLast(GetGuide(options, part));
+                }
+            }
+
+            if (current.Expanded && current.Nodes.Count > 0)
+            {
+                levels.AddOrReplaceLast(GetGuide(options, isLastChild ? TreeGuidePart.Space : TreeGuidePart.Continue));
+                levels.Add(GetGuide(options, current.Nodes.Count == 1 ? TreeGuidePart.End : TreeGuidePart.Fork));
+
+                stack.Push(new Queue<TreeNode>(current.Nodes));
+            }
         }
-        return newTree;
-    }
 
-    private TreeNode CloneNode(TreeNode original)
+        return result;
+    }
+    
+    private Segment GetGuide(RenderOptions options, TreeGuidePart part)
     {
-        var renderable = (IRenderable?)renderableProp!.GetValue(original); 
-        if (renderable == null) throw new InvalidOperationException("TreeNode renderable is null.");
-
-        var newNode = new TreeNode(renderable);
-        newNode.Expanded = original.Expanded;
-        
-        foreach (var child in original.Nodes)
-        {
-            newNode.Nodes.Add(CloneNode(child));
-        }
-        return newNode;
+        var guide = Guide.GetSafeTreeGuide(safe: !options.Unicode);
+        return new Segment(guide.GetPart(part), Style ?? Style.Plain);
     }
+    #endregion
+
+    #region Fields
+    public IRenderable _rootLabel;
+    public TreeNode _root;
+    protected Style _style;
+    protected TreeGuide _guide;
+    protected bool _expanded;
+    #endregion
 }

@@ -60,8 +60,7 @@ which is used by ConsoleGUI to draw the control to the console screen. Note the 
 
 - Any public properties or methods that change the visual state of the control must call the Invalidate() method to indicate that the control needs to be re-rendered and re-drawn by parent containers. 
 - *Do not acquire the UI lock in publicly visible properties or methods of a control* as this will inevitably lead to deadlocks. Instead, call `Invalidate()` to signal that a control needs to be redrawn in the next Paint event.
-
-- When modifying control state stored in collections, use a copy-on-write strategy using the CloneContent() method and setting the Content property to the cloned object, to avoid modifying collections while they might be enumerated during rendering.
+- When modifying control state stored in collections, use a copy-on-write strategy using the `UpdateContent` method which invokes `CloneContent()`, to avoid modifying collections while they might be enumerated during rendering.
 Since this is inefficient, try to batch multiple changes to control state collections into a single property or index setter when possible.
 
 ## Project coding instructions:
@@ -73,6 +72,7 @@ Since this is inefficient, try to batch multiple changes to control state collec
 - Do not modify external library code located in the @ext directory. Changes should be limited to the code in the @src directory only.
 
 ## Project coding Style:
+- Use the existing #regions in a file to organize class constructors, indexers, events, properties, methods, fields, and child types.
 - Use 4 spaces for indentation.
 - Use camel-case for method and property names. Method and property names should begin with a capital letter.
 - Use camel-case for class fields. Field names should begin with lower-case letters unless they are backing fields for properties which should begin with an underscore.

@@ -1,11 +1,11 @@
 namespace Jumbee.Console;
 
 using System;
-
+using System.Collections.Generic;
 using Spectre.Console.Rendering;
 
 /// <summary>
-/// Wraps a Spectre.Console <see cref="IRenderable"/> control for use with ConsoleGUI control and layout types. 
+/// Wraps an existing Spectre.Console <see cref="IRenderable"/> control for use with ConsoleGUI control and layout types. 
 /// </summary>
 /// <remarks>
 /// Uses an <see cref="AnsiConsoleBuffer"/> to render the control to a buffer.
@@ -13,7 +13,7 @@ using Spectre.Console.Rendering;
 /// Non thread-safe changes should use CloneContent to create a copy of the IRenderable content and modify that before replacing the control's content with the modified copy.
 /// </remarks>
 /// <typeparam name="T"></typeparam>
-public class SpectreControl<T> : Control where T : IRenderable
+public class SpectreControl<T> : RenderableControl where T : IRenderable
 {
     #region Constructors
     public SpectreControl(T content) : base()
@@ -46,7 +46,7 @@ public class SpectreControl<T> : Control where T : IRenderable
     protected virtual T CloneContent() => throw new NotImplementedException($"Cloning not implemented for type {typeof(T).Name}. Override CloneContent() in derived class.");
 
     /// <summary>
-    /// Provides a thread-safe but less efficient way of updating the control content.
+    /// Provides a thread-safe but much more expensive way of updating the control content.
     /// </summary>
     /// <param name="update">The update operation.</param>
     protected void UpdateContent(Action<T> update)
@@ -92,16 +92,11 @@ public class SpectreControl<T> : Control where T : IRenderable
         }
     }
 
-    /// <summary>
-    /// Renders the control's content to the console buffer.
-    /// </summary>
-    protected sealed override void Render()
-    {  
-        ansiConsole.Clear(true);
-        // We probably want to render with the full width of the control
-        // Spectre will look at the Profile.Width which comes from the IConsole.Size (BufferConsole.Size)
-        ansiConsole.Write(_content);        
-    }
+
+    protected override Measurement Measure(RenderOptions options, int maxWidth) => _content.Measure(options, maxWidth);
+
+    protected override IEnumerable<Segment> Render(RenderOptions options, int maxWidth) => _content.Render(options, maxWidth);  
+    
     #endregion
 
     #region Fields
