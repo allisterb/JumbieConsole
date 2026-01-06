@@ -2,6 +2,7 @@ namespace Jumbee.Console;
 
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using Spectre.Console.Rendering;
 using Spectre.Console;
@@ -73,6 +74,22 @@ public struct TreeNode
     }
 
     public TreeNode AddChild(string label) => AddChild(new Markup(label));
+
+    public void AddChildren(params IRenderable[] children)
+    {
+        foreach (IRenderable child in children)
+        {
+            AddChild(child);
+        }
+    }
+
+    public void AddChildren(params string[] children)
+    {
+        foreach (var child in children)
+        {
+            AddChild(child);
+        }
+    }
     #endregion
 
     #region Fields

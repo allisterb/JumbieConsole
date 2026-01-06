@@ -91,6 +91,22 @@ public class Tree : RenderableControl
     #endregion
 
     #region Methods
+    public TreeNode AddNode(IRenderable label) => _root.AddChild(label);
+            
+    public TreeNode AddNode(string label) => AddNode(new Markup(label));
+
+    public Tree AddNodes(params IRenderable[] labels)
+    {
+        _root.AddChildren(labels);
+        return this;
+    }
+
+    public Tree AddNodes(params string[] labels)
+    {
+        _root.AddChildren(labels);
+        return this;    
+    }
+
     internal void UpdateNodes() => this.Invalidate();
 
     protected override IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
