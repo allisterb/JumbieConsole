@@ -75,7 +75,7 @@ public static class ControlExtensions
 
     public static ControlFrame WithMargin(this ControlFrame frame, int offset) => frame.WithMargin(offset, offset, offset, offset);
 
-    public static ControlFrame WithBorder(this Control control, BorderStyle style) => new ControlFrame(control, style);
+    public static ControlFrame WithBorder(this Control control, BorderStyle style, Color? fgColor = null, Color? bgColor = null) => new ControlFrame(control, borderStyle:style, borderFgColor: fgColor, borderBgColor: bgColor);
         
     public static ControlFrame WithBorder(this ControlFrame frame, BorderStyle style)
     {

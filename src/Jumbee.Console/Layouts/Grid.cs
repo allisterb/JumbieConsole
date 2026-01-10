@@ -7,19 +7,19 @@ using System.Linq;
 using ConsoleGUI;
 
 /// <summary>
-///  A grid layout with controls arranged in equally-spaced rows and columns.
+///  A grid layout with controls arranged in rows and columns.
 /// </summary>
 public class Grid : Layout<ConsoleGUI.Controls.Grid>
 {
     #region Constructors
     /// <summary>
-    /// Create a grid layout.
+    /// Creates a grid layout with the specified row heights, column heights, and arrays of controls.
     /// </summary>
     /// <param name="rowHeights"></param>
     /// <param name="columnWidths"></param>
     /// <param name="controls"></param>
     /// <exception cref="ArgumentException"></exception>
-    public Grid(int[] rowHeights, int[] columnWidths, IControl[][]? controls = null) : base(new ConsoleGUI.Controls.Grid())
+    public Grid(int[] rowHeights, int[] columnWidths, params IControl[][]? controls ) : base(new ConsoleGUI.Controls.Grid())
     {                
         control.Rows = rowHeights.Select(h => new ConsoleGUI.Controls.Grid.RowDefinition(h)).ToArray();
         control.Columns = columnWidths.Select(w => new ConsoleGUI.Controls.Grid.ColumnDefinition(w)).ToArray();

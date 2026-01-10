@@ -23,22 +23,179 @@ public enum BorderStyle
 }
 
 /// <summary>
-/// Draws a border around a control together with margins and a title bar.
+/// Draws a border around a control together with margins and a title bar, and sets the foreground and background colors.
 /// </summary>
-public sealed class ControlFrame : ConsoleGUI.Common.Control, IDrawingContextListener, IInputListener
+public sealed class ControlFrame : CControl, IDrawingContextListener, IInputListener
 {
     #region Constructors
-    public ControlFrame(Control control, BorderStyle? borderStyle = null, Offset? margin = null, Color? fgColor = null, Color? bgColor = null, string? title=null)
+    public ControlFrame(Control control, BorderStyle? borderStyle = null, Offset? margin = null, Color? fgColor = null, Color? bgColor = null, string? title=null, Color? borderFgColor = null, Color? borderBgColor = null)
     {
         _borderStyle = borderStyle ?? BorderStyle.None; 
         _boxBorder = GetSpectreBoxBorder(_borderStyle);
         _margin = margin ?? DefaultMargin;
         _foreground = fgColor;
         _background = bgColor;
+        _borderFgColor = borderFgColor;
+        _borderBgColor = borderBgColor;
         _title = title;
         _control = control;
         control.Frame = this;
         BindControl();
+    }
+    #endregion
+
+    #region Indexers
+    public override Cell this[Position position]
+    {
+        get
+        {
+            lock (UI.Lock)
+            {
+                // 1. Calculate Offsets & Viewport
+                // We replicate Initialize logic to ensure consistency
+                var totalOffset = GetTotalOffset();
+
+                var controlLeft = totalOffset.Left;
+                var controlTop = totalOffset.Top;
+                var controlRight = Size.Width - 1 - totalOffset.Right;
+                var controlBottom = Size.Height - 1 - totalOffset.Bottom;
+
+                // 2. Control & Scrollbar (Inside Viewport)
+                if (position.X >= controlLeft && position.X <= controlRight &&
+                    position.Y >= controlTop && position.Y <= controlBottom)
+                {
+                    // Scrollbar logic: always at the right edge of valid control area
+                    if (position.X == controlRight)
+                    {
+                        if (Control == null) return ScrollBarForeground;
+
+                        var viewportHeight = controlBottom - controlTop + 1;
+                        var controlHeight = ControlContext.Size.Height;
+
+                        // Only draw scrollbar if control is larger than viewport
+                        if (controlHeight > viewportHeight)
+                        {
+                            // Calculate thumb position
+                            // Relative Y in viewport
+                            var relY = position.Y - controlTop;
+
+                            if (relY == 0)
+                            {
+                                return ScrollBarUpArrow;
+                            }
+                            else if (relY == viewportHeight - 1)
+                            {
+                                return ScrollBarDownArrow;
+                            }
+
+                            var trackHeight = viewportHeight - 2;
+                            if (trackHeight > 0)
+                            {
+                                var maxScroll = controlHeight - viewportHeight;
+                                var currentScroll = Math.Clamp(_top, 0, maxScroll);
+
+                                // Calculate thumb size based on visible proportion
+                                var thumbSize = Math.Max(1, (int)((long)trackHeight * viewportHeight / controlHeight));
+                                thumbSize = Math.Max(1, thumbSize);
+
+                                var availableTrack = trackHeight - thumbSize;
+
+                                // Calculate thumb position based on scroll proportion                      
+                                var thumbOffset = (int)((long)currentScroll * availableTrack / maxScroll);
+                                var thumbStart = 1 + thumbOffset;
+
+                                if (relY >= thumbStart && relY < thumbStart + thumbSize)
+                                {
+                                    return ScrollBarForeground;
+                                }
+                            }
+                            return ScrollBarBackground;
+                        }
+                        else
+                        {
+                            // No scrollbar needed -> allow control to draw here?
+                            // Current design reserves the column. 
+                            // If we reserved the column in Initialize (limitWidth), control shouldn't be here.
+                            // But for aesthetic, maybe draw empty or background?
+                            // If we return Character.Empty, we see background.
+                            // Let's return Character.Empty so control *could* extend if we changed limits,
+                            // but currently it acts as padding.
+                            // Actually, if we don't return here, it falls through to ControlContext.Contains
+                            // which might return true if we didn't limit width
+                        }
+                    }
+
+                    if (ControlContext.Contains(position))
+                        return ControlContext[position];
+
+                    return Character.Empty;
+                }
+
+                // 3. Borders & Title (Outside Viewport)
+                var left = Margin.Left;
+                var top = Margin.Top;
+                var right = Size.Width - 1 - Margin.Right;
+                var bottom = Size.Height - 1 - Margin.Bottom;
+
+                if (position.X == left && position.Y == top && BorderPlacement.HasBorder(BorderPlacement.Top | BorderPlacement.Left))
+                    return GetBorderCell(BoxBorderPart.TopLeft);
+
+                if (position.X == right && position.Y == top && BorderPlacement.HasBorder(BorderPlacement.Top | BorderPlacement.Right))
+                    return GetBorderCell(BoxBorderPart.TopRight);
+
+                if (position.X == left && position.Y == bottom && BorderPlacement.HasBorder(BorderPlacement.Bottom | BorderPlacement.Left))
+                    return GetBorderCell(BoxBorderPart.BottomLeft);
+
+                if (position.X == right && position.Y == bottom && BorderPlacement.HasBorder(BorderPlacement.Bottom | BorderPlacement.Right))
+                    return GetBorderCell(BoxBorderPart.BottomRight);
+
+                if (position.X == left && position.Y >= top && position.Y <= bottom && BorderPlacement.HasBorder(BorderPlacement.Left))
+                    return GetBorderCell(BoxBorderPart.Left);
+
+                if (position.X == right && position.Y >= top && position.Y <= bottom && BorderPlacement.HasBorder(BorderPlacement.Right))
+                    return GetBorderCell(BoxBorderPart.Right);
+
+                if (position.Y == top && position.X >= left && position.X <= right && BorderPlacement.HasBorder(BorderPlacement.Top))
+                    return GetBorderCell(BoxBorderPart.Top);
+
+                if (position.Y == bottom && position.X >= left && position.X <= right && BorderPlacement.HasBorder(BorderPlacement.Bottom))
+                    return GetBorderCell(BoxBorderPart.Bottom);
+
+                if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
+                {
+                    if (position.Y == top + 1)
+                    {
+                        var startX = BorderPlacement.HasBorder(BorderPlacement.Left) ? left + 1 : left;
+                        var titleIndex = position.X - startX;
+
+                        if (titleIndex >= 0 && titleIndex < Title.Length)
+                        {
+                            var character = new Character(Title[titleIndex]);
+                            if (_foreground.HasValue) character = character.WithForeground(_foreground.Value);
+                            if (_background.HasValue) character = character.WithBackground(_background.Value);
+                            return new Cell(character);
+                        }
+                    }
+                    else if (position.Y == top + 2)
+                    {
+                        if (position.X == left) // Start character for separator
+                        {
+                            return GetBorderCell(BoxBorderPart.TopLeft);
+                        }
+                        else if (position.X == right) // End character for separator
+                        {
+                            return GetBorderCell(BoxBorderPart.TopRight);
+                        }
+                        else if (position.X > left && position.X < right) // Middle characters for separator
+                        {
+                            return GetBorderCell(BoxBorderPart.Top);
+                        }
+                    }
+                }
+
+                return Character.Empty;
+            }
+        }
     }
     #endregion
 
@@ -116,6 +273,28 @@ public sealed class ControlFrame : ConsoleGUI.Common.Control, IDrawingContextLis
         {
             if (Equals(_background, value)) return;
             _background = value;
+            Redraw();
+        }
+    }
+
+    public Color? BorderFgColor
+    {
+        get => _borderFgColor;
+        set
+        {
+            if (Equals(_borderFgColor, value)) return;
+            _borderFgColor = value;
+            Redraw();
+        }
+    }
+
+    public Color? BorderBgColor
+    {
+        get => _borderBgColor;
+        set
+        {
+            if (Equals(_borderBgColor, value)) return;
+            _borderBgColor = value;
             Redraw();
         }
     }
@@ -203,161 +382,6 @@ public sealed class ControlFrame : ConsoleGUI.Common.Control, IDrawingContextLis
     }      
     #endregion
 
-    #region Indexers
-    public override Cell this[Position position]
-    {
-        get
-        {
-            lock (UI.Lock)
-            {
-                // 1. Calculate Offsets & Viewport
-                // We replicate Initialize logic to ensure consistency
-                var totalOffset = GetTotalOffset();
-
-                var controlLeft = totalOffset.Left;
-                var controlTop = totalOffset.Top;
-                var controlRight = Size.Width - 1 - totalOffset.Right;
-                var controlBottom = Size.Height - 1 - totalOffset.Bottom;
-
-                // 2. Control & Scrollbar (Inside Viewport)
-                if (position.X >= controlLeft && position.X <= controlRight &&
-                    position.Y >= controlTop && position.Y <= controlBottom)
-                {
-                    // Scrollbar logic: always at the right edge of valid control area
-                    if (position.X == controlRight)
-                    {
-                        if (Control == null) return ScrollBarForeground;
-
-                        var viewportHeight = controlBottom - controlTop + 1;
-                        var controlHeight = ControlContext.Size.Height;
-
-                        // Only draw scrollbar if control is larger than viewport
-                        if (controlHeight > viewportHeight)
-                        {
-                            // Calculate thumb position
-                            // Relative Y in viewport
-                            var relY = position.Y - controlTop;
-
-                            if (relY == 0)
-                            {
-                                return ScrollBarUpArrow;
-                            }
-                            else if (relY == viewportHeight - 1)
-                            {
-                                return ScrollBarDownArrow;
-                            }
-
-                            var trackHeight = viewportHeight - 2;
-                            if (trackHeight > 0)
-                            {
-                                var maxScroll = controlHeight - viewportHeight;
-                                var currentScroll = Math.Clamp(_top, 0, maxScroll);
-
-                                // Calculate thumb size based on visible proportion
-                                var thumbSize = Math.Max(1, (int)((long)trackHeight * viewportHeight / controlHeight));
-                                thumbSize = Math.Max(1, thumbSize);
-                                
-                                var availableTrack = trackHeight - thumbSize;
-                                
-                                // Calculate thumb position based on scroll proportion                      
-                                var thumbOffset = (int)((long)currentScroll * availableTrack / maxScroll);
-                                var thumbStart = 1 + thumbOffset;
-
-                                if (relY >= thumbStart && relY < thumbStart + thumbSize)
-                                {
-                                    return ScrollBarForeground;
-                                }                               
-                            }
-                            return ScrollBarBackground;
-                        }
-                        else
-                        {
-                            // No scrollbar needed -> allow control to draw here?
-                            // Current design reserves the column. 
-                            // If we reserved the column in Initialize (limitWidth), control shouldn't be here.
-                            // But for aesthetic, maybe draw empty or background?
-                            // If we return Character.Empty, we see background.
-                            // Let's return Character.Empty so control *could* extend if we changed limits,
-                            // but currently it acts as padding.
-                            // Actually, if we don't return here, it falls through to ControlContext.Contains
-                            // which might return true if we didn't limit width
-                        }
-                    }
-
-                    if (ControlContext.Contains(position))
-                        return ControlContext[position];
-
-                    return Character.Empty;
-                }
-
-                // 3. Borders & Title (Outside Viewport)
-                var left = Margin.Left;
-                var top = Margin.Top;
-                var right = Size.Width - 1 - Margin.Right;
-                var bottom = Size.Height - 1 - Margin.Bottom;
-
-                if (position.X == left && position.Y == top && BorderPlacement.HasBorder(BorderPlacement.Top | BorderPlacement.Left))
-                    return GetCell(BoxBorderPart.TopLeft);
-
-                if (position.X == right && position.Y == top && BorderPlacement.HasBorder(BorderPlacement.Top | BorderPlacement.Right))
-                    return GetCell(BoxBorderPart.TopRight);
-
-                if (position.X == left && position.Y == bottom && BorderPlacement.HasBorder(BorderPlacement.Bottom | BorderPlacement.Left))
-                    return GetCell(BoxBorderPart.BottomLeft);
-
-                if (position.X == right && position.Y == bottom && BorderPlacement.HasBorder(BorderPlacement.Bottom | BorderPlacement.Right))
-                    return GetCell(BoxBorderPart.BottomRight);
-
-                if (position.X == left && position.Y >= top && position.Y <= bottom && BorderPlacement.HasBorder(BorderPlacement.Left))
-                    return GetCell(BoxBorderPart.Left);
-
-                if (position.X == right && position.Y >= top && position.Y <= bottom && BorderPlacement.HasBorder(BorderPlacement.Right))
-                    return GetCell(BoxBorderPart.Right);
-
-                if (position.Y == top && position.X >= left && position.X <= right && BorderPlacement.HasBorder(BorderPlacement.Top))
-                    return GetCell(BoxBorderPart.Top);
-
-                if (position.Y == bottom && position.X >= left && position.X <= right && BorderPlacement.HasBorder(BorderPlacement.Bottom))
-                    return GetCell(BoxBorderPart.Bottom);
-
-                if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
-                {
-                    if (position.Y == top + 1)
-                    {
-                        var startX = BorderPlacement.HasBorder(BorderPlacement.Left) ? left + 1 : left;
-                        var titleIndex = position.X - startX;
-
-                        if (titleIndex >= 0 && titleIndex < Title.Length)
-                        {
-                            var character = new Character(Title[titleIndex]);
-                            if (_foreground.HasValue) character = character.WithForeground(_foreground.Value);
-                            if (_background.HasValue) character = character.WithBackground(_background.Value);
-                            return new Cell(character);
-                        }
-                    }
-                    else if (position.Y == top + 2)
-                    {
-                        if (position.X == left) // Start character for separator
-                        {
-                            return GetCell(BoxBorderPart.TopLeft);
-                        }
-                        else if (position.X == right) // End character for separator
-                        {
-                            return GetCell(BoxBorderPart.TopRight);
-                        }
-                        else if (position.X > left && position.X < right) // Middle characters for separator
-                        {
-                            return GetCell(BoxBorderPart.Top);
-                        }
-                    }
-                }
-
-                return Character.Empty;
-            }
-        }
-    }
-    #endregion
-
     #region Methods
     private Offset GetTotalOffset()
     {
@@ -373,7 +397,7 @@ public sealed class ControlFrame : ConsoleGUI.Common.Control, IDrawingContextLis
             borderOffset.Bottom + Margin.Bottom);
     }
 
-    public static SpectreBoxBorder GetSpectreBoxBorder(BorderStyle style)
+    private static SpectreBoxBorder GetSpectreBoxBorder(BorderStyle style)
     {
         return style switch
         {
@@ -387,14 +411,18 @@ public sealed class ControlFrame : ConsoleGUI.Common.Control, IDrawingContextLis
         };
     }
 
-    private Cell GetCell(BoxBorderPart part)
+    private Cell GetBorderCell(BoxBorderPart part)
     {
         var str = _boxBorder.GetPart(part);
         var ch = string.IsNullOrEmpty(str) ? ' ' : str[0];
         
         var character = new Character(ch);
-        if (_foreground.HasValue) character = character.WithForeground(_foreground.Value);
-        if (_background.HasValue) character = character.WithBackground(_background.Value);
+        
+        var fg = _borderFgColor ?? _foreground;
+        if (fg.HasValue) character = character.WithForeground(fg.Value);
+        
+        var bg = _borderBgColor ?? _background;
+        if (bg.HasValue) character = character.WithBackground(bg.Value);
         
         return new Cell(character);
     }
@@ -528,6 +556,8 @@ public sealed class ControlFrame : ConsoleGUI.Common.Control, IDrawingContextLis
     private Offset _margin;
     private Color? _foreground;
     private Color? _background;
+    private Color? _borderFgColor;
+    private Color? _borderBgColor;
     private DrawingContext _controlContext = DrawingContext.Dummy;
     private string? _title;
     private int _top;
