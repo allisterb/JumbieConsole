@@ -11,7 +11,7 @@ using ConsoleGUI.Common;
 using ConsoleGUI.Space;
 using ConsoleGUI.Input;
 /// <summary>
-/// Manages the overall UI update loop and provides a paint event for controls to subscribe to.
+/// Manages the overall UI and provides a paint event for controls to subscribe to.
 /// </summary>
 public static class UI
 {
@@ -43,7 +43,7 @@ public static class UI
         }
         timer = new Timer(OnTick, null, interval, interval);
         var inputHandler = new GlobalInputListener();
-        Task = Task.Run(() =>
+        task = Task.Run(() =>
         {
             // Main loop
             while (true && !cancellationToken.IsCancellationRequested)
@@ -53,7 +53,7 @@ public static class UI
             }
         }, cancellationToken);
         isRunning = true;
-        return Task;
+        return task;
     }
     /// <summary>
     /// Stops the UI update loop and disposes of the timer. 
@@ -65,6 +65,7 @@ public static class UI
         timer?.Dispose();
         timer = null;
         controls.Clear();
+        cts.Cancel();   
     }
 
     public static bool HasControl(IControl control) => controls.Contains(control);
@@ -99,14 +100,18 @@ public static class UI
     internal static readonly object Lock = new object();
     private static PaintEventArgs paintEventArgs = new PaintEventArgs(Lock);
     private static Timer? timer;
-    private static Task? Task;
-    private static CancellationToken cancellationToken = new CancellationToken();
+    private static Task task = Task.CompletedTask;
+    private static CancellationTokenSource cts = new CancellationTokenSource();
+    private static CancellationToken cancellationToken = cts.Token;
     private static int interval = 100;
     private static bool isRunning;
     
-    private static List<IControl> controls = new List<IControl>();
-    private static List<ControlFrame> frames = new List<ControlFrame>();
+    private static List<IControl> controls = new List<IControl>();    
     private static List<IInputListener> inputListeners = new List<IInputListener>();
+    private static Dictionary<ConsoleKeyInfo, Action> GlobalHotKeys = new Dictionary<ConsoleKeyInfo, Action>
+    {
+        { HotKeys.CtrlQ, Stop }
+    };
     #endregion
 
     #region Events
@@ -117,9 +122,12 @@ public static class UI
         {
             _Paint = (EventHandler<PaintEventArgs>?)Delegate.Combine(_Paint, value);
             if (value.Target is IControl c)
-            {                
-                controls.Add(c);
-                if (c is IInputListener listener)
+            {
+                if (!controls.Contains(c))
+                {
+                    controls.Add(c);
+                }
+                if (c is IInputListener listener && !inputListeners.Contains(listener))
                 {
                     inputListeners.Add(listener);   
                 }
@@ -151,6 +159,13 @@ public static class UI
     {
         public void OnInput(InputEvent inputEvent)
         {
+            if (GlobalHotKeys.TryGetValue(inputEvent.Key, out var action))
+            {
+                action?.Invoke();
+                inputEvent.Handled = true;
+                return;
+            }
+
             foreach (var listener in inputListeners)
             {
                 if (listener is IFocusable focusable && focusable.IsFocused)
@@ -159,6 +174,14 @@ public static class UI
                 }   
             }
         }
+    }
+
+    public static class HotKeys
+    {
+        public static ConsoleKeyInfo Ctrl(ConsoleKey key, char k) =>
+            new ConsoleKeyInfo(k, key, false, false, true);
+
+        public static ConsoleKeyInfo CtrlQ = Ctrl(ConsoleKey.Q, (char) 17);
     }
     #endregion
 }
