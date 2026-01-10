@@ -13,6 +13,8 @@ public interface ILayout : IControl, IDrawingContextListener, IInputListener
     
     int Columns { get; }    
     
+    IControl LayoutControl { get; }
+
     IControl this[int row, int column] { get; }
 
     IEnumerable<IControl> Controls { get; }
@@ -36,6 +38,8 @@ public abstract class Layout<T> : ILayout where T:ConsoleGUI.Common.Control, IDr
     public Cell this[Position position] => control[position];   
 
     public Size Size => control.Size;   
+
+    public IControl LayoutControl => control;
 
     public IDrawingContext Context
     {

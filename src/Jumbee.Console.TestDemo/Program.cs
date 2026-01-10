@@ -82,7 +82,7 @@ public class Program
             [spinner.WithFrame(borderStyle: BorderStyle.Rounded, fgColor: Red, title: "Spinna benz"), prompt],
             [treeControl, barChart]
         ]);
-
+        p.IsFocused = true;
         // Start the user interface
         var t = UI.Start(grid, 130, 40);
         //UI.Start(internalGrid, width:250, height: 60, isTrueColorTerminal: true);

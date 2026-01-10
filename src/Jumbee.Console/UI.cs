@@ -17,26 +17,32 @@ public static class UI
 {
     #region Methods
     /// <summary>
-    /// Initializes the system console and starts the UI.
+    /// Initializes the console and starts the UI.
     /// </summary>
-    /// <param name="layout"></param>
-    /// <param name="width"></param>
-    /// <param name="height"></param>
-    /// <param name="paintInterval"></param>
-    /// <param name="isTrueColorTerminal"></param>
-    internal static Task Start(IControl layout, int width = 110, int height = 25, int paintInterval = 100, bool isTrueColorTerminal = true)
-    {        
-        if (isRunning) return Task.CompletedTask;        
+    public static Task Start(ILayout layout, int width = 110, int height = 25, int paintInterval = 100, bool isTrueColorTerminal = true)
+    {
+        if (isRunning) return Task.CompletedTask;
         if (!isTrueColorTerminal)
         {
             ConsoleManager.Console = new SimplifiedConsole(); ;
-        }        
+        }
         ConsoleManager.Setup();
         ConsoleManager.Resize(new Size(width, height));
-        ConsoleManager.Content = layout;
-        interval = paintInterval;                   
+        ConsoleManager.Content = layout.LayoutControl;
+        interval = paintInterval;
+        foreach(var c in layout.Controls)
+        {
+            if (!controls.Contains(c))
+            {
+                controls.Add(c);
+            }   
+            if (c is IInputListener listener && !inputListeners.Contains(listener))
+            {
+                inputListeners.Add(listener);
+            }
+        }
         timer = new Timer(OnTick, null, interval, interval);
-        var inputHandler = new GlobalInputListener();   
+        var inputHandler = new GlobalInputListener();
         Task = Task.Run(() =>
         {
             // Main loop
@@ -47,11 +53,8 @@ public static class UI
             }
         }, cancellationToken);
         isRunning = true;
-        return Task;    
+        return Task;
     }
-
-    public static Task Start<T>(Layout<T> layout, int width = 110, int height = 25, int paintInterval = 100, bool isTrueColorTerminal = true) where T : ConsoleGUI.Common.Control, IDrawingContextListener =>
-       Start(layout.control, width, height, paintInterval, isTrueColorTerminal);
     /// <summary>
     /// Stops the UI update loop and disposes of the timer. 
     /// </summary>
