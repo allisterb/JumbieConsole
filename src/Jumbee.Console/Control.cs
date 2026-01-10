@@ -6,7 +6,7 @@ using System.Threading;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
 
-public abstract class Control : ConsoleGUI.Common.Control, IDisposable    
+public abstract class Control : CControl, IFocusable, IDisposable    
 {
     #region Constructor
     public Control() : base()
@@ -111,8 +111,21 @@ public abstract class Control : ConsoleGUI.Common.Control, IDisposable
     #endregion
 
     #region Properties
-    public ControlFrame? Frame { get; set; }
+    public ControlFrame? Frame 
+    {
+        get => field;
+        set
+        {
+            if (value is not null && UI.HasControl(this))
+            {
+                UI.AddInputListener(value);
+            }
+            field = value;
+        }
+    
+    }
 
+    public bool IsFocused { get; set; }
     #endregion
 
     #region Fields

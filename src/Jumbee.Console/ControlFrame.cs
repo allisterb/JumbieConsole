@@ -25,7 +25,7 @@ public enum BorderStyle
 /// <summary>
 /// Draws a border around a control together with margins and a title bar, and sets the foreground and background colors.
 /// </summary>
-public sealed class ControlFrame : CControl, IDrawingContextListener, IInputListener
+public sealed class ControlFrame : CControl, IDrawingContextListener, IInputListener, IFocusable
 {
     #region Constructors
     public ControlFrame(Control control, BorderStyle? borderStyle = null, Offset? margin = null, Color? fgColor = null, Color? bgColor = null, string? title=null, Color? borderFgColor = null, Color? borderBgColor = null)
@@ -206,6 +206,7 @@ public sealed class ControlFrame : CControl, IDrawingContextListener, IInputList
         set
         {            
             _control = value;
+            _control.Frame = this;  
             BindControl();
         }
     }
@@ -368,6 +369,8 @@ public sealed class ControlFrame : CControl, IDrawingContextListener, IInputList
                 Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom));
         }
     }
+
+    public bool IsFocused { get; set; }
 
     private DrawingContext ControlContext
     {
@@ -534,6 +537,12 @@ public sealed class ControlFrame : CControl, IDrawingContextListener, IInputList
 
     void IInputListener.OnInput(InputEvent inputEvent)
     {
+        if (Control is IInputListener listener)
+        {
+            listener.OnInput(inputEvent);
+            if (inputEvent.Handled) return;
+        }   
+
         if (inputEvent.Key.Key == ScrollUpKey)
         {
             Top -= 1;
