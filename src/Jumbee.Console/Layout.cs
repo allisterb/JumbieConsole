@@ -5,9 +5,18 @@ using ConsoleGUI.Common;
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
+using System;
 using System.Collections.Generic;
 
-public interface ILayout : IControl, IDrawingContextListener, IInputListener
+public enum LayoutKeyboardNavigation
+{
+    Up,
+    Down,
+    Left,
+    Right
+}
+
+public interface ILayout : IControl, IDrawingContextListener, IInputListener, IFocusable
 {
     int Rows { get; }
     
@@ -18,23 +27,30 @@ public interface ILayout : IControl, IDrawingContextListener, IInputListener
     IControl this[int row, int column] { get; }
 
     IEnumerable<IControl> Controls { get; }
+
+    Dictionary <ConsoleKeyInfo, LayoutKeyboardNavigation> NavigationKeys { get; }
 }   
 
-public abstract class Layout<T> : ILayout where T:ConsoleGUI.Common.Control, IDrawingContextListener
+public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListener
 {
+    #region Constructors
     protected Layout(T control)
     {
         this.control = control;
     }
+    #endregion
 
+    #region Indexers
+    public abstract IControl this[int row, int column] { get; }
+    #endregion
+
+    #region Properties
     public abstract int Rows { get; }
 
     public abstract int Columns { get; }    
-    
-    public abstract IControl this[int row, int column] { get; }  
-    
-    public readonly T control;
-
+        
+    public Dictionary<ConsoleKeyInfo, LayoutKeyboardNavigation> NavigationKeys { get; } = new Dictionary<ConsoleKeyInfo, LayoutKeyboardNavigation>();
+   
     public Cell this[Position position] => control[position];   
 
     public Size Size => control.Size;   
@@ -61,6 +77,27 @@ public abstract class Layout<T> : ILayout where T:ConsoleGUI.Common.Control, IDr
         }
     }
 
+    public bool IsFocused
+    {
+        get => field;
+        set
+        {
+            field = value;
+            if (value)
+                OnFocus?.Invoke();
+            else
+                OnLostFocus?.Invoke();           
+        }
+    }
+    #endregion
+
+    #region Events
+    public event FocusableEventHandler? OnFocus;
+
+    public event FocusableEventHandler? OnLostFocus;
+    #endregion
+
+    #region Methods
     public void OnRedraw(DrawingContext drawingContext) => control.OnRedraw(drawingContext);
 
     public void OnUpdate(DrawingContext drawingContext, Rect rect) => control.OnUpdate(drawingContext, rect);   
@@ -79,4 +116,9 @@ public abstract class Layout<T> : ILayout where T:ConsoleGUI.Common.Control, IDr
             }
         }
     }
+    #endregion
+
+    #region Fields
+    public readonly T control;
+    #endregion
 }

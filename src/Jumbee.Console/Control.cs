@@ -1,10 +1,10 @@
 ﻿namespace Jumbee.Console;
 
-using System;
-using System.Threading;
-
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
+using System;
+using System.Security.Cryptography;
+using System.Threading;
 
 public abstract class Control : CControl, IFocusable, IDisposable    
 {
@@ -125,7 +125,28 @@ public abstract class Control : CControl, IFocusable, IDisposable
     
     }
 
-    public bool IsFocused { get; set; }
+    public bool IsFocused 
+    { 
+        get => field; 
+        set
+        {
+            var old = field;
+            field = value;
+            if (field && !old)
+            {
+                OnFocus?.Invoke();
+            }
+            else if (!field && old)
+            {
+                OnLostFocus?.Invoke();
+            }
+        }
+    }
+    #endregion
+
+    #region Events
+    public event FocusableEventHandler? OnFocus;
+    public event FocusableEventHandler? OnLostFocus;
     #endregion
 
     #region Fields

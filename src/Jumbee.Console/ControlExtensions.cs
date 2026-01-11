@@ -97,42 +97,54 @@ public static class ControlExtensions
 
     public static ControlFrame WithTitle(this Control control, string title) => new ControlFrame(control) { Title = title };
 
-    public static ControlFrame WithAsciiBorder(this Control control) => new ControlFrame(control, BorderStyle.Ascii);  
+    public static ControlFrame WithAsciiBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) 
+        => new ControlFrame(control, BorderStyle.Ascii, borderFgColor: borderFgColor, borderBgColor: borderBgColor);  
 
-    public static ControlFrame WithAsciiBorder(this ControlFrame frame)
+    public static ControlFrame WithAsciiBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
     {
         frame.BorderStyle = BorderStyle.Ascii;
+        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor;
+        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor; 
         return frame;
     }
-    public static ControlFrame WithDoubleBorder(this Control control) => new ControlFrame(control, BorderStyle.Double);
+    public static ControlFrame WithDoubleBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) 
+        => new ControlFrame(control, BorderStyle.Double, borderFgColor: borderFgColor, borderBgColor: borderBgColor);
 
-    public static ControlFrame WithDoubleBorder(this ControlFrame frame)
+    public static ControlFrame WithDoubleBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
     {
         frame.BorderStyle = BorderStyle.Double;
+        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor; 
+        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor;
         return frame;
     }   
 
-    public static ControlFrame WithHeavyBorder(this Control control) => new ControlFrame(control, BorderStyle.Heavy);
+    public static ControlFrame WithHeavyBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) => new ControlFrame(control, BorderStyle.Heavy, borderFgColor: borderFgColor, borderBgColor: borderBgColor);
 
-    public static ControlFrame WithHeavyBorder(this ControlFrame frame)
+    public static ControlFrame WithHeavyBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
     {
         frame.BorderStyle = BorderStyle.Heavy;
+        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor;
+        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor; 
         return frame;
     }
     
-    public static ControlFrame WithRoundedBorder(this Control control) => new ControlFrame(control, BorderStyle.Rounded);
+    public static ControlFrame WithRoundedBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) => new ControlFrame(control, BorderStyle.Rounded, borderFgColor: borderFgColor, borderBgColor:borderBgColor);
 
-    public static ControlFrame WithRoundedBorder(this ControlFrame frame)
+    public static ControlFrame WithRoundedBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
     {
         frame.BorderStyle = BorderStyle.Rounded;
+        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor; 
+        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor; 
         return frame;
     }
     
-    public static ControlFrame WithSquareBorder(this Control control) => new ControlFrame(control, BorderStyle.Square);
+    public static ControlFrame WithSquareBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) => new ControlFrame(control, BorderStyle.Square, borderFgColor: borderFgColor, borderBgColor: borderBgColor);
 
-    public static ControlFrame WithSquareBorder(this ControlFrame frame)
+    public static ControlFrame WithSquareBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
     {
         frame.BorderStyle = BorderStyle.Square;
+        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor;
+        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor;
         return frame;
     }          
 }

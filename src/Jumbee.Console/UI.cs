@@ -10,6 +10,7 @@ using ConsoleGUI.Api;
 using ConsoleGUI.Common;
 using ConsoleGUI.Space;
 using ConsoleGUI.Input;
+
 /// <summary>
 /// Manages the overall UI and provides a paint event for controls to subscribe to.
 /// </summary>
@@ -21,7 +22,7 @@ public static class UI
     /// </summary>
     public static Task Start(ILayout layout, int width = 110, int height = 25, int paintInterval = 100, bool isTrueColorTerminal = true)
     {
-        if (isRunning) return Task.CompletedTask;
+        if (isRunning) return task;
         if (!isTrueColorTerminal)
         {
             ConsoleManager.Console = new SimplifiedConsole(); ;
@@ -110,7 +111,7 @@ public static class UI
     private static List<IInputListener> inputListeners = new List<IInputListener>();
     private static Dictionary<ConsoleKeyInfo, Action> GlobalHotKeys = new Dictionary<ConsoleKeyInfo, Action>
     {
-        { HotKeys.CtrlQ, Stop }
+        { HotKeys.CtrlN, Stop }
     };
     #endregion
 
@@ -178,10 +179,16 @@ public static class UI
 
     public static class HotKeys
     {
-        public static ConsoleKeyInfo Ctrl(ConsoleKey key, char k) =>
-            new ConsoleKeyInfo(k, key, false, false, true);
+        public static ConsoleKeyInfo Ctrl(ConsoleKey key) =>
+            new ConsoleKeyInfo((char) (Char.ToLower((char) key) - 96), key, false, false, true);
 
-        public static ConsoleKeyInfo CtrlQ = Ctrl(ConsoleKey.Q, (char) 17);
+        public static ConsoleKeyInfo Alt(ConsoleKey key) =>
+            new ConsoleKeyInfo(Char.ToLower((char)key), key, false, true, false);
+
+        public static ConsoleKeyInfo CtrlQ = Ctrl(ConsoleKey.Q);
+        public static ConsoleKeyInfo CtrlN = Ctrl(ConsoleKey.N);
+
+        public static ConsoleKeyInfo CtrlAltUp = Ctrl(Alt(ConsoleKey.UpArrow).Key);
     }
     #endregion
 }

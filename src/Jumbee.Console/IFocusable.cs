@@ -1,11 +1,18 @@
 ﻿namespace Jumbee.Console;
 
 using System;
-using System.Collections.Generic;
 
-using ConsoleGUI.Input;
+public delegate void FocusableEventHandler(); 
 
 public interface IFocusable
 {
-    public bool IsFocused { get; set; }    
+    bool IsFocused { get; set; }
+
+    public void Focus() => IsFocused = true;
+
+    void UnFocus() => IsFocused = false;
+
+    event FocusableEventHandler OnFocus;
+
+    event FocusableEventHandler OnLostFocus;
 }
