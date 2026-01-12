@@ -76,28 +76,25 @@ public abstract class Control : CControl, IFocusable, IDisposable
 
     }
 
-    public virtual bool IsFocused
+    public bool Focusable { get; set; } = true;
+
+    public bool IsFocused
     {
         get => field;
         set
         {
-            var old = field;
-            field = value;
-            if (field && !old)
+            if (field != value)
             {
-                Control_OnFocus();
-                OnFocus?.Invoke();
-            }
-            else if (!field && old)
-            {
-                Control_OnLostFocus();
-                OnLostFocus?.Invoke();
+                field = value;
+                if (value)
+                    OnFocus?.Invoke();
+                else
+                    OnLostFocus?.Invoke();
             }
         }
     }
 
     public IFocusable FocusableControl => this.Frame is not null ? this.Frame : this;
-
     #endregion
 
     #region Methods

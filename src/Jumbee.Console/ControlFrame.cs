@@ -39,7 +39,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         _borderBgColor = borderBgColor;
         _title = title;
         _control = control;
-        control.Frame = this;
+        _control.Frame = this;
         BindControl();
     }
     #endregion
@@ -369,6 +369,8 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
                 Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom));
         }
     }
+
+    public bool Focusable { get; set; } = true;
 
     public bool IsFocused
     {

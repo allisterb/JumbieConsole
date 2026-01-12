@@ -10,6 +10,7 @@ using ConsoleGUI.Api;
 using ConsoleGUI.Common;
 using ConsoleGUI.Space;
 using ConsoleGUI.Input;
+using System.Linq;
 
 /// <summary>
 /// Manages the overall UI and provides a paint event for controls to subscribe to.
@@ -31,7 +32,7 @@ public static class UI
         ConsoleManager.Resize(new Size(width, height));
         ConsoleManager.Content = layout.CControl;
         interval = paintInterval;
-        foreach(var c in layout.Controls)
+        foreach(var c in layout.Controls.Select(lc => lc.FocusableControl))
         {
             if (!controls.Contains(c))
             {
@@ -87,6 +88,7 @@ public static class UI
     {
         if (Monitor.TryEnter(Lock))
         {
+            // Resize UI if console size changed
             ConsoleManager.AdjustBufferSize();
             Monitor.Exit(Lock);            
             _Paint?.Invoke(null, paintEventArgs);

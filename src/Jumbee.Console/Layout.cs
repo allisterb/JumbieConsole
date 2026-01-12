@@ -1,12 +1,13 @@
 ﻿namespace Jumbee.Console;
 
+using System;
+using System.Collections.Generic;
+
 using ConsoleGUI;
 using ConsoleGUI.Common;
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
-using System;
-using System.Collections.Generic;
 
 public enum LayoutKeyboardNavigation
 {
@@ -56,9 +57,7 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
     public Size Size => control.Size;   
 
     public IControl CControl => control;
-
-    public IFocusable FocusableControl => this;
-
+    
     public IDrawingContext Context
     {
         get => ((IControl) control).Context;
@@ -79,16 +78,23 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
         }
     }
 
+    public bool Focusable { get; set; } = true;
+
+    public IFocusable FocusableControl => this;
+
     public bool IsFocused
     {
         get => field;
         set
         {
-            field = value;
-            if (value)
-                OnFocus?.Invoke();
-            else
-                OnLostFocus?.Invoke();           
+            if (field != value)
+            {
+                field = value;
+                if (value)
+                    OnFocus?.Invoke();
+                else
+                    OnLostFocus?.Invoke();
+            }
         }
     }
     #endregion
