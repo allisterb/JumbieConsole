@@ -37,7 +37,7 @@ public class Grid : Layout<ConsoleGUI.Controls.Grid>
             {
                 for (int c = 0; c < controls[r].Length; c++)
                 {
-                    control.AddChild(c, r, controls[r][c]);
+                    control.AddChild(c, r, controls[r][c].FocusableControl);
                 }
             }
         }

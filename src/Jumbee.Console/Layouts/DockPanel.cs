@@ -16,8 +16,8 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
     public DockPanel(DockedControlPlacement placement, IFocusable dockedControl, IFocusable fillControl)
         : base(new ConsoleGUI.Controls.DockPanel())
     {
-        this.DockedControl = dockedControl;
-        this.FillControl = fillControl;
+        this.DockedControl = dockedControl.FocusableControl;
+        this.FillControl = fillControl.FocusableControl;
         control.Placement = placement switch
         {
             DockedControlPlacement.Top => ConsoleGUI.Controls.DockPanel.DockedControlPlacement.Top,
@@ -25,7 +25,7 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
             DockedControlPlacement.Bottom => ConsoleGUI.Controls.DockPanel.DockedControlPlacement.Bottom,
             DockedControlPlacement.Left => ConsoleGUI.Controls.DockPanel.DockedControlPlacement.Left,
             _ => throw new ArgumentOutOfRangeException(nameof(placement), placement, null)
-        };        
+        };
     }
 
     public IFocusable DockedControl
@@ -44,7 +44,7 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
         set
         {
             field = value;
-            control.DockedControl = value;
+            control.FillingControl = value;
         }
     }
 

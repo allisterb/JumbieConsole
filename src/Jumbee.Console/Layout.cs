@@ -57,6 +57,8 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
 
     public IControl CControl => control;
 
+    public IFocusable FocusableControl => this;
+
     public IDrawingContext Context
     {
         get => ((IControl) control).Context;

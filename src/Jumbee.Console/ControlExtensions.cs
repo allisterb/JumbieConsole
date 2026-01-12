@@ -1,12 +1,12 @@
 ﻿namespace Jumbee.Console;
 
-using System;
-
+using ConsoleGUI.Common;
 using ConsoleGUI.Space;
+using System;
 
 public static class ControlExtensions
 {
-    public static T[][] Transpose<T>(this T[][] source)
+    internal static T[][] Transpose<T>(this T[][] source)
     {
         if (source == null || source.Length == 0)
         {
@@ -57,96 +57,73 @@ public static class ControlExtensions
 
     public static Position Add(this Position position, int x, int y) => new Position(position.X + x, position.Y + y);
 
-    public static ControlFrame WithFrame(this Control control, BorderStyle? borderStyle = null, Offset? margin = null, Color? fgColor = null, Color? bgColor = null, string? title = null) 
-        => new ControlFrame(control, borderStyle, margin, fgColor, bgColor, title); 
+    public static Control WithFrame(this Control control, ControlFrame frame)
+    {
+        control.Frame = frame;
+        return control;
+    }
+    public static Control WithFrame(this Control control, BorderStyle? borderStyle = null, Offset? margin = null, Color? fgColor = null, Color? bgColor = null, string? title = null, Color? borderFgColor = null, Color? borderBgColor = null)
+    {
+        var frame = control.Frame ??= new ControlFrame(control);         
+        frame.BorderStyle = borderStyle ?? frame.BorderStyle;   
+        frame.Margin = margin ?? frame.Margin;
+        frame.Foreground = fgColor ?? frame.Foreground;
+        frame.Background = bgColor ?? frame.Background;
+        frame.Title = title ?? frame.Title;
+        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor;
+        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor; 
+        return control;
+    }
 
-    public static ControlFrame WithMargin(this Control control, int left, int top, int right, int bottom) => new ControlFrame(
-        control,
-        margin: new Offset(left, top, right, bottom)
-    );
+    public static Control WithMargin(this Control control, int left, int top, int right, int bottom)
+    {
+        if (control.Frame != null)
+        {
+            control.Frame.Margin = new Offset(left, top, right, bottom);
+            return control;
+        }
+        else
+        {
+            control.Frame = new ControlFrame(control, margin: new Offset(left, top, right, bottom));
+            return control; 
+        }
+    }
     
-    public static ControlFrame WithMargin(this Control control, int offset) => control.WithMargin(offset, offset, offset, offset);
+    public static Control WithMargin(this Control control, int offset) => control.WithMargin(offset, offset, offset, offset);
     
-    public static ControlFrame WithMargin(this ControlFrame frame, int left, int top, int right, int bottom)
+    public static Control WithBorder(this Control control, BorderStyle? style, Color? borderFgColor = null, Color? borderBgColor = null)
     {
-        frame.Margin = new Offset(left, top, right, bottom);
-        return frame;
+        var frame = control.Frame ??= new ControlFrame(control);
+        frame.BorderStyle = style ?? frame.BorderStyle;
+        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor;
+        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor;
+        return control;
     }
 
-    public static ControlFrame WithMargin(this ControlFrame frame, int offset) => frame.WithMargin(offset, offset, offset, offset);
-
-    public static ControlFrame WithBorder(this Control control, BorderStyle style, Color? fgColor = null, Color? bgColor = null) => new ControlFrame(control, borderStyle:style, borderFgColor: fgColor, borderBgColor: bgColor);
-        
-    public static ControlFrame WithBorder(this ControlFrame frame, BorderStyle style)
+    public static Control WithTitle(this Control control, string title)
     {
-        frame.BorderStyle = style;
-        return frame;
-    }
-    public static ControlFrame WithBorderColor(this ControlFrame border, Color? fgColor = null, Color? bgColor = null)
-    {
-        border.Foreground = fgColor ?? border.Foreground;
-        border.Background = bgColor ?? border.Background;
-        return border;
-    }
-
-    public static ControlFrame WithTitle(this ControlFrame frame, string title)
-    {
+        var frame = control.Frame ??= new ControlFrame(control);
         frame.Title = title;
-        return frame;
+        return control;
     }
 
-    public static ControlFrame WithTitle(this Control control, string title) => new ControlFrame(control) { Title = title };
+    public static Control WithNoBorder(this Control control) =>
+        control.WithBorder(BorderStyle.None);
 
-    public static ControlFrame WithAsciiBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) 
-        => new ControlFrame(control, BorderStyle.Ascii, borderFgColor: borderFgColor, borderBgColor: borderBgColor);  
+    public static Control WithAsciiBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) =>
+        control.WithBorder(BorderStyle.Ascii, borderFgColor, borderBgColor);
 
-    public static ControlFrame WithAsciiBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
-    {
-        frame.BorderStyle = BorderStyle.Ascii;
-        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor;
-        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor; 
-        return frame;
-    }
-    public static ControlFrame WithDoubleBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) 
-        => new ControlFrame(control, BorderStyle.Double, borderFgColor: borderFgColor, borderBgColor: borderBgColor);
+    public static Control WithHeavyBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) =>
+         control.WithBorder(BorderStyle.Heavy, borderFgColor, borderBgColor);
 
-    public static ControlFrame WithDoubleBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
-    {
-        frame.BorderStyle = BorderStyle.Double;
-        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor; 
-        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor;
-        return frame;
-    }   
+    public static Control WithDoubleBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) =>
+        control.WithBorder(BorderStyle.Double, borderFgColor, borderBgColor);
 
-    public static ControlFrame WithHeavyBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) => new ControlFrame(control, BorderStyle.Heavy, borderFgColor: borderFgColor, borderBgColor: borderBgColor);
+    public static Control WithRoundedBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) =>
+        control.WithBorder(BorderStyle.Rounded, borderFgColor, borderBgColor);
 
-    public static ControlFrame WithHeavyBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
-    {
-        frame.BorderStyle = BorderStyle.Heavy;
-        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor;
-        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor; 
-        return frame;
-    }
-    
-    public static ControlFrame WithRoundedBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) => new ControlFrame(control, BorderStyle.Rounded, borderFgColor: borderFgColor, borderBgColor:borderBgColor);
-
-    public static ControlFrame WithRoundedBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
-    {
-        frame.BorderStyle = BorderStyle.Rounded;
-        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor; 
-        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor; 
-        return frame;
-    }
-    
-    public static ControlFrame WithSquareBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) => new ControlFrame(control, BorderStyle.Square, borderFgColor: borderFgColor, borderBgColor: borderBgColor);
-
-    public static ControlFrame WithSquareBorder(this ControlFrame frame, Color? borderFgColor = null, Color? borderBgColor = null)
-    {
-        frame.BorderStyle = BorderStyle.Square;
-        frame.BorderFgColor = borderFgColor ?? frame.BorderFgColor;
-        frame.BorderBgColor = borderBgColor ?? frame.BorderBgColor;
-        return frame;
-    }
+    public static Control WithSquareBorder(this Control control, Color? borderFgColor = null, Color? borderBgColor = null) =>
+        control.WithBorder(BorderStyle.Square, borderFgColor, borderBgColor);
 
     public static string WithStyle(this string s, Style style) => style[s];
 }

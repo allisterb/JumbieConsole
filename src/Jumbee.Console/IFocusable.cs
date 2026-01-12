@@ -1,5 +1,6 @@
 ﻿namespace Jumbee.Console;
 
+using ConsoleGUI;
 using System;
 
 public delegate void FocusableEventHandler(); 
@@ -7,6 +8,8 @@ public delegate void FocusableEventHandler();
 public interface IFocusable : ConsoleGUI.IControl
 {
     bool IsFocused { get; set; }
+
+    IFocusable FocusableControl { get; }
 
     public void Focus() => IsFocused = true;
 

@@ -20,7 +20,7 @@ public static class UI
     /// <summary>
     /// Initializes the console and starts the UI.
     /// </summary>
-    public static Task Start(ILayout layout, int width = 110, int height = 25, int paintInterval = 100, bool isTrueColorTerminal = true)
+    public static Task Start(ILayout layout, int width = 110, int height = 25, int paintInterval = 100, int inputInterval = 100, bool isTrueColorTerminal = true)
     {
         if (isRunning) return task;
         if (!isTrueColorTerminal)
@@ -46,11 +46,11 @@ public static class UI
         var inputHandler = new GlobalInputListener();
         task = Task.Run(() =>
         {
-            // Main loop
+            // Main input loop
             while (true && !cancellationToken.IsCancellationRequested)
-            {
+            {                
                 ConsoleManager.ReadInput([inputHandler]);
-                Thread.Sleep(50);
+                Thread.Sleep(inputInterval);
             }
         }, cancellationToken);
         isRunning = true;
@@ -87,9 +87,10 @@ public static class UI
     {
         if (Monitor.TryEnter(Lock))
         {
+            ConsoleManager.AdjustBufferSize();
             Monitor.Exit(Lock);            
             _Paint?.Invoke(null, paintEventArgs);
-        }
+        }        
     }
     #endregion
 

@@ -2,7 +2,7 @@
 
 using System;
 using System.Threading;
-
+using ConsoleGUI;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
 
@@ -95,6 +95,9 @@ public abstract class Control : CControl, IFocusable, IDisposable
             }
         }
     }
+
+    public IFocusable FocusableControl => this.Frame is not null ? this.Frame : this;
+
     #endregion
 
     #region Methods

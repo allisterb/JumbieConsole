@@ -389,6 +389,8 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         }
     }
 
+    public IFocusable FocusableControl => this;
+
     private DrawingContext ControlContext
     {
         get => _controlContext;
