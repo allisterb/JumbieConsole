@@ -6,20 +6,20 @@ using System.Threading.Tasks;
 
 using ConsoleGUI;
 using ConsoleGUI.Input;
-using Spectre.Console;
 
 using Jumbee.Console;
-using static Jumbee.Console.Color;
+using static Jumbee.Console.Style;
 
 public class Program
 {
-    static void Main(string[] args) => Test1(args);
+    static void Main(string[] args) => Test3(args);
     
+    /*
     static void Test1(string[] args)
     {
         // --- Spectre.Console Controls ---
         // 1. Table
-        var table = new Table();
+        var table = new Spectre.Console.Table();
         table.Title("[bold yellow]Jumbee Console[/]");
         table.AddColumn("Library");
         table.AddColumn("Role");
@@ -110,7 +110,20 @@ public class Program
         
         t.Wait();
     }
-    
+    */
+    static void Test3(string[] args)
+    {
+        var p = new TextPrompt(">")
+           .WithRoundedBorder(Purple)
+           .WithTitle("Foo")   ;
+        var tree = new Tree("tree", TreeGuide.Line, Green | Dim);
+        tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions").WithRoundedBorder();
+        p.IsFocused = true;
+        var d = new DockPanel(DockedControlPlacement.Left, tree, p);
+        //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
+        var t = UI.Start(d);
+        t.Wait();
+    }
     /*
     static void Test2(string[] args)
     {

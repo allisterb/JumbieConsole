@@ -470,7 +470,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
                 
                 var limitWidth = Math.Max(0, controlLimitsMax.Width - 1);
                 ControlContext?.SetLimits(
-                    new Size(Math.Max(0, controlLimitsMax.Width - 1), Math.Max(0, controlLimitsMax.Height)), 
+                    new Size(Math.Max(0, controlLimitsMin.Width - 1), Math.Max(0, controlLimitsMin.Height)), 
                     new Size(limitWidth, int.MaxValue));
 
                 // Clamp Top
