@@ -2,7 +2,7 @@
 
 using System;
 using System.Threading;
-using ConsoleGUI;
+
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
 
@@ -13,6 +13,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     {
         consoleBuffer = new ConsoleBuffer();
         ansiConsole = new AnsiConsoleBuffer(consoleBuffer);
+        //((IControl)this).Context = UI.Layout;
         UI.Paint += OnPaint;
         OnFocus += Control_OnFocus;
         OnLostFocus += Control_OnLostFocus;
@@ -46,19 +47,21 @@ public abstract class Control : CControl, IFocusable, IDisposable
     #region Properties
     public virtual int Width
     {
-        get => Size.Width;
+        get => field;
         set
         {
-            Resize(new Size(value, Size.Height));
+            field = value;            
+            Resize(new Size(value, Height));
         }
     }
 
     public virtual int Height
     {
-        get => Size.Height;
+        get => field;
         set
         {
-            Resize(new Size(Size.Width, value));
+            field = value;
+            Resize(new Size(Width, value));
         }
     }   
 
@@ -107,10 +110,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     {
         lock (UI.Lock)
         {
-            // Handle the case when negative or overflow sizes may get passed down by parent containers
-            int width = Math.Min(1000, Math.Max(0, MaxSize.Width));
-            int height = Math.Min(1000, Math.Max(0, MaxSize.Height));
-            
+            var (width, height) = CalculateSize();
             var size = new Size(width, height);                             
             Resize(size);
             consoleBuffer.Size = Size;
@@ -160,6 +160,25 @@ public abstract class Control : CControl, IFocusable, IDisposable
     /// Indicates that any pending paint requests have been handled.
     /// </summary>
     protected void Validate() => Interlocked.Exchange(ref paintRequests, 0u);
+
+    /// <summary>
+    /// Calculates the size of the control based on its own dimensions and the maximum size constraints set by paremt.
+    /// </summary>
+    /// <returns></returns>
+    protected (int, int) CalculateSize()
+    {
+        // Handle the case when negative or overflow sizes may get passed down by parent containers
+        int maxWidth = Math.Clamp(MaxSize.Width, 0 ,1000);
+        int maxHeight = Math.Clamp(MaxSize.Height, 0, 1000);
+
+        // Use Width and Height as preferred if set (non-zero), otherwise default to MaxSize.Width and MaxSize.Height set by parents
+        var preferredWidth = Width > 0 ? Math.Clamp(Width, 0, 1000) : maxWidth;
+        var preferredHeight = Height > 0 ? Math.Clamp(Height, 0, 1000) : maxHeight;
+        
+        var width = Math.Min(preferredWidth, maxWidth);
+        var height = Math.Min(preferredHeight, maxHeight);
+        return (width, height);
+    }
     #endregion
     
     #region Events

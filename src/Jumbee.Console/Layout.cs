@@ -118,8 +118,9 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
     public void OnInput(InputEvent inputEvent) => Array.ForEach(inputListeners, il => il.OnInput(inputEvent));
 
     protected void UpdateInputListeners()
-    {
-        inputListeners = Controls
+    {        
+        inputListeners = Controls            
+            .Where(c => c is not null) // Must handle case where controls might not be fully initialized when called from constructor   
             .Select(lc => lc.FocusableControl)
             .Where(fc => fc is IInputListener)
             .Cast<IInputListener>()

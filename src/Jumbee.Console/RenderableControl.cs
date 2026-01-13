@@ -25,30 +25,14 @@ public abstract class RenderableControl : Control, IRenderable
     {
         lock (UI.Lock)
         {
-            // Handle the case when negative or overflow sizes may get passed down by parent containers
-            // Use Size.Width as preferred width if set (non-zero), otherwise default to MaxSize.Width
-            var preferredWidth = Size.Width > 0 ? Size.Width : MaxSize.Width;
-            int maxWidth = Math.Min(1000, Math.Max(0, Math.Min(preferredWidth, MaxSize.Width)));
-            
-            var preferredHeight = Size.Height > 0 ? Size.Height : MaxSize.Height;
-            int maxHeight = Math.Min(1000, Math.Max(0, Math.Min(preferredHeight, MaxSize.Height)));
+            var (width, height) = CalculateSize();
 
             // Create RenderOptions based on the virtual console and max width and height
-            var options = new RenderOptions(ansiConsole.Profile.Capabilities, new Spectre.Console.Size(maxWidth, maxHeight));
+            var options = new RenderOptions(ansiConsole.Profile.Capabilities, new Spectre.Console.Size(width, height));
 
             // Determine Spectre.Console control measurement
-            var measurement = this.Measure(options, maxWidth);
-
-            // Determine final size
-            // Respect MinSize/MaxSize constraints from ConsoleGUI parent
-            var width = Math.Clamp(measurement.Max, MinSize.Width, MaxSize.Width);
-
-            // Height might be determined by the content (if available) or calculated
-            // For many widgets, height is dynamic. 
-            // If Measure doesn't return height, we might need a test Render or heuristics.
-            // Assuming we fit in MaxSize.Height:
-            var height = Math.Min(measurement.Max, MaxSize.Height); // Simplified
-
+            var measurement = this.Measure(options, width);
+        
             // Resize the ConsoleGUI control            
             var size = new ConsoleGUI.Space.Size(width, height);
             Resize(size);

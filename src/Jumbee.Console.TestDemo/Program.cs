@@ -116,10 +116,10 @@ public class Program
         var p = new TextPrompt(">")
            .WithRoundedBorder(Purple)
            .WithTitle("Foo")   ;
-        var tree = new Tree("tree", TreeGuide.Line, Green | Dim);
+        var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20 };
         tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions").WithRoundedBorder();
         p.IsFocused = true;
-        var d = new DockPanel(DockedControlPlacement.Left, tree, p);
+        var d = new DockPanel(DockedControlPlacement.Right, tree, p);
         //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
         var t = UI.Start(d);
         t.Wait();

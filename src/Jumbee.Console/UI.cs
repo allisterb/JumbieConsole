@@ -82,6 +82,10 @@ public static class UI
     }
     #endregion
 
+    #region Properties
+    public static ILayout Layout => layout!;    
+    #endregion
+
     #region Fields   
     internal static readonly object Lock = new object();
     private static PaintEventArgs paintEventArgs = new PaintEventArgs(Lock);
