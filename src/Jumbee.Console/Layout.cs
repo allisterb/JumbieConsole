@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using ConsoleGUI;
 using ConsoleGUI.Common;
@@ -29,6 +30,8 @@ public interface ILayout : IFocusable, IDrawingContextListener, IInputListener
 
     IEnumerable<IFocusable> Controls { get; }
 
+    IInputListener[] InputListeners { get; }
+
     Dictionary <ConsoleKeyInfo, LayoutKeyboardNavigation> NavigationKeys { get; }
 }   
 
@@ -50,6 +53,8 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
 
     public abstract int Columns { get; }    
         
+    public IInputListener[] InputListeners => inputListeners;
+
     public Dictionary<ConsoleKeyInfo, LayoutKeyboardNavigation> NavigationKeys { get; } = new Dictionary<ConsoleKeyInfo, LayoutKeyboardNavigation>();
    
     public Cell this[Position position] => control[position];   
@@ -108,25 +113,22 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
     #region Methods
     public void OnRedraw(DrawingContext drawingContext) => control.OnRedraw(drawingContext);
 
-    public void OnUpdate(DrawingContext drawingContext, Rect rect) => control.OnUpdate(drawingContext, rect);   
+    public void OnUpdate(DrawingContext drawingContext, Rect rect) => control.OnUpdate(drawingContext, rect);
 
-    public void OnInput(InputEvent inputEvent)
+    public void OnInput(InputEvent inputEvent) => Array.ForEach(inputListeners, il => il.OnInput(inputEvent));
+
+    protected void UpdateInputListeners()
     {
-        foreach(var c in Controls)
-        {
-            if (c is IInputListener listener)
-            {
-                listener.OnInput(inputEvent);
-                if (inputEvent.Handled)
-                {
-                    break;
-                }
-            }
-        }
+        inputListeners = Controls
+            .Select(lc => lc.FocusableControl)
+            .Where(fc => fc is IInputListener)
+            .Cast<IInputListener>()
+            .ToArray();
     }
     #endregion
 
     #region Fields
     public readonly T control;
+    protected IInputListener[] inputListeners = Array.Empty<IInputListener>();
     #endregion
 }

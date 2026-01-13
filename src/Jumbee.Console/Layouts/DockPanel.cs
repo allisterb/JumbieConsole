@@ -16,15 +16,15 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
     public DockPanel(DockedControlPlacement placement, IFocusable dockedControl, IFocusable fillControl)
         : base(new ConsoleGUI.Controls.DockPanel())
     {
-        this.DockedControl = dockedControl.FocusableControl;
-        this.FillControl = fillControl.FocusableControl;
+        this.DockedControl = dockedControl;
+        this.FillControl = fillControl;
         control.Placement = placement switch
         {
             DockedControlPlacement.Top => ConsoleGUI.Controls.DockPanel.DockedControlPlacement.Top,
             DockedControlPlacement.Right => ConsoleGUI.Controls.DockPanel.DockedControlPlacement.Right,
             DockedControlPlacement.Bottom => ConsoleGUI.Controls.DockPanel.DockedControlPlacement.Bottom,
             DockedControlPlacement.Left => ConsoleGUI.Controls.DockPanel.DockedControlPlacement.Left,
-            _ => throw new ArgumentOutOfRangeException(nameof(placement), placement, null)
+            _ => throw new NotSupportedException($"Unknown DockedControlPlacement value {placement}.")
         };
     }
 
@@ -34,7 +34,7 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
         set
         {
             field = value;
-            control.DockedControl = value;
+            control.DockedControl = value.FocusableControl;
         }
     }
 
@@ -44,7 +44,7 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
         set
         {
             field = value;
-            control.FillingControl = value;
+            control.FillingControl = value.FocusableControl;
         }
     }
 
@@ -72,7 +72,7 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
                 case ConsoleGUI.Controls.DockPanel.DockedControlPlacement.Right:
                     return column == 0 ? FillControl : DockedControl;
                 default:
-                    throw new InvalidOperationException("Invalid placement state");
+                    throw new NotSupportedException($"Unknown DockedControlPlacement value {control.Placement}.");
             }
         }
     }

@@ -2,15 +2,14 @@ namespace Jumbee.Console;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;   
 
 using ConsoleGUI;
 using ConsoleGUI.Api;
-using ConsoleGUI.Common;
 using ConsoleGUI.Space;
 using ConsoleGUI.Input;
-using System.Linq;
 
 /// <summary>
 /// Manages the overall UI and provides a paint event for controls to subscribe to.
@@ -31,24 +30,21 @@ public static class UI
         ConsoleManager.Setup();
         ConsoleManager.Resize(new Size(width, height));
         ConsoleManager.Content = layout.CControl;
+        UI.layout = layout;
         interval = paintInterval;
         foreach(var c in layout.Controls.Select(lc => lc.FocusableControl))
         {
             if (!controls.Contains(c))
             {
                 controls.Add(c);
-            }   
-            if (c is IInputListener listener && !inputListeners.Contains(listener))
-            {
-                inputListeners.Add(listener);
-            }
+            }               
         }
         timer = new Timer(OnTick, null, interval, interval);
         var inputHandler = new GlobalInputListener();
         task = Task.Run(() =>
         {
             // Main input loop
-            while (true && !cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {                
                 ConsoleManager.ReadInput([inputHandler]);
                 Thread.Sleep(inputInterval);
@@ -69,17 +65,7 @@ public static class UI
         controls.Clear();
         cts.Cancel();   
     }
-
-    public static bool HasControl(IFocusable control) => controls.Contains(control);
-
-    public static void AddInputListener(IInputListener listener)
-    {
-        if (!inputListeners.Contains(listener))
-        {
-            inputListeners.Add(listener);
-        }
-    }   
-
+    
     /// <summary>
     /// Handles periodic timer ticks by invoking the <see cref="Paint"/> event, if the lock is available.
     /// </summary>
@@ -96,10 +82,6 @@ public static class UI
     }
     #endregion
 
-    #region Properties
-    private static ILayout Root => (ILayout) ConsoleManager.Content;
-    #endregion
-
     #region Fields   
     internal static readonly object Lock = new object();
     private static PaintEventArgs paintEventArgs = new PaintEventArgs(Lock);
@@ -109,9 +91,8 @@ public static class UI
     private static CancellationToken cancellationToken = cts.Token;
     private static int interval = 100;
     private static bool isRunning;
-    
+    private static ILayout? layout;
     private static List<IFocusable> controls = new List<IFocusable>();    
-    private static List<IInputListener> inputListeners = new List<IInputListener>();
     private static Dictionary<ConsoleKeyInfo, Action> GlobalHotKeys = new Dictionary<ConsoleKeyInfo, Action>
     {
         { HotKeys.CtrlN, Stop }
@@ -130,11 +111,7 @@ public static class UI
                 if (!controls.Contains(c))
                 {
                     controls.Add(c);
-                }
-                if (c is IInputListener listener && !inputListeners.Contains(listener))
-                {
-                    inputListeners.Add(listener);   
-                }
+                }                
             }           
         }
         remove
@@ -170,12 +147,9 @@ public static class UI
                 return;
             }
 
-            foreach (var listener in inputListeners)
+            else
             {
-                if (listener is IFocusable focusable && focusable.IsFocused)
-                {
-                    listener.OnInput(inputEvent);                    
-                }   
+                layout!.OnInput(inputEvent);
             }
         }
     }

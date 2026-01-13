@@ -15,6 +15,7 @@ public class VerticalStackPanel : Layout<ConsoleGUI.Controls.VerticalStackPanel>
                 this.control.Add(control);
             }
         }
+        UpdateInputListeners();
     }
 
     public void Add(params IFocusable[] controls)
@@ -23,6 +24,7 @@ public class VerticalStackPanel : Layout<ConsoleGUI.Controls.VerticalStackPanel>
         {
             this.control.Add(control);
         }
+        UpdateInputListeners();
     }
 
     public void Remove(params IFocusable[] controls)
@@ -31,6 +33,7 @@ public class VerticalStackPanel : Layout<ConsoleGUI.Controls.VerticalStackPanel>
         {
             this.control.Remove(control);
         }
+        UpdateInputListeners();
     }
 
     public override int Rows => control.Children.Count();

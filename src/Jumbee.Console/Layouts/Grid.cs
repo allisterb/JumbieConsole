@@ -19,33 +19,38 @@ public class Grid : Layout<ConsoleGUI.Controls.Grid>
     /// <param name="columnWidths"></param>
     /// <param name="controls"></param>
     /// <exception cref="ArgumentException"></exception>
-    public Grid(int[] rowHeights, int[] columnWidths, params IFocusable[][]? controls ) : base(new ConsoleGUI.Controls.Grid())
+    public Grid(int[] rowHeights, int[] columnWidths, params IFocusable[][] controls ) : base(new ConsoleGUI.Controls.Grid())
     {                
         control.Rows = rowHeights.Select(h => new ConsoleGUI.Controls.Grid.RowDefinition(h)).ToArray();
         control.Columns = columnWidths.Select(w => new ConsoleGUI.Controls.Grid.ColumnDefinition(w)).ToArray();
-        if (controls is not null)
+        
+        if (controls.Length != rowHeights.Length)
         {
-            if (controls.Length != rowHeights.Length)
+            throw new ArgumentException($"The number of control rows: {controls.Length} must match the number of row heights: {rowHeights.Length}.");
+        }
+        if (controls.Any(r => r.Length != columnWidths.Length))
+        {
+            var c = controls.First(r => r.Length != columnWidths.Length);
+            var index = Array.IndexOf(controls, c);
+            throw new ArgumentException($"The number of control columns in row {index}: {c.Length} must match the number of column widths: {columnWidths.Length}.");
+        }   
+        for (int r = 0; r < controls.Length; r++)
+        {
+            for (int c = 0; c < controls[r].Length; c++)
             {
-                throw new ArgumentException("Number of control rows must match number of row heights.");
-            }
-            if (controls.Any(r => r.Length != columnWidths.Length))
-            {
-                throw new ArgumentException("Number of control columns must match number of column widths.");
-            }   
-            for (int r = 0; r < controls.Length; r++)
-            {
-                for (int c = 0; c < controls[r].Length; c++)
-                {
-                    control.AddChild(c, r, controls[r][c].FocusableControl);
-                }
+                control.AddChild(c, r, controls[r][c].FocusableControl);
             }
         }
+        UpdateInputListeners();
     }
     #endregion
 
     #region Methods
-    public void SetChild(int row, int column, IControl child) => control.AddChild(column, row, child);
+    public void SetChild(int row, int column, IFocusable child)
+    {
+        control.AddChild(column, row, child.FocusableControl);
+        UpdateInputListeners();
+    }
         
     public override int Rows => control.Rows.Length;
 

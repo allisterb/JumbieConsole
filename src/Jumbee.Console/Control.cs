@@ -62,19 +62,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
         }
     }   
 
-    public ControlFrame? Frame
-    {
-        get => field;
-        set
-        {
-            if (value is not null && UI.HasControl(this))
-            {
-                UI.AddInputListener(value);
-            }
-            field = value;
-        }
-
-    }
+    public ControlFrame? Frame { get; set; }
 
     public bool Focusable { get; set; } = true;
 

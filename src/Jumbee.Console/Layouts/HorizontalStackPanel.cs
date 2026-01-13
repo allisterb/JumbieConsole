@@ -12,9 +12,10 @@ public class HorizontalStackPanel : Layout<ConsoleGUI.Controls.HorizontalStackPa
         {
             foreach (var control in controls)
             {
-                this.control.Add(control);
+                this.control.Add(control.FocusableControl);
             }
         }
+        UpdateInputListeners();
     }
 
     public void Add(params IFocusable[] controls)
@@ -23,6 +24,7 @@ public class HorizontalStackPanel : Layout<ConsoleGUI.Controls.HorizontalStackPa
         {
             this.control.Add(control);
         }
+        UpdateInputListeners();
     }
 
     public void Remove(params IFocusable[] controls)
@@ -31,6 +33,7 @@ public class HorizontalStackPanel : Layout<ConsoleGUI.Controls.HorizontalStackPa
         {
             this.control.Remove(control);
         }
+        UpdateInputListeners();
     }
 
     public override int Rows => 1;

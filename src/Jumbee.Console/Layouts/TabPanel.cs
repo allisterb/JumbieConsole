@@ -13,11 +13,13 @@ public enum TabBarDock
 
 public class TabPanel : Layout<TabPanelDockPanel>
 {
-    public TabPanel(TabBarDock tabBarDock, Color activeTabBgColor = default, Color inactiveTabBgColor = default, params (string, IFocusable)[] controls) : base(new TabPanelDockPanel(tabBarDock, inactiveTabBgColor)) {
+    public TabPanel(TabBarDock tabBarDock, Color activeTabBgColor = default, Color inactiveTabBgColor = default, params (string, IFocusable)[] controls) : base(new TabPanelDockPanel(tabBarDock, inactiveTabBgColor)) 
+    {
         foreach (var (tabname, tabcontrol) in controls)
         {
-            this.control.AddTab(tabname, tabcontrol, activeTabBgColor, inactiveTabBgColor);
+            this.control.AddTab(tabname, tabcontrol.FocusableControl, activeTabBgColor, inactiveTabBgColor);
         }
+        UpdateInputListeners();
     }
             
     public override int Rows { get; } = 1;
