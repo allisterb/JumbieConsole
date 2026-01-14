@@ -2,6 +2,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
@@ -13,7 +14,7 @@ using static Vezel.Cathode.Text.Control.ControlConstants;
 
 namespace Vezel.Cathode.Text.Control;
 
-public sealed class ControlSequenceBuilder
+public sealed class AnsiControlSequenceBuilder
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     [InterpolatedStringHandler]
@@ -21,7 +22,7 @@ public sealed class ControlSequenceBuilder
     {
         private const int StackBufferSize = 256;
 
-        private readonly ControlSequenceBuilder _builder;
+        private readonly AnsiControlSequenceBuilder _builder;
 
         private readonly IFormatProvider? _provider;
 
@@ -30,7 +31,7 @@ public sealed class ControlSequenceBuilder
         public PrintInterpolatedStringHandler(
             [SuppressMessage("", "IDE0060")] int literalLength,
             [SuppressMessage("", "IDE0060")] int formattedCount,
-            ControlSequenceBuilder builder,
+            AnsiControlSequenceBuilder builder,
             IFormatProvider? provider = null)
         {
             _builder = builder;
@@ -137,7 +138,7 @@ public sealed class ControlSequenceBuilder
 
     private ArrayBufferWriter<char> _writer;
 
-    public ControlSequenceBuilder(int capacity = 1024)
+    public AnsiControlSequenceBuilder(int capacity = 1024)
     {
         Check.Range(capacity > 0, capacity);
 
@@ -155,7 +156,7 @@ public sealed class ControlSequenceBuilder
             _writer.Clear();
     }
 
-    public ControlSequenceBuilder Print(scoped ReadOnlySpan<char> value)
+    public AnsiControlSequenceBuilder Print(scoped ReadOnlySpan<char> value)
     {
         _writer.Write(value);
 
@@ -163,39 +164,39 @@ public sealed class ControlSequenceBuilder
     }
 
     [SuppressMessage("", "IDE0060")]
-    public ControlSequenceBuilder Print(
+    public AnsiControlSequenceBuilder Print(
         [InterpolatedStringHandlerArgument("")] scoped ref PrintInterpolatedStringHandler handler)
     {
         return this;
     }
 
     [SuppressMessage("", "IDE0060")]
-    public ControlSequenceBuilder Print(
+    public AnsiControlSequenceBuilder Print(
         IFormatProvider? provider,
         [InterpolatedStringHandlerArgument("", nameof(provider))] scoped ref PrintInterpolatedStringHandler handler)
     {
         return this;
     }
 
-    public ControlSequenceBuilder PrintLine()
+    public AnsiControlSequenceBuilder PrintLine()
     {
         return Print(Environment.NewLine);
     }
 
-    public ControlSequenceBuilder PrintLine(scoped ReadOnlySpan<char> value)
+    public AnsiControlSequenceBuilder PrintLine(scoped ReadOnlySpan<char> value)
     {
         return Print(value).PrintLine();
     }
 
     [SuppressMessage("", "IDE0060")]
-    public ControlSequenceBuilder PrintLine(
+    public AnsiControlSequenceBuilder PrintLine(
         [InterpolatedStringHandlerArgument("")] scoped ref PrintInterpolatedStringHandler handler)
     {
         return PrintLine();
     }
 
     [SuppressMessage("", "IDE0060")]
-    public ControlSequenceBuilder PrintLine(
+    public AnsiControlSequenceBuilder PrintLine(
         IFormatProvider? provider,
         [InterpolatedStringHandlerArgument("", nameof(provider))] scoped ref PrintInterpolatedStringHandler handler)
     {
@@ -204,102 +205,102 @@ public sealed class ControlSequenceBuilder
 
     // Keep methods in sync with the ControlSequences class.
 
-    public ControlSequenceBuilder Null()
+    public AnsiControlSequenceBuilder Null()
     {
         return Print([NUL]);
     }
 
-    public ControlSequenceBuilder Beep()
+    public AnsiControlSequenceBuilder Beep()
     {
         return Print([BEL]);
     }
 
-    public ControlSequenceBuilder Backspace()
+    public AnsiControlSequenceBuilder Backspace()
     {
         return Print([BS]);
     }
 
-    public ControlSequenceBuilder HorizontalTab()
+    public AnsiControlSequenceBuilder HorizontalTab()
     {
         return Print([HT]);
     }
 
-    public ControlSequenceBuilder LineFeed()
+    public AnsiControlSequenceBuilder LineFeed()
     {
         return Print([LF]);
     }
 
-    public ControlSequenceBuilder VerticalTab()
+    public AnsiControlSequenceBuilder VerticalTab()
     {
         return Print([VT]);
     }
 
-    public ControlSequenceBuilder FormFeed()
+    public AnsiControlSequenceBuilder FormFeed()
     {
         return Print([FF]);
     }
 
-    public ControlSequenceBuilder CarriageReturn()
+    public AnsiControlSequenceBuilder CarriageReturn()
     {
         return Print([CR]);
     }
 
-    public ControlSequenceBuilder Substitute()
+    public AnsiControlSequenceBuilder Substitute()
     {
         return Print([SUB]);
     }
 
-    public ControlSequenceBuilder Cancel()
+    public AnsiControlSequenceBuilder Cancel()
     {
         return Print([CAN]);
     }
 
-    public ControlSequenceBuilder FileSeparator()
+    public AnsiControlSequenceBuilder FileSeparator()
     {
         return Print([FS]);
     }
 
-    public ControlSequenceBuilder GroupSeparator()
+    public AnsiControlSequenceBuilder GroupSeparator()
     {
         return Print([GS]);
     }
 
-    public ControlSequenceBuilder RecordSeparator()
+    public AnsiControlSequenceBuilder RecordSeparator()
     {
         return Print([RS]);
     }
 
-    public ControlSequenceBuilder UnitSeparator()
+    public AnsiControlSequenceBuilder UnitSeparator()
     {
         return Print([US]);
     }
 
-    public ControlSequenceBuilder Space()
+    public AnsiControlSequenceBuilder Space()
     {
         return Print([SP]);
     }
 
-    public ControlSequenceBuilder SetOutputBatching(bool enable)
+    public AnsiControlSequenceBuilder SetOutputBatching(bool enable)
     {
         return Print(CSI).Print("?2026").Print(enable ? "h" : "l");
     }
 
-    public ControlSequenceBuilder SetTitle(scoped ReadOnlySpan<char> title)
+    public AnsiControlSequenceBuilder SetTitle(scoped ReadOnlySpan<char> title)
     {
         return Print(OSC).Print("2;").Print(title).Print(ST);
     }
 
-    public ControlSequenceBuilder PushTitle()
+    public AnsiControlSequenceBuilder PushTitle()
     {
         return Print(CSI).Print("22;2t");
     }
 
-    public ControlSequenceBuilder PopTitle()
+    public AnsiControlSequenceBuilder PopTitle()
     {
         return Print(CSI).Print("23;2t");
     }
 
-    public ControlSequenceBuilder SetProgress(ProgressState state, int value)
+    public AnsiControlSequenceBuilder SetProgress(ProgressState state, int value)
     {
         Check.Enum(state);
         Check.Range(Math.Clamp(value, 0, 100) == value, value);
@@ -313,7 +314,7 @@ public sealed class ControlSequenceBuilder
         return Print(OSC).Print("9;4;").Print(stateSpan[..stateLen]).Print(";").Print(valueSpan[..valueLen]).Print(ST);
     }
 
-    public ControlSequenceBuilder SetCursorKeyMode(CursorKeyMode mode)
+    public AnsiControlSequenceBuilder SetCursorKeyMode(CursorKeyMode mode)
     {
         Check.Enum(mode);
 
@@ -322,7 +323,7 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print("?1").Print([ch]);
     }
 
-    public ControlSequenceBuilder SetKeypadMode(KeypadMode mode)
+    public AnsiControlSequenceBuilder SetKeypadMode(KeypadMode mode)
     {
         Check.Enum(mode);
 
@@ -331,7 +332,7 @@ public sealed class ControlSequenceBuilder
         return Print([ESC]).Print([ch]);
     }
 
-    public ControlSequenceBuilder SetKeyboardLevel(KeyboardLevel level)
+    public AnsiControlSequenceBuilder SetKeyboardLevel(KeyboardLevel level)
     {
         var (cursor, function, other) = level switch
         {
@@ -344,33 +345,33 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(cursor).Print(CSI).Print(function).Print(CSI).Print(other);
     }
 
-    public ControlSequenceBuilder SetAutoRepeatMode(bool enable)
+    public AnsiControlSequenceBuilder SetAutoRepeatMode(bool enable)
     {
         return Print(CSI).Print("?8").Print(enable ? "h" : "l");
     }
 
-    public ControlSequenceBuilder SetMouseEvents(MouseEvents events)
+    public AnsiControlSequenceBuilder SetMouseEvents(MouseEvents events)
     {
         return Print(CSI).Print("?1003").Print(events.HasFlag(MouseEvents.Movement) ? "h" : "l")
             .Print(CSI).Print("?1006").Print(events.HasFlag(MouseEvents.Buttons) ? "h" : "l");
     }
 
-    public ControlSequenceBuilder SetMousePointerStyle(scoped ReadOnlySpan<char> style)
+    public AnsiControlSequenceBuilder SetMousePointerStyle(scoped ReadOnlySpan<char> style)
     {
         return Print(OSC).Print("22;").Print(style).Print(ST);
     }
 
-    public ControlSequenceBuilder SetFocusEvents(bool enable)
+    public AnsiControlSequenceBuilder SetFocusEvents(bool enable)
     {
         return Print(CSI).Print("?1004").Print(enable ? "h" : "l");
     }
 
-    public ControlSequenceBuilder SetBracketedPaste(bool enable)
+    public AnsiControlSequenceBuilder SetBracketedPaste(bool enable)
     {
         return Print(CSI).Print("?2004").Print(enable ? "h" : "l");
     }
 
-    public ControlSequenceBuilder SetScreenBuffer(ScreenBuffer buffer)
+    public AnsiControlSequenceBuilder SetScreenBuffer(ScreenBuffer buffer)
     {
         Check.Enum(buffer);
 
@@ -379,17 +380,17 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print("?1049").Print([ch]);
     }
 
-    public ControlSequenceBuilder SetInvertedColors(bool enable)
+    public AnsiControlSequenceBuilder SetInvertedColors(bool enable)
     {
         return Print(CSI).Print("?5").Print(enable ? "h" : "l");
     }
 
-    public ControlSequenceBuilder SetCursorVisibility(bool visible)
+    public AnsiControlSequenceBuilder SetCursorVisibility(bool visible)
     {
         return Print(CSI).Print("?25").Print(visible ? "h" : "l");
     }
 
-    public ControlSequenceBuilder SetCursorStyle(CursorStyle style)
+    public AnsiControlSequenceBuilder SetCursorStyle(CursorStyle style)
     {
         Check.Enum(style);
 
@@ -400,12 +401,12 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(styleSpan[..styleLen]).Space().Print("q");
     }
 
-    public ControlSequenceBuilder SetScrollBarVisibility(bool visible)
+    public AnsiControlSequenceBuilder SetScrollBarVisibility(bool visible)
     {
         return Print(CSI).Print("?30").Print(visible ? "h" : "l");
     }
 
-    public ControlSequenceBuilder SetScrollMargin(int top, int bottom)
+    public AnsiControlSequenceBuilder SetScrollMargin(int top, int bottom)
     {
         Check.Range(top >= 0, top);
         Check.Range(bottom > top, bottom);
@@ -419,12 +420,12 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(topSpan[..topLen]).Print(";").Print(bottomSpan[..bottomLen]).Print("r");
     }
 
-    public ControlSequenceBuilder ResetScrollMargin()
+    public AnsiControlSequenceBuilder ResetScrollMargin()
     {
         return Print(CSI).Print(";r");
     }
 
-    private ControlSequenceBuilder ModifyText(string type, int count)
+    private AnsiControlSequenceBuilder ModifyText(string type, int count)
     {
         Check.Range(count >= 0, count);
 
@@ -438,32 +439,32 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(countSpan[..countLen]).Print(type);
     }
 
-    public ControlSequenceBuilder InsertCharacters(int count)
+    public AnsiControlSequenceBuilder InsertCharacters(int count)
     {
         return ModifyText("@", count);
     }
 
-    public ControlSequenceBuilder DeleteCharacters(int count)
+    public AnsiControlSequenceBuilder DeleteCharacters(int count)
     {
         return ModifyText("P", count);
     }
 
-    public ControlSequenceBuilder EraseCharacters(int count)
+    public AnsiControlSequenceBuilder EraseCharacters(int count)
     {
         return ModifyText("X", count);
     }
 
-    public ControlSequenceBuilder InsertLines(int count)
+    public AnsiControlSequenceBuilder InsertLines(int count)
     {
         return ModifyText("L", count);
     }
 
-    public ControlSequenceBuilder DeleteLines(int count)
+    public AnsiControlSequenceBuilder DeleteLines(int count)
     {
         return ModifyText("M", count);
     }
 
-    private ControlSequenceBuilder Clear(string type, ClearMode mode)
+    private AnsiControlSequenceBuilder Clear(string type, ClearMode mode)
     {
         Check.Enum(mode);
 
@@ -474,22 +475,22 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(modeSpan[..modeLen]).Print(type);
     }
 
-    public ControlSequenceBuilder ClearScreen(ClearMode mode = ClearMode.Full)
+    public AnsiControlSequenceBuilder ClearScreen(ClearMode mode = ClearMode.Full)
     {
         return Clear("J", mode);
     }
 
-    public ControlSequenceBuilder ClearLine(ClearMode mode = ClearMode.Full)
+    public AnsiControlSequenceBuilder ClearLine(ClearMode mode = ClearMode.Full)
     {
         return Clear("K", mode);
     }
 
-    public ControlSequenceBuilder SetProtection(bool protect)
+    public AnsiControlSequenceBuilder SetProtection(bool protect)
     {
         return Print(CSI).Print(protect ? "1" : "0").Print("\"q");
     }
 
-    private ControlSequenceBuilder ProtectedClear(string type, ClearMode mode)
+    private AnsiControlSequenceBuilder ProtectedClear(string type, ClearMode mode)
     {
         Check.Enum(mode);
 
@@ -500,17 +501,17 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print("?").Print(modeSpan[..modeLen]).Print(type);
     }
 
-    public ControlSequenceBuilder ProtectedClearScreen(ClearMode mode = ClearMode.Full)
+    public AnsiControlSequenceBuilder ProtectedClearScreen(ClearMode mode = ClearMode.Full)
     {
         return Clear("J", mode);
     }
 
-    public ControlSequenceBuilder ProtectedClearLine(ClearMode mode = ClearMode.Full)
+    public AnsiControlSequenceBuilder ProtectedClearLine(ClearMode mode = ClearMode.Full)
     {
         return Clear("K", mode);
     }
 
-    private ControlSequenceBuilder MoveBuffer(string type, int count)
+    private AnsiControlSequenceBuilder MoveBuffer(string type, int count)
     {
         Check.Range(count >= 0, count);
 
@@ -524,17 +525,17 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(countSpan[..countLen]).Print(type);
     }
 
-    public ControlSequenceBuilder MoveBufferUp(int count)
+    public AnsiControlSequenceBuilder MoveBufferUp(int count)
     {
         return MoveBuffer("S", count);
     }
 
-    public ControlSequenceBuilder MoveBufferDown(int count)
+    public AnsiControlSequenceBuilder MoveBufferDown(int count)
     {
         return MoveBuffer("T", count);
     }
 
-    public ControlSequenceBuilder MoveCursorTo(int line, int column)
+    public AnsiControlSequenceBuilder MoveCursorTo(int line, int column)
     {
         Check.Range(line >= 0, line);
         Check.Range(column >= 0, column);
@@ -548,7 +549,7 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(lineSpan[..lineLen]).Print(";").Print(columnSpan[..columnLen]).Print("H");
     }
 
-    private ControlSequenceBuilder MoveCursor(string type, int count)
+    private AnsiControlSequenceBuilder MoveCursor(string type, int count)
     {
         Check.Range(count >= 0, count);
 
@@ -562,37 +563,37 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(countSpan[..countLen]).Print(type);
     }
 
-    public ControlSequenceBuilder MoveCursorUp(int count)
+    public AnsiControlSequenceBuilder MoveCursorUp(int count)
     {
         return MoveCursor("A", count);
     }
 
-    public ControlSequenceBuilder MoveCursorDown(int count)
+    public AnsiControlSequenceBuilder MoveCursorDown(int count)
     {
         return MoveCursor("B", count);
     }
 
-    public ControlSequenceBuilder MoveCursorLeft(int count)
+    public AnsiControlSequenceBuilder MoveCursorLeft(int count)
     {
         return MoveCursor("D", count);
     }
 
-    public ControlSequenceBuilder MoveCursorRight(int count)
+    public AnsiControlSequenceBuilder MoveCursorRight(int count)
     {
         return MoveCursor("C", count);
     }
 
-    public ControlSequenceBuilder SaveCursorState()
+    public AnsiControlSequenceBuilder SaveCursorState()
     {
         return Print([ESC]).Print("7");
     }
 
-    public ControlSequenceBuilder RestoreCursorState()
+    public AnsiControlSequenceBuilder RestoreCursorState()
     {
         return Print([ESC]).Print("8");
     }
 
-    public ControlSequenceBuilder SetForegroundColor(Color color)
+    public AnsiControlSequenceBuilder SetForegroundColor(Color color)
     {
         Check.Argument(color.A == byte.MaxValue, color);
 
@@ -608,7 +609,7 @@ public sealed class ControlSequenceBuilder
             .Print(gSpan[..gLen]).Print(";").Print(bSpan[..bLen]).Print("m");
     }
 
-    public ControlSequenceBuilder SetBackgroundColor(Color color)
+    public AnsiControlSequenceBuilder SetBackgroundColor(Color color)
     {
         Check.Argument(color.A == byte.MaxValue, color);
 
@@ -624,7 +625,7 @@ public sealed class ControlSequenceBuilder
             .Print(gSpan[..gLen]).Print(";").Print(bSpan[..bLen]).Print("m");
     }
 
-    public ControlSequenceBuilder SetUnderlineColor(Color color)
+    public AnsiControlSequenceBuilder SetUnderlineColor(Color color)
     {
         Check.Argument(color.A == byte.MaxValue, color);
 
@@ -640,7 +641,7 @@ public sealed class ControlSequenceBuilder
             .Print(gSpan[..gLen]).Print(";").Print(bSpan[..bLen]).Print("m");
     }
 
-    public ControlSequenceBuilder SetDecorations(
+    public AnsiControlSequenceBuilder SetDecorations(
         bool intense = false,
         bool faint = false,
         bool italic = false,
@@ -691,12 +692,12 @@ public sealed class ControlSequenceBuilder
         return Print("m");
     }
 
-    public ControlSequenceBuilder ResetAttributes()
+    public AnsiControlSequenceBuilder ResetAttributes()
     {
         return Print(CSI).Print("0m");
     }
 
-    public ControlSequenceBuilder OpenHyperlink(Uri uri, scoped ReadOnlySpan<char> id = default)
+    public AnsiControlSequenceBuilder OpenHyperlink(Uri uri, scoped ReadOnlySpan<char> id = default)
     {
         Check.Null(uri);
 
@@ -708,12 +709,12 @@ public sealed class ControlSequenceBuilder
         return Print(";").Print(uri.ToString()).Print(ST);
     }
 
-    public ControlSequenceBuilder CloseHyperlink()
+    public AnsiControlSequenceBuilder CloseHyperlink()
     {
         return Print(OSC).Print("8;;").Print(ST);
     }
 
-    public ControlSequenceBuilder SetWorkingDirectory(Uri uri)
+    public AnsiControlSequenceBuilder SetWorkingDirectory(Uri uri)
     {
         Check.Null(uri);
         Check.Argument(uri.Scheme == Uri.UriSchemeFile, uri);
@@ -721,29 +722,29 @@ public sealed class ControlSequenceBuilder
         return Print(OSC).Print("7").Print(uri.ToString()).Print(ST);
     }
 
-    public ControlSequenceBuilder SetWorkingDirectory(scoped ReadOnlySpan<char> path)
+    public AnsiControlSequenceBuilder SetWorkingDirectory(scoped ReadOnlySpan<char> path)
     {
         Check.Argument(!path.IsEmpty, path);
 
         return Print(OSC).Print("9;9;").Print("\"").Print(path).Print("\"").Print(ST);
     }
 
-    public ControlSequenceBuilder BeginShellPrompt()
+    public AnsiControlSequenceBuilder BeginShellPrompt()
     {
         return Print(OSC).Print("133;A").Print(ST);
     }
 
-    public ControlSequenceBuilder EndShellPrompt()
+    public AnsiControlSequenceBuilder EndShellPrompt()
     {
         return Print(OSC).Print("133;B").Print(ST);
     }
 
-    public ControlSequenceBuilder BeginShellExecution()
+    public AnsiControlSequenceBuilder BeginShellExecution()
     {
         return Print(OSC).Print("133;C").Print(ST);
     }
 
-    public ControlSequenceBuilder EndShellExecution(int? code = null)
+    public AnsiControlSequenceBuilder EndShellExecution(int? code = null)
     {
         _ = Print(OSC).Print("133;D");
 
@@ -759,7 +760,7 @@ public sealed class ControlSequenceBuilder
         return Print(ST);
     }
 
-    public ControlSequenceBuilder SaveScreenshot(ScreenshotFormat format = ScreenshotFormat.Html)
+    public AnsiControlSequenceBuilder SaveScreenshot(ScreenshotFormat format = ScreenshotFormat.Html)
     {
         Check.Enum(format);
 
@@ -770,7 +771,7 @@ public sealed class ControlSequenceBuilder
         return Print(CSI).Print(formatSpan[..formatLen]).Print("i");
     }
 
-    public ControlSequenceBuilder PlayNotes(int volume, int duration, scoped ReadOnlySpan<int> notes)
+    public AnsiControlSequenceBuilder PlayNotes(int volume, int duration, scoped ReadOnlySpan<int> notes)
     {
         Check.Range(volume is >= 0 and <= 7, volume);
         Check.Range(duration >= 0, duration);
@@ -797,12 +798,12 @@ public sealed class ControlSequenceBuilder
         return Print(",~");
     }
 
-    public ControlSequenceBuilder SoftReset()
+    public AnsiControlSequenceBuilder SoftReset()
     {
         return Print(CSI).Print("!p");
     }
 
-    public ControlSequenceBuilder FullReset()
+    public AnsiControlSequenceBuilder FullReset()
     {
         return Print([ESC]).Print("c");
     }
@@ -811,4 +812,8 @@ public sealed class ControlSequenceBuilder
     {
         return Span.ToString();
     }
+
+    public void WriteToSystemConsole() => Console.Write(Span);
+
+   
 }

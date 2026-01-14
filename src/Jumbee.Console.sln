@@ -31,7 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{8575CE18-A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{6ED98344-E90A-44C5-8EB8-CBA5F48FF975}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vezel.Cathode.ControlSequenceBuilder", "..\ext\Vezel.Cathode.ControlSequenceBuilder\Vezel.Cathode.ControlSequenceBuilder.csproj", "{F06E1486-567B-281E-CBD1-BDE154B62599}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vezel.Cathode.AnsiControlSequenceBuilder", "..\ext\Vezel.Cathode.AnsiControlSequenceBuilder\Vezel.Cathode.AnsiControlSequenceBuilder.csproj", "{F06E1486-567B-281E-CBD1-BDE154B62599}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

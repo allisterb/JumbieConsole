@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\ext\Vezel.Cathode.AnsiControlSequenceBuilder\Vezel.Cathode.AnsiControlSequenceBuilder.csproj" />
     <ProjectReference Include="..\Jumbee.Console\Jumbee.Console.csproj" />
   </ItemGroup>
 

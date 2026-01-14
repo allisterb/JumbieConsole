@@ -7,12 +7,12 @@ namespace Vezel.Cathode.Text.Control;
 
 public static class ControlSequences
 {
-    private delegate void CreateAction<T>(ControlSequenceBuilder builder, ReadOnlySpan<T> span);
+    private delegate void CreateAction<T>(AnsiControlSequenceBuilder builder, ReadOnlySpan<T> span);
 
-    private delegate void CreateAction<T, in TState>(ControlSequenceBuilder builder, ReadOnlySpan<T> span, TState state);
+    private delegate void CreateAction<T, in TState>(AnsiControlSequenceBuilder builder, ReadOnlySpan<T> span, TState state);
 
     [ThreadStatic]
-    private static ControlSequenceBuilder? _builder;
+    private static AnsiControlSequenceBuilder? _builder;
 
     private static string Create<T, TState>(CreateAction<T, TState> action, scoped ReadOnlySpan<T> span, TState state)
     {
@@ -35,7 +35,7 @@ public static class ControlSequences
         return Create(static (cb, span, action) => action(cb, span), span, action);
     }
 
-    private static string Create<TState>(Action<ControlSequenceBuilder, TState> action, TState state)
+    private static string Create<TState>(Action<AnsiControlSequenceBuilder, TState> action, TState state)
     {
         return Create(
             static (cb, _, args) => args.Action(cb, args.State),
@@ -43,7 +43,7 @@ public static class ControlSequences
             (Action: action, State: state));
     }
 
-    private static string Create(Action<ControlSequenceBuilder> action)
+    private static string Create(Action<AnsiControlSequenceBuilder> action)
     {
         return Create(static (cb, _, action) => action(cb), ReadOnlySpan<char>.Empty, action);
     }

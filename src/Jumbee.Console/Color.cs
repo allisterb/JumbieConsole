@@ -2,7 +2,7 @@
 
 using ConsoleGUIColor = ConsoleGUI.Data.Color;
 using SpectreColor = Spectre.Console.Color;
-
+using SystemDrawingColor = System.Drawing.Color;
 public readonly struct Color 
 {
     #region Constructors
@@ -51,6 +51,8 @@ public readonly struct Color
     public static implicit operator ConsoleGUIColor(Color color) => color.ToConsoleGUIColor();
 
     public static implicit operator Color(ConsoleGUIColor color) => FromConsoleGUIColor(color);
+
+    public static implicit operator SystemDrawingColor(Color color) => SystemDrawingColor.FromArgb(color.R, color.G, color.B);  
     #endregion
 
     #region Fields

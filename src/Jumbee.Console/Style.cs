@@ -2,6 +2,7 @@
 
 using SCStyle = Spectre.Console.Style; 
 using SCDecoration = Spectre.Console.Decoration;    
+using SystemDrawingColor = System.Drawing.Color;    
 
 public readonly struct Style
 {    
@@ -41,6 +42,11 @@ public readonly struct Style
 
     public static Style operator | (Style a, Style b) => new Style(a.SpectreConsoleStyle.Combine(b.SpectreConsoleStyle));
 
+    public static implicit operator SystemDrawingColor(Style style)
+    {
+        var scColor = style.SpectreConsoleStyle.Foreground;
+        return SystemDrawingColor.FromArgb(scColor.R, scColor.G, scColor.B);
+    }
     #endregion
 
     #region Fields

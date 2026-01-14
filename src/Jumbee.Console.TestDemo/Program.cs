@@ -7,12 +7,16 @@ using System.Threading.Tasks;
 using ConsoleGUI;
 using ConsoleGUI.Input;
 
+using Vezel.Cathode.Text.Control;
+
+
 using Jumbee.Console;
 using static Jumbee.Console.Style;
+using System.Diagnostics;
 
 public class Program
 {
-    static void Main(string[] args) => Test3(args);
+    static void Main(string[] args) => Test4(args);
     
     /*
     static void Test1(string[] args)
@@ -118,11 +122,41 @@ public class Program
            .WithTitle("Foo")   ;
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20 };
         tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions").WithRoundedBorder();
-        p.IsFocused = true;
+        p.Focus();
         var d = new DockPanel(DockedControlPlacement.Right, tree, p);
         //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
         var t = UI.Start(d, paintInterval: 20);
         t.Wait();
+    }
+
+    static void Test4(string[] args)
+    {
+        var cb = new AnsiControlSequenceBuilder();
+        var t = new Stopwatch();
+        t.Start();
+        Console.CursorLeft = Console.CursorLeft + 9;
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("This is red text that is really long xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        Console.CursorLeft = Console.CursorLeft + 10;
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.WriteLine("This is blue text that is really long x");
+        t.Stop();
+        Console.WriteLine($"Elapsed: {t.ElapsedMilliseconds} ms");
+        t.Restart();
+        cb.MoveCursorRight(9);
+        cb.SetForegroundColor(Red);
+            //.Print("Red Bar Cursor\n")
+            //.SetCursorStyle(CursorStyle.BlinkingBar)
+        cb.PrintLine("This is red text that is really longs xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        cb.MoveCursorRight(10);
+        cb.SetForegroundColor(Blue);
+        cb.PrintLine("This is blue text that is really long x");
+        cb.WriteToSystemConsole();
+        t.Stop();
+        Console.WriteLine($"Elapsed: {t.ElapsedMilliseconds} ms");
+       
+
+
     }
     /*
     static void Test2(string[] args)
@@ -201,17 +235,3 @@ public class Program
     */
 }
 
-public class InputListener : IInputListener
-{
-    public void OnInput(InputEvent inputEvent)
-    {
-        if (!inputEvent.Handled)
-        {
-            if (inputEvent.Key.Key == ConsoleKey.Escape)
-            {
-                UI.Stop();  
-                Environment.Exit(0);
-            }
-        }
-    }
-}
