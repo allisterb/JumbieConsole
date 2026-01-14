@@ -113,7 +113,7 @@ public class Program
     */
     static void Test3(string[] args)
     {
-        var p = new TextPrompt(">")
+        var p = new TextPrompt(">", blinkCursor: false)
            .WithRoundedBorder(Purple)
            .WithTitle("Foo")   ;
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20 };
@@ -121,7 +121,7 @@ public class Program
         p.IsFocused = true;
         var d = new DockPanel(DockedControlPlacement.Right, tree, p);
         //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
-        var t = UI.Start(d);
+        var t = UI.Start(d, paintInterval: 20);
         t.Wait();
     }
     /*

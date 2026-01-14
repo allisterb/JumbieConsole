@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 
 using ConsoleGUI.Data;
+using ConsoleGUI.Input;
 using ConsoleGUI.Space;
 
 public abstract class Control : CControl, IFocusable, IDisposable    
@@ -77,6 +78,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
             if (field != value)
             {
                 field = value;
+                Frame?.IsFocused = value;   
                 if (value)
                     OnFocus?.Invoke();
                 else
@@ -93,7 +95,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     {
         UI.Paint -= OnPaint;
     }
-
+    
     public void Focus() => IsFocused = true;
 
     public void UnFocus() => IsFocused = false;

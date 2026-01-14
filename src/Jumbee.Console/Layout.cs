@@ -30,7 +30,7 @@ public interface ILayout : IFocusable, IDrawingContextListener, IInputListener
 
     IEnumerable<IFocusable> Controls { get; }
 
-    IInputListener[] InputListeners { get; }
+    IFocusable[] InputListeners { get; }
 
     Dictionary <ConsoleKeyInfo, LayoutKeyboardNavigation> NavigationKeys { get; }
 }   
@@ -53,7 +53,7 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
 
     public abstract int Columns { get; }    
         
-    public IInputListener[] InputListeners => inputListeners;
+    public IFocusable[] InputListeners => inputListeners;
 
     public Dictionary<ConsoleKeyInfo, LayoutKeyboardNavigation> NavigationKeys { get; } = new Dictionary<ConsoleKeyInfo, LayoutKeyboardNavigation>();
    
@@ -115,21 +115,19 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
 
     public void OnUpdate(DrawingContext drawingContext, Rect rect) => control.OnUpdate(drawingContext, rect);
 
-    public void OnInput(InputEvent inputEvent) => Array.ForEach(inputListeners, il => il.OnInput(inputEvent));
+    public void OnInput(InputEvent inputEvent) => Array.ForEach(inputListeners, il => il.FocusedControl?.OnInput(inputEvent));
 
     protected void UpdateInputListeners()
     {        
-        inputListeners = Controls            
-            .Where(c => c is not null) // Must handle case where controls might not be fully initialized when called from constructor   
-            .Select(lc => lc.FocusableControl)
-            .Where(fc => fc is IInputListener)
-            .Cast<IInputListener>()
+        inputListeners = 
+            Controls            
+            .Where(c => c is not null) // Must handle case where controls might not be fully initialized when called from constructor             
             .ToArray();
     }
     #endregion
 
     #region Fields
     public readonly T control;
-    protected IInputListener[] inputListeners = Array.Empty<IInputListener>();
+    protected IFocusable[] inputListeners = Array.Empty<IFocusable>();
     #endregion
 }
