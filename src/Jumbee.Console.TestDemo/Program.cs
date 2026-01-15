@@ -146,8 +146,6 @@ public class Program
         t.Restart();
         cb.MoveCursorRight(9);
         cb.SetForegroundColor(Red);
-            //.Print("Red Bar Cursor\n")
-            //.SetCursorStyle(CursorStyle.BlinkingBar)
         cb.PrintLine("This is red text that is really longs xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
         cb.MoveCursorRight(10);
         cb.SetForegroundColor(Blue);

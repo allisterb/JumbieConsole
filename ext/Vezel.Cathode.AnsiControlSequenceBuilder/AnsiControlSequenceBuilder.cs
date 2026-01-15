@@ -140,24 +140,33 @@ public sealed class AnsiControlSequenceBuilder
 
     private ArrayBufferWriter<char> _writer;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AnsiControlSequenceBuilder"/> class.
+    /// </summary>
+    /// <param name="capacity">The initial capacity. Must be greater than 0.</param>
     public AnsiControlSequenceBuilder(int capacity = 1024)
     {
-        Check.Range(capacity > 0, capacity);
-
         _capacity = capacity;
         _writer = new(capacity);
     }
 
+    /// <summary>
+    /// Clears the builder, optionally reallocating the underlying buffer.
+    /// </summary>
+    /// <param name="reallocateThreshold">The reallocation threshold. Must be greater than or equal to 0.</param>
     public void Clear(int reallocateThreshold = 4096)
     {
-        Check.Range(reallocateThreshold >= 0, reallocateThreshold);
-
         if (reallocateThreshold != 0 && _writer.Capacity > reallocateThreshold)
             _writer = new(_capacity);
         else
             _writer.Clear();
     }
 
+    /// <summary>
+    /// Appends a span of characters to the builder.
+    /// </summary>
+    /// <param name="value">The characters to append.</param>
+    /// <returns>A reference to this instance after the append operation has completed.</returns>
     public AnsiControlSequenceBuilder Print(scoped ReadOnlySpan<char> value)
     {
         _writer.Write(value);
@@ -165,169 +174,201 @@ public sealed class AnsiControlSequenceBuilder
         return this;
     }
 
+    /// <summary>
+    /// Appends the string returned by an interpolated string handler to the builder.
+    /// </summary>
+    /// <param name="handler">The interpolated string handler.</param>
+    /// <returns>A reference to this instance after the append operation has completed.</returns>
     [SuppressMessage("", "IDE0060")]
     public AnsiControlSequenceBuilder Print(
-        [InterpolatedStringHandlerArgument("")] scoped ref PrintInterpolatedStringHandler handler)
-    {
-        return this;
-    }
+        [InterpolatedStringHandlerArgument("")] scoped ref PrintInterpolatedStringHandler handler) => this;
 
+    /// <summary>
+    /// Appends the string returned by an interpolated string handler to the builder, using the specified format provider.
+    /// </summary>
+    /// <param name="provider">An object that supplies culture-specific formatting information.</param>
+    /// <param name="handler">The interpolated string handler.</param>
+    /// <returns>A reference to this instance after the append operation has completed.</returns>
     [SuppressMessage("", "IDE0060")]
     public AnsiControlSequenceBuilder Print(
         IFormatProvider? provider,
-        [InterpolatedStringHandlerArgument("", nameof(provider))] scoped ref PrintInterpolatedStringHandler handler)
-    {
-        return this;
-    }
+        [InterpolatedStringHandlerArgument("", nameof(provider))] scoped ref PrintInterpolatedStringHandler handler) => this;
 
-    public AnsiControlSequenceBuilder PrintLine()
-    {
-        return Print(Environment.NewLine);
-    }
+    /// <summary>
+    /// Appends a new line to the builder.
+    /// </summary>
+    /// <returns>A reference to this instance after the append operation has completed.</returns>
+    public AnsiControlSequenceBuilder PrintLine() => Print(Environment.NewLine);
 
-    public AnsiControlSequenceBuilder PrintLine(scoped ReadOnlySpan<char> value)
-    {
-        return Print(value).PrintLine();
-    }
+    /// <summary>
+    /// Appends a span of characters followed by a new line to the builder.
+    /// </summary>
+    /// <param name="value">The characters to append.</param>
+    /// <returns>A reference to this instance after the append operation has completed.</returns>
+    public AnsiControlSequenceBuilder PrintLine(scoped ReadOnlySpan<char> value) => Print(value).PrintLine();
 
+    /// <summary>
+    /// Appends the string returned by an interpolated string handler followed by a new line to the builder.
+    /// </summary>
+    /// <param name="handler">The interpolated string handler.</param>
+    /// <returns>A reference to this instance after the append operation has completed.</returns>
     [SuppressMessage("", "IDE0060")]
     public AnsiControlSequenceBuilder PrintLine(
-        [InterpolatedStringHandlerArgument("")] scoped ref PrintInterpolatedStringHandler handler)
-    {
-        return PrintLine();
-    }
+        [InterpolatedStringHandlerArgument("")] scoped ref PrintInterpolatedStringHandler handler) => PrintLine();
 
+    /// <summary>
+    /// Appends the string returned by an interpolated string handler followed by a new line to the builder, using the specified format provider.
+    /// </summary>
+    /// <param name="provider">An object that supplies culture-specific formatting information.</param>
+    /// <param name="handler">The interpolated string handler.</param>
+    /// <returns>A reference to this instance after the append operation has completed.</returns>
     [SuppressMessage("", "IDE0060")]
     public AnsiControlSequenceBuilder PrintLine(
         IFormatProvider? provider,
-        [InterpolatedStringHandlerArgument("", nameof(provider))] scoped ref PrintInterpolatedStringHandler handler)
-    {
-        return PrintLine();
-    }
+        [InterpolatedStringHandlerArgument("", nameof(provider))] scoped ref PrintInterpolatedStringHandler handler) => PrintLine();
 
     // Keep methods in sync with the ControlSequences class.
 
-    public AnsiControlSequenceBuilder Null()
-    {
-        return Print([NUL]);
-    }
+    /// <summary>
+    /// Appends a Null (NUL) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder Null() => Print([NUL]);
 
-    public AnsiControlSequenceBuilder Beep()
-    {
-        return Print([BEL]);
-    }
+    /// <summary>
+    /// Appends a Bell (BEL) character, which may cause an audible beep.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder Beep() => Print([BEL]);
 
-    public AnsiControlSequenceBuilder Backspace()
-    {
-        return Print([BS]);
-    }
+    /// <summary>
+    /// Appends a Backspace (BS) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder Backspace() => Print([BS]);
 
-    public AnsiControlSequenceBuilder HorizontalTab()
-    {
-        return Print([HT]);
-    }
+    /// <summary>
+    /// Appends a Horizontal Tab (HT) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder HorizontalTab() => Print([HT]);
 
-    public AnsiControlSequenceBuilder LineFeed()
-    {
-        return Print([LF]);
-    }
+    /// <summary>
+    /// Appends a Line Feed (LF) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder LineFeed() => Print([LF]);
 
-    public AnsiControlSequenceBuilder VerticalTab()
-    {
-        return Print([VT]);
-    }
+    /// <summary>
+    /// Appends a Vertical Tab (VT) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder VerticalTab() => Print([VT]);
 
-    public AnsiControlSequenceBuilder FormFeed()
-    {
-        return Print([FF]);
-    }
+    /// <summary>
+    /// Appends a Form Feed (FF) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder FormFeed() => Print([FF]);
 
-    public AnsiControlSequenceBuilder CarriageReturn()
-    {
-        return Print([CR]);
-    }
+    /// <summary>
+    /// Appends a Carriage Return (CR) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder CarriageReturn() => Print([CR]);
 
-    public AnsiControlSequenceBuilder Substitute()
-    {
-        return Print([SUB]);
-    }
+    /// <summary>
+    /// Appends a Substitute (SUB) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder Substitute() => Print([SUB]);
 
-    public AnsiControlSequenceBuilder Cancel()
-    {
-        return Print([CAN]);
-    }
+    /// <summary>
+    /// Appends a Cancel (CAN) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder Cancel() => Print([CAN]);
 
-    public AnsiControlSequenceBuilder FileSeparator()
-    {
-        return Print([FS]);
-    }
+    /// <summary>
+    /// Appends a File Separator (FS) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder FileSeparator() => Print([FS]);
 
-    public AnsiControlSequenceBuilder GroupSeparator()
-    {
-        return Print([GS]);
-    }
+    /// <summary>
+    /// Appends a Group Separator (GS) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder GroupSeparator() => Print([GS]);
 
-    public AnsiControlSequenceBuilder RecordSeparator()
-    {
-        return Print([RS]);
-    }
+    /// <summary>
+    /// Appends a Record Separator (RS) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder RecordSeparator() => Print([RS]);
 
-    public AnsiControlSequenceBuilder UnitSeparator()
-    {
-        return Print([US]);
-    }
+    /// <summary>
+    /// Appends a Unit Separator (US) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder UnitSeparator() => Print([US]);
 
-    public AnsiControlSequenceBuilder Space()
-    {
-        return Print([SP]);
-    }
+    /// <summary>
+    /// Appends a Space (SP) character.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder Space() => Print([SP]);
 
-    public AnsiControlSequenceBuilder SetOutputBatching(bool enable)
-    {
-        return Print(CSI).Print("?2026").Print(enable ? "h" : "l");
-    }
+    /// <summary>
+    /// Enables or disables terminal output batching.
+    /// </summary>
+    /// <param name="enable">True to enable, false to disable.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetOutputBatching(bool enable) => Print(CSI).Print("?2026").Print(enable ? "h" : "l");
 
-    public AnsiControlSequenceBuilder SetTitle(scoped ReadOnlySpan<char> title)
-    {
-        return Print(OSC).Print("2;").Print(title).Print(ST);
-    }
+    /// <summary>
+    /// Sets the terminal window title.
+    /// </summary>
+    /// <param name="title">The title to set.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetTitle(scoped ReadOnlySpan<char> title) => Print(OSC).Print("2;").Print(title).Print(ST);
 
-    public AnsiControlSequenceBuilder PushTitle()
-    {
-        return Print(CSI).Print("22;2t");
-    }
+    /// <summary>
+    /// Pushes the current window title onto the title stack.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder PushTitle() => Print(CSI).Print("22;2t");
 
-    public AnsiControlSequenceBuilder PopTitle()
-    {
-        return Print(CSI).Print("23;2t");
-    }
+    /// <summary>
+    /// Pops the window title from the title stack.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder PopTitle() => Print(CSI).Print("23;2t");
 
-    public AnsiControlSequenceBuilder SetProgress(ProgressState state, int value)
-    {
-        Check.Enum(state);
-        Check.Range(Math.Clamp(value, 0, 100) == value, value);
+    /// <summary>
+    /// Sets the progress indicator in the title bar.
+    /// </summary>
+    /// <param name="state">The progress state. Must be a defined enum value.</param>
+    /// <param name="value">The progress value. Must be between 0 and 100.</param>
+    public AnsiControlSequenceBuilder SetProgress(ProgressState state, int value) => Print(_culture, $"{OSC}9;4;{(int)state};{value}{ST}");
 
-        return Print(_culture, $"{OSC}9;4;{(int)state};{value}{ST}");
-    }
+    /// <summary>
+    /// Sets the cursor key mode.
+    /// </summary>
+    /// <param name="mode">The cursor key mode. Must be a defined enum value.</param>
+    public AnsiControlSequenceBuilder SetCursorKeyMode(CursorKeyMode mode) => Print(CSI).Print("?1").Print([(char)mode]);
 
-    public AnsiControlSequenceBuilder SetCursorKeyMode(CursorKeyMode mode)
-    {
-        Check.Enum(mode);
+    /// <summary>
+    /// Sets the keypad mode.
+    /// </summary>
+    /// <param name="mode">The keypad mode. Must be a defined enum value.</param>
+    public AnsiControlSequenceBuilder SetKeypadMode(KeypadMode mode) => Print([ESC]).Print([(char)mode]);
 
-        var ch = (char)mode;
-
-        return Print(CSI).Print("?1").Print([ch]);
-    }
-
-    public AnsiControlSequenceBuilder SetKeypadMode(KeypadMode mode)
-    {
-        Check.Enum(mode);
-
-        var ch = (char)mode;
-
-        return Print([ESC]).Print([ch]);
-    }
-
+    /// <summary>
+    /// Sets the keyboard conformance level.
+    /// </summary>
+    /// <param name="level">The keyboard level to set.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
     public AnsiControlSequenceBuilder SetKeyboardLevel(KeyboardLevel level)
     {
         var (cursor, function, other) = level switch
@@ -341,239 +382,294 @@ public sealed class AnsiControlSequenceBuilder
         return Print(CSI).Print(cursor).Print(CSI).Print(function).Print(CSI).Print(other);
     }
 
-    public AnsiControlSequenceBuilder SetAutoRepeatMode(bool enable)
-    {
-        return Print(CSI).Print("?8").Print(enable ? "h" : "l");
-    }
+    /// <summary>
+    /// Enables or disables key auto-repeat mode.
+    /// </summary>
+    /// <param name="enable">True to enable, false to disable.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetAutoRepeatMode(bool enable) => Print(CSI).Print("?8").Print(enable ? "h" : "l");
 
-    public AnsiControlSequenceBuilder SetMouseEvents(MouseEvents events)
-    {
-        return Print(CSI).Print("?1003").Print(events.HasFlag(MouseEvents.Movement) ? "h" : "l")
+    /// <summary>
+    /// Enables or disables mouse event reporting.
+    /// </summary>
+    /// <param name="events">The types of mouse events to report.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetMouseEvents(MouseEvents events) => Print(CSI).Print("?1003").Print(events.HasFlag(MouseEvents.Movement) ? "h" : "l")
             .Print(CSI).Print("?1006").Print(events.HasFlag(MouseEvents.Buttons) ? "h" : "l");
-    }
 
-    public AnsiControlSequenceBuilder SetMousePointerStyle(scoped ReadOnlySpan<char> style)
-    {
-        return Print(OSC).Print("22;").Print(style).Print(ST);
-    }
+    /// <summary>
+    /// Sets the shape of the mouse pointer.
+    /// </summary>
+    /// <param name="style">The style of the mouse pointer.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetMousePointerStyle(scoped ReadOnlySpan<char> style) => Print(OSC).Print("22;").Print(style).Print(ST);
 
-    public AnsiControlSequenceBuilder SetFocusEvents(bool enable)
-    {
-        return Print(CSI).Print("?1004").Print(enable ? "h" : "l");
-    }
+    /// <summary>
+    /// Enables or disables focus event reporting.
+    /// </summary>
+    /// <param name="enable">True to enable, false to disable.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetFocusEvents(bool enable) => Print(CSI).Print("?1004").Print(enable ? "h" : "l");
 
-    public AnsiControlSequenceBuilder SetBracketedPaste(bool enable)
-    {
-        return Print(CSI).Print("?2004").Print(enable ? "h" : "l");
-    }
+    /// <summary>
+    /// Enables or disables bracketed paste mode.
+    /// </summary>
+    /// <param name="enable">True to enable, false to disable.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetBracketedPaste(bool enable) => Print(CSI).Print("?2004").Print(enable ? "h" : "l");
 
-    public AnsiControlSequenceBuilder SetScreenBuffer(ScreenBuffer buffer)
-    {
-        Check.Enum(buffer);
+    /// <summary>
+    /// Sets the active screen buffer.
+    /// </summary>
+    /// <param name="buffer">The screen buffer. Must be a defined enum value.</param>
+    public AnsiControlSequenceBuilder SetScreenBuffer(ScreenBuffer buffer) => Print(CSI).Print("?1049").Print([(char)buffer]);
 
-        var ch = (char)buffer;
+    /// <summary>
+    /// Enables or disables inverted screen colors (light/dark mode).
+    /// </summary>
+    /// <param name="enable">True to enable, false to disable.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetInvertedColors(bool enable) => Print(CSI).Print("?5").Print(enable ? "h" : "l");
 
-        return Print(CSI).Print("?1049").Print([ch]);
-    }
+    /// <summary>
+    /// Sets the cursor visibility.
+    /// </summary>
+    /// <param name="visible">True to show the cursor, false to hide it.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetCursorVisibility(bool visible) => Print(CSI).Print("?25").Print(visible ? "h" : "l");
 
-    public AnsiControlSequenceBuilder SetInvertedColors(bool enable)
-    {
-        return Print(CSI).Print("?5").Print(enable ? "h" : "l");
-    }
+    /// <summary>
+    /// Sets the cursor style.
+    /// </summary>
+    /// <param name="style">The cursor style. Must be a defined enum value.</param>
+    public AnsiControlSequenceBuilder SetCursorStyle(CursorStyle style) => Print(_culture, $"{CSI}{(int)style} q");
 
-    public AnsiControlSequenceBuilder SetCursorVisibility(bool visible)
-    {
-        return Print(CSI).Print("?25").Print(visible ? "h" : "l");
-    }
+    /// <summary>
+    /// Sets the scroll bar visibility.
+    /// </summary>
+    /// <param name="visible">True to show the scroll bar, false to hide it.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetScrollBarVisibility(bool visible) => Print(CSI).Print("?30").Print(visible ? "h" : "l");
 
-    public AnsiControlSequenceBuilder SetCursorStyle(CursorStyle style)
-    {
-        Check.Enum(style);
+    /// <summary>
+    /// Sets the scroll margin.
+    /// </summary>
+    /// <param name="top">The top margin. Must be greater than or equal to 0.</param>
+    /// <param name="bottom">The bottom margin. Must be greater than top.</param>
+    public AnsiControlSequenceBuilder SetScrollMargin(int top, int bottom) => Print(_culture, $"{CSI}{top + 1};{bottom + 1}r");
 
-        return Print(_culture, $"{CSI}{(int)style} q");
-    }
+    /// <summary>
+    /// Resets the scroll margin to the full window.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder ResetScrollMargin() => Print(CSI).Print(";r");
 
-    public AnsiControlSequenceBuilder SetScrollBarVisibility(bool visible)
-    {
-        return Print(CSI).Print("?30").Print(visible ? "h" : "l");
-    }
-
-    public AnsiControlSequenceBuilder SetScrollMargin(int top, int bottom)
-    {
-        Check.Range(top >= 0, top);
-        Check.Range(bottom > top, bottom);
-
-        return Print(_culture, $"{CSI}{top + 1};{bottom + 1}r");
-    }
-
-    public AnsiControlSequenceBuilder ResetScrollMargin()
-    {
-        return Print(CSI).Print(";r");
-    }
-
+    /// <summary>
+    /// Modifies text in the buffer.
+    /// </summary>
+    /// <param name="type">The modification type.</param>
+    /// <param name="count">The number of characters/lines. Must be greater than or equal to 0.</param>
     private AnsiControlSequenceBuilder ModifyText(string type, int count)
     {
-        Check.Range(count >= 0, count);
-
         if (count == 0)
             return this;
 
         return Print(_culture, $"{CSI}{count}{type}");
     }
 
-    public AnsiControlSequenceBuilder InsertCharacters(int count)
-    {
-        return ModifyText("@", count);
-    }
+    /// <summary>
+    /// Inserts a specified number of characters.
+    /// </summary>
+    /// <param name="count">The number of characters to insert.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder InsertCharacters(int count) => ModifyText("@", count);
 
-    public AnsiControlSequenceBuilder DeleteCharacters(int count)
-    {
-        return ModifyText("P", count);
-    }
+    /// <summary>
+    /// Deletes a specified number of characters.
+    /// </summary>
+    /// <param name="count">The number of characters to delete.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder DeleteCharacters(int count) => ModifyText("P", count);
 
-    public AnsiControlSequenceBuilder EraseCharacters(int count)
-    {
-        return ModifyText("X", count);
-    }
+    /// <summary>
+    /// Erases a specified number of characters.
+    /// </summary>
+    /// <param name="count">The number of characters to erase.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder EraseCharacters(int count) => ModifyText("X", count);
 
-    public AnsiControlSequenceBuilder InsertLines(int count)
-    {
-        return ModifyText("L", count);
-    }
+    /// <summary>
+    /// Inserts a specified number of lines.
+    /// </summary>
+    /// <param name="count">The number of lines to insert.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder InsertLines(int count) => ModifyText("L", count);
 
-    public AnsiControlSequenceBuilder DeleteLines(int count)
-    {
-        return ModifyText("M", count);
-    }
+    /// <summary>
+    /// Deletes a specified number of lines.
+    /// </summary>
+    /// <param name="count">The number of lines to delete.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder DeleteLines(int count) => ModifyText("M", count);
 
-    private AnsiControlSequenceBuilder Clear(string type, ClearMode mode)
-    {
-        Check.Enum(mode);
+    /// <summary>
+    /// Clears a part of the screen or line.
+    /// </summary>
+    /// <param name="type">The clear type.</param>
+    /// <param name="mode">The clear mode. Must be a defined enum value.</param>
+    private AnsiControlSequenceBuilder Clear(string type, ClearMode mode) => Print(_culture, $"{CSI}{(int)mode}{type}");
 
-        return Print(_culture, $"{CSI}{(int)mode}{type}");
-    }
+    /// <summary>
+    /// Clears the screen.
+    /// </summary>
+    /// <param name="mode">The clear mode to use.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder ClearScreen(ClearMode mode = ClearMode.Full) => Clear("J", mode);
 
-    public AnsiControlSequenceBuilder ClearScreen(ClearMode mode = ClearMode.Full)
-    {
-        return Clear("J", mode);
-    }
+    /// <summary>
+    /// Clears the current line.
+    /// </summary>
+    /// <param name="mode">The clear mode to use.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder ClearLine(ClearMode mode = ClearMode.Full) => Clear("K", mode);
 
-    public AnsiControlSequenceBuilder ClearLine(ClearMode mode = ClearMode.Full)
-    {
-        return Clear("K", mode);
-    }
+    /// <summary>
+    /// Sets the character protection attribute.
+    /// </summary>
+    /// <param name="protect">True to protect characters, false to unprotect.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SetProtection(bool protect) => Print(CSI).Print(protect ? "1" : "0").Print("\"q");
 
-    public AnsiControlSequenceBuilder SetProtection(bool protect)
-    {
-        return Print(CSI).Print(protect ? "1" : "0").Print("\"q");
-    }
+    /// <summary>
+    /// Clears a part of the screen or line, respecting protected areas.
+    /// </summary>
+    /// <param name="type">The clear type.</param>
+    /// <param name="mode">The clear mode. Must be a defined enum value.</param>
+    private AnsiControlSequenceBuilder ProtectedClear(string type, ClearMode mode) => Print(_culture, $"{CSI}?{(int)mode}{type}");
 
-    private AnsiControlSequenceBuilder ProtectedClear(string type, ClearMode mode)
-    {
-        Check.Enum(mode);
+    /// <summary>
+    /// Clears the screen, respecting protected areas.
+    /// </summary>
+    /// <param name="mode">The clear mode to use.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder ProtectedClearScreen(ClearMode mode = ClearMode.Full) => ProtectedClear("J", mode);
 
-        return Print(_culture, $"{CSI}?{(int)mode}{type}");
-    }
+    /// <summary>
+    /// Clears the current line, respecting protected areas.
+    /// </summary>
+    /// <param name="mode">The clear mode to use.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder ProtectedClearLine(ClearMode mode = ClearMode.Full) => ProtectedClear("K", mode);
 
-    public AnsiControlSequenceBuilder ProtectedClearScreen(ClearMode mode = ClearMode.Full)
-    {
-        return ProtectedClear("J", mode);
-    }
-
-    public AnsiControlSequenceBuilder ProtectedClearLine(ClearMode mode = ClearMode.Full)
-    {
-        return ProtectedClear("K", mode);
-    }
-
+    /// <summary>
+    /// Moves the buffer content.
+    /// </summary>
+    /// <param name="type">The move direction.</param>
+    /// <param name="count">The number of lines. Must be greater than or equal to 0.</param>
     private AnsiControlSequenceBuilder MoveBuffer(string type, int count)
     {
-        Check.Range(count >= 0, count);
-
         if (count == 0)
             return this;
 
         return Print(_culture, $"{CSI}{count}{type}");
     }
 
-    public AnsiControlSequenceBuilder MoveBufferUp(int count)
-    {
-        return MoveBuffer("S", count);
-    }
+    /// <summary>
+    /// Scrolls the buffer content up.
+    /// </summary>
+    /// <param name="count">The number of lines to scroll.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder MoveBufferUp(int count) => MoveBuffer("S", count);
 
-    public AnsiControlSequenceBuilder MoveBufferDown(int count)
-    {
-        return MoveBuffer("T", count);
-    }
+    /// <summary>
+    /// Scrolls the buffer content down.
+    /// </summary>
+    /// <param name="count">The number of lines to scroll.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder MoveBufferDown(int count) => MoveBuffer("T", count);
 
-    public AnsiControlSequenceBuilder MoveCursorTo(int line, int column)
-    {
-        Check.Range(line >= 0, line);
-        Check.Range(column >= 0, column);
+    /// <summary>
+    /// Moves the cursor to a specific position.
+    /// </summary>
+    /// <param name="line">The line. Must be greater than or equal to 0.</param>
+    /// <param name="column">The column. Must be greater than or equal to 0.</param>
+    public AnsiControlSequenceBuilder MoveCursorTo(int line, int column) => Print(_culture, $"{CSI}{line + 1};{column + 1}H");
 
-        return Print(_culture, $"{CSI}{line + 1};{column + 1}H");
-    }
-
+    /// <summary>
+    /// Moves the cursor relative to its current position.
+    /// </summary>
+    /// <param name="type">The move direction.</param>
+    /// <param name="count">The number of positions. Must be greater than or equal to 0.</param>
     private AnsiControlSequenceBuilder MoveCursor(string type, int count)
     {
-        Check.Range(count >= 0, count);
-
         if (count == 0)
             return this;
 
         return Print(_culture, $"{CSI}{count}{type}");
     }
 
-    public AnsiControlSequenceBuilder MoveCursorUp(int count)
-    {
-        return MoveCursor("A", count);
-    }
+    /// <summary>
+    /// Moves the cursor up a specified number of lines.
+    /// </summary>
+    /// <param name="count">The number of lines to move.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder MoveCursorUp(int count) => MoveCursor("A", count);
 
-    public AnsiControlSequenceBuilder MoveCursorDown(int count)
-    {
-        return MoveCursor("B", count);
-    }
+    /// <summary>
+    /// Moves the cursor down a specified number of lines.
+    /// </summary>
+    /// <param name="count">The number of lines to move.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder MoveCursorDown(int count) => MoveCursor("B", count);
 
-    public AnsiControlSequenceBuilder MoveCursorLeft(int count)
-    {
-        return MoveCursor("D", count);
-    }
+    /// <summary>
+    /// Moves the cursor left a specified number of columns.
+    /// </summary>
+    /// <param name="count">The number of columns to move.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder MoveCursorLeft(int count) => MoveCursor("D", count);
 
-    public AnsiControlSequenceBuilder MoveCursorRight(int count)
-    {
-        return MoveCursor("C", count);
-    }
+    /// <summary>
+    /// Moves the cursor right a specified number of columns.
+    /// </summary>
+    /// <param name="count">The number of columns to move.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder MoveCursorRight(int count) => MoveCursor("C", count);
 
-    public AnsiControlSequenceBuilder SaveCursorState()
-    {
-        return Print([ESC]).Print("7");
-    }
+    /// <summary>
+    /// Saves the current cursor state (position, attributes).
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SaveCursorState() => Print([ESC]).Print("7");
 
-    public AnsiControlSequenceBuilder RestoreCursorState()
-    {
-        return Print([ESC]).Print("8");
-    }
+    /// <summary>
+    /// Restores the previously saved cursor state.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder RestoreCursorState() => Print([ESC]).Print("8");
 
-    public AnsiControlSequenceBuilder SetForegroundColor(Color color)
-    {
-        Check.Argument(color.A == byte.MaxValue, color);
+    /// <summary>
+    /// Sets the foreground color.
+    /// </summary>
+    /// <param name="color">The color. The alpha component must be 255.</param>
+    public AnsiControlSequenceBuilder SetForegroundColor(Color color) => Print(_culture, $"{CSI}38;2;{color.R};{color.G};{color.B}m");
 
-        return Print(_culture, $"{CSI}38;2;{color.R};{color.G};{color.B}m");
-    }
+    /// <summary>
+    /// Sets the background color.
+    /// </summary>
+    /// <param name="color">The color. The alpha component must be 255.</param>
+    public AnsiControlSequenceBuilder SetBackgroundColor(Color color) => Print(_culture, $"{CSI}48;2;{color.R};{color.G};{color.B}m");
 
-    public AnsiControlSequenceBuilder SetBackgroundColor(Color color)
-    {
-        Check.Argument(color.A == byte.MaxValue, color);
+    /// <summary>
+    /// Sets the underline color.
+    /// </summary>
+    /// <param name="color">The color. The alpha component must be 255.</param>
+    public AnsiControlSequenceBuilder SetUnderlineColor(Color color) => Print(_culture, $"{CSI}58;2;{color.R};{color.G};{color.B}m");
 
-        return Print(_culture, $"{CSI}48;2;{color.R};{color.G};{color.B}m");
-    }
-
-    public AnsiControlSequenceBuilder SetUnderlineColor(Color color)
-    {
-        Check.Argument(color.A == byte.MaxValue, color);
-
-        return Print(_culture, $"{CSI}58;2;{color.R};{color.G};{color.B}m");
-    }
-
+    /// <summary>
+    /// Sets various text decorations.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
     public AnsiControlSequenceBuilder SetDecorations(
         bool intense = false,
         bool faint = false,
@@ -625,15 +721,19 @@ public sealed class AnsiControlSequenceBuilder
         return Print("m");
     }
 
-    public AnsiControlSequenceBuilder ResetAttributes()
-    {
-        return Print(CSI).Print("0m");
-    }
+    /// <summary>
+    /// Resets all graphic attributes to their default state.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder ResetAttributes() => Print(CSI).Print("0m");
 
+    /// <summary>
+    /// Opens a hyperlink.
+    /// </summary>
+    /// <param name="uri">The hyperlink URI. Cannot be null.</param>
+    /// <param name="id">The hyperlink ID.</param>
     public AnsiControlSequenceBuilder OpenHyperlink(Uri uri, scoped ReadOnlySpan<char> id = default)
     {
-        Check.Null(uri);
-
         _ = Print(OSC).Print("8;");
 
         if (!id.IsEmpty)
@@ -642,41 +742,47 @@ public sealed class AnsiControlSequenceBuilder
         return Print(";").Print(uri.ToString()).Print(ST);
     }
 
-    public AnsiControlSequenceBuilder CloseHyperlink()
-    {
-        return Print(OSC).Print("8;;").Print(ST);
-    }
+    /// <summary>
+    /// Closes a hyperlink.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder CloseHyperlink() => Print(OSC).Print("8;;").Print(ST);
 
-    public AnsiControlSequenceBuilder SetWorkingDirectory(Uri uri)
-    {
-        Check.Null(uri);
-        Check.Argument(uri.Scheme == Uri.UriSchemeFile, uri);
+    /// <summary>
+    /// Sets the working directory.
+    /// </summary>
+    /// <param name="uri">The working directory URI. Cannot be null and must be a file URI.</param>
+    public AnsiControlSequenceBuilder SetWorkingDirectory(Uri uri) => Print(OSC).Print("7").Print(uri.ToString()).Print(ST);
 
-        return Print(OSC).Print("7").Print(uri.ToString()).Print(ST);
-    }
+    /// <summary>
+    /// Sets the working directory.
+    /// </summary>
+    /// <param name="path">The working directory path. Cannot be empty.</param>
+    public AnsiControlSequenceBuilder SetWorkingDirectory(scoped ReadOnlySpan<char> path) => Print(OSC).Print("9;9;").Print("\"").Print(path).Print("\"").Print(ST);
 
-    public AnsiControlSequenceBuilder SetWorkingDirectory(scoped ReadOnlySpan<char> path)
-    {
-        Check.Argument(!path.IsEmpty, path);
+    /// <summary>
+    /// Marks the beginning of a shell prompt.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder BeginShellPrompt() => Print(OSC).Print("133;A").Print(ST);
 
-        return Print(OSC).Print("9;9;").Print("\"").Print(path).Print("\"").Print(ST);
-    }
+    /// <summary>
+    /// Marks the end of a shell prompt.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder EndShellPrompt() => Print(OSC).Print("133;B").Print(ST);
 
-    public AnsiControlSequenceBuilder BeginShellPrompt()
-    {
-        return Print(OSC).Print("133;A").Print(ST);
-    }
+    /// <summary>
+    /// Marks the beginning of a shell command execution.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder BeginShellExecution() => Print(OSC).Print("133;C").Print(ST);
 
-    public AnsiControlSequenceBuilder EndShellPrompt()
-    {
-        return Print(OSC).Print("133;B").Print(ST);
-    }
-
-    public AnsiControlSequenceBuilder BeginShellExecution()
-    {
-        return Print(OSC).Print("133;C").Print(ST);
-    }
-
+    /// <summary>
+    /// Marks the end of a shell command execution.
+    /// </summary>
+    /// <param name="code">The exit code of the command.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
     public AnsiControlSequenceBuilder EndShellExecution(int? code = null)
     {
         _ = Print(OSC).Print("133;D");
@@ -689,20 +795,20 @@ public sealed class AnsiControlSequenceBuilder
         return Print(ST);
     }
 
-    public AnsiControlSequenceBuilder SaveScreenshot(ScreenshotFormat format = ScreenshotFormat.Html)
-    {
-        Check.Enum(format);
+    /// <summary>
+    /// Saves a screenshot of the terminal.
+    /// </summary>
+    /// <param name="format">The screenshot format. Must be a defined enum value.</param>
+    public AnsiControlSequenceBuilder SaveScreenshot(ScreenshotFormat format = ScreenshotFormat.Html) => Print(_culture, $"{CSI}{(int)format}i");
 
-        return Print(_culture, $"{CSI}{(int)format}i");
-    }
-
+    /// <summary>
+    /// Plays a sequence of musical notes.
+    /// </summary>
+    /// <param name="volume">The note volume. Must be between 0 and 7.</param>
+    /// <param name="duration">The note duration. Must be greater than or equal to 0.</param>
+    /// <param name="notes">The notes. Must have at least one note and all notes must be between 1 and 25.</param>
     public AnsiControlSequenceBuilder PlayNotes(int volume, int duration, scoped ReadOnlySpan<int> notes)
     {
-        Check.Range(volume is >= 0 and <= 7, volume);
-        Check.Range(duration >= 0, duration);
-        Check.Argument(notes.Length >= 1, nameof(notes));
-        Check.All(notes, static note => note is >= 1 and <= 25);
-
         Print(_culture, $"{CSI}{volume};{duration}");
 
         foreach (var note in notes)
@@ -713,28 +819,38 @@ public sealed class AnsiControlSequenceBuilder
         return Print(",~");
     }
 
-    public AnsiControlSequenceBuilder SoftReset()
-    {
-        return Print(CSI).Print("!p");
-    }
+    /// <summary>
+    /// Performs a soft terminal reset.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder SoftReset() => Print(CSI).Print("!p");
 
-    public AnsiControlSequenceBuilder FullReset()
-    {
-        return Print([ESC]).Print("c");
-    }
+    /// <summary>
+    /// Performs a full terminal reset.
+    /// </summary>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    public AnsiControlSequenceBuilder FullReset() => Print([ESC]).Print("c");
 
-    public override string ToString()
-    {
-        return Span.ToString();
-    }
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString() => Span.ToString();
 
+    /// <summary>
+    /// Writes the content of the builder to the system console.
+    /// </summary>
     public void WriteToSystemConsole() => Console.Write(Span);
 
+    /// <summary>
+    /// Asynchronously writes the content of the builder to the system console.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous write operation.</returns>
     public async Task WriteToSystemConsoleAsync()
     {
         var buf = MemoryMarshal.AsBytes(Span);
         using var s = Console.OpenStandardOutput();
         s.Write(buf);
-        await s.FlushAsync();        
+        await s.FlushAsync();
     }
 }
