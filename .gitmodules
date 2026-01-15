@@ -3,4 +3,4 @@
 	url = https://github.com/allisterb/C-sharp-console-gui-framework.git
 [submodule "ext/spectre.console"]
 	path = ext/spectre.console
-	url = https://github.com/spectreconsole/spectre.console.git
+	url = https://github.com/allisterb/spectre.console.git
