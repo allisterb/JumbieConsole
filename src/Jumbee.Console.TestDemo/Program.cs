@@ -142,6 +142,7 @@ public class Program
         Console.WriteLine("This is blue text that is really long x");
         t.Stop();
         Console.WriteLine($"Elapsed: {t.ElapsedMilliseconds} ms");
+        t.Reset();
         t.Restart();
         cb.MoveCursorRight(9);
         cb.SetForegroundColor(Red);
@@ -151,10 +152,12 @@ public class Program
         cb.MoveCursorRight(10);
         cb.SetForegroundColor(Blue);
         cb.PrintLine("This is blue text that is really long x");
+        //Task.Run(cb.WriteToSystemConsole2);
         cb.WriteToSystemConsole();
         t.Stop();
         Console.WriteLine($"Elapsed: {t.ElapsedMilliseconds} ms");
-       
+        Thread.Sleep(50);
+
 
 
     }

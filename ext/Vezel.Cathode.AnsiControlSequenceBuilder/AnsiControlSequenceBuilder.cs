@@ -8,6 +8,8 @@ using System.Drawing;
 using System.Globalization;
 using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 using Vezel.Cathode.Diagnostics;
 using static Vezel.Cathode.Text.Control.ControlConstants;
@@ -305,13 +307,7 @@ public sealed class AnsiControlSequenceBuilder
         Check.Enum(state);
         Check.Range(Math.Clamp(value, 0, 100) == value, value);
 
-        var stateSpan = (stackalloc char[StackBufferSize]);
-        var valueSpan = (stackalloc char[StackBufferSize]);
-
-        _ = ((int)state).TryFormat(stateSpan, out var stateLen, provider: _culture);
-        _ = value.TryFormat(valueSpan, out var valueLen, provider: _culture);
-
-        return Print(OSC).Print("9;4;").Print(stateSpan[..stateLen]).Print(";").Print(valueSpan[..valueLen]).Print(ST);
+        return Print(_culture, $"{OSC}9;4;{(int)state};{value}{ST}");
     }
 
     public AnsiControlSequenceBuilder SetCursorKeyMode(CursorKeyMode mode)
@@ -394,11 +390,7 @@ public sealed class AnsiControlSequenceBuilder
     {
         Check.Enum(style);
 
-        var styleSpan = (stackalloc char[StackBufferSize]);
-
-        _ = ((int)style).TryFormat(styleSpan, out var styleLen, provider: _culture);
-
-        return Print(CSI).Print(styleSpan[..styleLen]).Space().Print("q");
+        return Print(_culture, $"{CSI}{(int)style} q");
     }
 
     public AnsiControlSequenceBuilder SetScrollBarVisibility(bool visible)
@@ -411,13 +403,7 @@ public sealed class AnsiControlSequenceBuilder
         Check.Range(top >= 0, top);
         Check.Range(bottom > top, bottom);
 
-        var topSpan = (stackalloc char[StackBufferSize]);
-        var bottomSpan = (stackalloc char[StackBufferSize]);
-
-        _ = (top + 1).TryFormat(topSpan, out var topLen, provider: _culture);
-        _ = (bottom + 1).TryFormat(bottomSpan, out var bottomLen, provider: _culture);
-
-        return Print(CSI).Print(topSpan[..topLen]).Print(";").Print(bottomSpan[..bottomLen]).Print("r");
+        return Print(_culture, $"{CSI}{top + 1};{bottom + 1}r");
     }
 
     public AnsiControlSequenceBuilder ResetScrollMargin()
@@ -432,11 +418,7 @@ public sealed class AnsiControlSequenceBuilder
         if (count == 0)
             return this;
 
-        var countSpan = (stackalloc char[StackBufferSize]);
-
-        _ = count.TryFormat(countSpan, out var countLen, provider: _culture);
-
-        return Print(CSI).Print(countSpan[..countLen]).Print(type);
+        return Print(_culture, $"{CSI}{count}{type}");
     }
 
     public AnsiControlSequenceBuilder InsertCharacters(int count)
@@ -468,11 +450,7 @@ public sealed class AnsiControlSequenceBuilder
     {
         Check.Enum(mode);
 
-        var modeSpan = (stackalloc char[StackBufferSize]);
-
-        _ = ((int)mode).TryFormat(modeSpan, out var modeLen, provider: _culture);
-
-        return Print(CSI).Print(modeSpan[..modeLen]).Print(type);
+        return Print(_culture, $"{CSI}{(int)mode}{type}");
     }
 
     public AnsiControlSequenceBuilder ClearScreen(ClearMode mode = ClearMode.Full)
@@ -494,21 +472,17 @@ public sealed class AnsiControlSequenceBuilder
     {
         Check.Enum(mode);
 
-        var modeSpan = (stackalloc char[StackBufferSize]);
-
-        _ = ((int)mode).TryFormat(modeSpan, out var modeLen, provider: _culture);
-
-        return Print(CSI).Print("?").Print(modeSpan[..modeLen]).Print(type);
+        return Print(_culture, $"{CSI}?{(int)mode}{type}");
     }
 
     public AnsiControlSequenceBuilder ProtectedClearScreen(ClearMode mode = ClearMode.Full)
     {
-        return Clear("J", mode);
+        return ProtectedClear("J", mode);
     }
 
     public AnsiControlSequenceBuilder ProtectedClearLine(ClearMode mode = ClearMode.Full)
     {
-        return Clear("K", mode);
+        return ProtectedClear("K", mode);
     }
 
     private AnsiControlSequenceBuilder MoveBuffer(string type, int count)
@@ -518,11 +492,7 @@ public sealed class AnsiControlSequenceBuilder
         if (count == 0)
             return this;
 
-        var countSpan = (stackalloc char[StackBufferSize]);
-
-        _ = count.TryFormat(countSpan, out var countLen, provider: _culture);
-
-        return Print(CSI).Print(countSpan[..countLen]).Print(type);
+        return Print(_culture, $"{CSI}{count}{type}");
     }
 
     public AnsiControlSequenceBuilder MoveBufferUp(int count)
@@ -540,13 +510,7 @@ public sealed class AnsiControlSequenceBuilder
         Check.Range(line >= 0, line);
         Check.Range(column >= 0, column);
 
-        var lineSpan = (stackalloc char[StackBufferSize]);
-        var columnSpan = (stackalloc char[StackBufferSize]);
-
-        _ = (line + 1).TryFormat(lineSpan, out var lineLen, provider: _culture);
-        _ = (column + 1).TryFormat(columnSpan, out var columnLen, provider: _culture);
-
-        return Print(CSI).Print(lineSpan[..lineLen]).Print(";").Print(columnSpan[..columnLen]).Print("H");
+        return Print(_culture, $"{CSI}{line + 1};{column + 1}H");
     }
 
     private AnsiControlSequenceBuilder MoveCursor(string type, int count)
@@ -556,11 +520,7 @@ public sealed class AnsiControlSequenceBuilder
         if (count == 0)
             return this;
 
-        var countSpan = (stackalloc char[StackBufferSize]);
-
-        _ = count.TryFormat(countSpan, out var countLen, provider: _culture);
-
-        return Print(CSI).Print(countSpan[..countLen]).Print(type);
+        return Print(_culture, $"{CSI}{count}{type}");
     }
 
     public AnsiControlSequenceBuilder MoveCursorUp(int count)
@@ -597,48 +557,21 @@ public sealed class AnsiControlSequenceBuilder
     {
         Check.Argument(color.A == byte.MaxValue, color);
 
-        var rSpan = (stackalloc char[StackBufferSize]);
-        var gSpan = (stackalloc char[StackBufferSize]);
-        var bSpan = (stackalloc char[StackBufferSize]);
-
-        _ = color.R.TryFormat(rSpan, out var rLen, provider: _culture);
-        _ = color.G.TryFormat(gSpan, out var gLen, provider: _culture);
-        _ = color.B.TryFormat(bSpan, out var bLen, provider: _culture);
-
-        return Print(CSI).Print("38;2;").Print(rSpan[..rLen]).Print(";")
-            .Print(gSpan[..gLen]).Print(";").Print(bSpan[..bLen]).Print("m");
+        return Print(_culture, $"{CSI}38;2;{color.R};{color.G};{color.B}m");
     }
 
     public AnsiControlSequenceBuilder SetBackgroundColor(Color color)
     {
         Check.Argument(color.A == byte.MaxValue, color);
 
-        var rSpan = (stackalloc char[StackBufferSize]);
-        var gSpan = (stackalloc char[StackBufferSize]);
-        var bSpan = (stackalloc char[StackBufferSize]);
-
-        _ = color.R.TryFormat(rSpan, out var rLen, provider: _culture);
-        _ = color.G.TryFormat(gSpan, out var gLen, provider: _culture);
-        _ = color.B.TryFormat(bSpan, out var bLen, provider: _culture);
-
-        return Print(CSI).Print("48;2;").Print(rSpan[..rLen]).Print(";")
-            .Print(gSpan[..gLen]).Print(";").Print(bSpan[..bLen]).Print("m");
+        return Print(_culture, $"{CSI}48;2;{color.R};{color.G};{color.B}m");
     }
 
     public AnsiControlSequenceBuilder SetUnderlineColor(Color color)
     {
         Check.Argument(color.A == byte.MaxValue, color);
 
-        var rSpan = (stackalloc char[StackBufferSize]);
-        var gSpan = (stackalloc char[StackBufferSize]);
-        var bSpan = (stackalloc char[StackBufferSize]);
-
-        _ = color.R.TryFormat(rSpan, out var rLen, provider: _culture);
-        _ = color.G.TryFormat(gSpan, out var gLen, provider: _culture);
-        _ = color.B.TryFormat(bSpan, out var bLen, provider: _culture);
-
-        return Print(CSI).Print("58;2;").Print(rSpan[..rLen]).Print(";")
-            .Print(gSpan[..gLen]).Print(";").Print(bSpan[..bLen]).Print("m");
+        return Print(_culture, $"{CSI}58;2;{color.R};{color.G};{color.B}m");
     }
 
     public AnsiControlSequenceBuilder SetDecorations(
@@ -750,11 +683,7 @@ public sealed class AnsiControlSequenceBuilder
 
         if (code is { } c)
         {
-            var codeSpan = (stackalloc char[StackBufferSize]);
-
-            _ = c.TryFormat(codeSpan, out var codeLen, provider: _culture);
-
-            _ = Print(";").Print(codeSpan[..codeLen]);
+            _ = Print(_culture, $";{c}");
         }
 
         return Print(ST);
@@ -764,11 +693,7 @@ public sealed class AnsiControlSequenceBuilder
     {
         Check.Enum(format);
 
-        var formatSpan = (stackalloc char[StackBufferSize]);
-
-        _ = ((int)format).TryFormat(formatSpan, out var formatLen, provider: _culture);
-
-        return Print(CSI).Print(formatSpan[..formatLen]).Print("i");
+        return Print(_culture, $"{CSI}{(int)format}i");
     }
 
     public AnsiControlSequenceBuilder PlayNotes(int volume, int duration, scoped ReadOnlySpan<int> notes)
@@ -778,21 +703,11 @@ public sealed class AnsiControlSequenceBuilder
         Check.Argument(notes.Length >= 1, nameof(notes));
         Check.All(notes, static note => note is >= 1 and <= 25);
 
-        var volumeSpan = (stackalloc char[StackBufferSize]);
-        var durationSpan = (stackalloc char[StackBufferSize]);
-
-        _ = volume.TryFormat(volumeSpan, out var volumeLen, provider: _culture);
-        _ = duration.TryFormat(durationSpan, out var durationLen, provider: _culture);
-
-        _ = Print(CSI).Print(volumeSpan[..volumeLen]).Print(";").Print(durationSpan[..durationLen]);
-
-        var noteSpan = (stackalloc char[StackBufferSize]);
+        Print(_culture, $"{CSI}{volume};{duration}");
 
         foreach (var note in notes)
         {
-            _ = note.TryFormat(noteSpan, out var noteLen, provider: _culture);
-
-            _ = Print(";").Print(noteSpan[..noteLen]);
+            Print(_culture, $";{note}");
         }
 
         return Print(",~");
@@ -815,5 +730,11 @@ public sealed class AnsiControlSequenceBuilder
 
     public void WriteToSystemConsole() => Console.Write(Span);
 
-   
+    public async Task WriteToSystemConsoleAsync()
+    {
+        var buf = MemoryMarshal.AsBytes(Span);
+        using var s = Console.OpenStandardOutput();
+        s.Write(buf);
+        await s.FlushAsync();        
+    }
 }
