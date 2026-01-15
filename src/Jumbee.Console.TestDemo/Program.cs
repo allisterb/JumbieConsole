@@ -117,7 +117,7 @@ public class Program
     */
     static void DockPanelTest(string[] args)
     {
-        var p = new TextPrompt(">", blinkCursor: false, showCursor: false)
+        var p = new TextPrompt(">", blinkCursor: true)
            .WithRoundedBorder(Purple)
            .WithTitle("Foo")   ;
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20 };

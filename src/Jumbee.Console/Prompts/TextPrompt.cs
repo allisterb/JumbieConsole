@@ -110,16 +110,12 @@ public class TextPrompt : Prompt
     protected override void OnPaint(object? sender, UI.PaintEventArgs e)
     {
         lock (e.Lock)
-        {
-            _blinkState = !_blinkState;
+        {            
             if (paintRequests > 0)
             {
                 Paint();
             }
-            else if (ShowCursor)
-            {
-                Redraw();
-            }
+            DrawCursor();
         }                       
     }
 
@@ -207,6 +203,25 @@ public class TextPrompt : Prompt
     {                      
 
         Committed?.Invoke(this, input);
+    }
+
+    protected void DrawCursor()
+    {
+        _blinkState = !_blinkState;
+        if (ShowCursor && _blinkState && _cursorScreenX >= 0 && _cursorScreenX < Size.Width &&
+                    _cursorScreenY >= 0 && _cursorScreenY < Size.Height)
+        {
+            var cell = consoleBuffer[_cursorScreenX, _cursorScreenY];
+            if (cell.Content == null || cell.Content == '\0')
+            {
+                consoleBuffer.Write(_cursorScreenX, _cursorScreenY, _cursorEmptyCell);
+            }
+            else
+            {
+                consoleBuffer.Write(_cursorScreenX, _cursorScreenY, cell.WithBackground(_cursorBackgroundColor));
+                
+            }
+        }
     }
     #endregion
 

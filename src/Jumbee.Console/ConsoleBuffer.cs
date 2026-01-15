@@ -59,6 +59,16 @@ public class ConsoleBuffer : IConsole
     }
 
     /// <summary>
+    /// Sets the console buffer cell character.
+    /// </summary>
+    public void Write(in int X, in int Y, in Cell cell)
+    {
+        if (X >= 0 && X < Size.Width && Y >= 0 && Y < Size.Height)
+        {
+            buffer[Y][X] = cell;
+        }
+    }
+    /// <summary>
     /// Will be handled by IInputListeners.
     /// </summary>
     /// <returns></returns>
