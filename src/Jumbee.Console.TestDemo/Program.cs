@@ -16,7 +16,7 @@ using System.Diagnostics;
 
 public class Program
 {
-    static void Main(string[] args) => Test4(args);
+    static void Main(string[] args) => DockPanelTest(args);
     
     /*
     static void Test1(string[] args)
@@ -115,13 +115,13 @@ public class Program
         t.Wait();
     }
     */
-    static void Test3(string[] args)
+    static void DockPanelTest(string[] args)
     {
-        var p = new TextPrompt(">", blinkCursor: false)
+        var p = new TextPrompt(">", blinkCursor: false, showCursor: false)
            .WithRoundedBorder(Purple)
            .WithTitle("Foo")   ;
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20 };
-        tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions").WithRoundedBorder();
+        tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions");
         p.Focus();
         var d = new DockPanel(DockedControlPlacement.Right, tree, p);
         //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
@@ -129,7 +129,7 @@ public class Program
         t.Wait();
     }
 
-    static void Test4(string[] args)
+    static void AnsiControlSequenceBuilderTest(string[] args)
     {
         var cb = new AnsiControlSequenceBuilder();
         var t = new Stopwatch();

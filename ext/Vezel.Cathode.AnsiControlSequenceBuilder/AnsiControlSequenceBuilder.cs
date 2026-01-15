@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: 0BSD
 
 using System;
+using System.Buffers;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
-using System.Buffers;
+using System.Text;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -174,6 +175,18 @@ public sealed class AnsiControlSequenceBuilder
         return this;
     }
 
+    /// <summary>
+    /// Appends a span of characters to the builder.
+    /// </summary>
+    /// <param name="value">The characters to append.</param>
+    /// <returns>A reference to this instance after the append operation has completed.</returns>
+    public AnsiControlSequenceBuilder PrintChar(char value)
+    {
+        ReadOnlySpan<char> charSpan = stackalloc[] { value };
+        _writer.Write(charSpan);
+
+        return this;
+    }
     /// <summary>
     /// Appends the string returned by an interpolated string handler to the builder.
     /// </summary>
@@ -655,10 +668,22 @@ public sealed class AnsiControlSequenceBuilder
     public AnsiControlSequenceBuilder SetForegroundColor(Color color) => Print(_culture, $"{CSI}38;2;{color.R};{color.G};{color.B}m");
 
     /// <summary>
+    /// Sets the foreground color.
+    /// </summary>
+    /// <param name="color">The color. The alpha component must be 255.</param>
+    public AnsiControlSequenceBuilder SetForegroundColor(int R, int G, int B) => Print(_culture, $"{CSI}38;2;{R};{G};{B}m");
+    
+    /// <summary>
     /// Sets the background color.
     /// </summary>
     /// <param name="color">The color. The alpha component must be 255.</param>
     public AnsiControlSequenceBuilder SetBackgroundColor(Color color) => Print(_culture, $"{CSI}48;2;{color.R};{color.G};{color.B}m");
+
+    /// <summary>
+    /// Sets the background color.
+    /// </summary>
+    /// <param name="color">The color. The alpha component must be 255.</param>
+    public AnsiControlSequenceBuilder SetBackgroundColor(int R, int G, int B) => Print(_culture, $"{CSI}48;2;{R};{G};{B}m");
 
     /// <summary>
     /// Sets the underline color.
@@ -848,9 +873,11 @@ public sealed class AnsiControlSequenceBuilder
     /// <returns>A task that represents the asynchronous write operation.</returns>
     public async Task WriteToSystemConsoleAsync()
     {
-        var buf = MemoryMarshal.AsBytes(Span);
+        var maxBytes = Encoding.UTF8.GetMaxByteCount(Span.Length);
+        byte[] buf = ArrayPool<byte>.Shared.Rent(maxBytes);
+        var c = Encoding.UTF8.GetBytes(Span, buf);
         using var s = Console.OpenStandardOutput();
-        s.Write(buf);
+        await s.WriteAsync(buf);
         await s.FlushAsync();
     }
 }
