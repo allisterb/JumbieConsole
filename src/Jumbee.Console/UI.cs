@@ -74,10 +74,14 @@ public static class UI
     {
         if (Monitor.TryEnter(Lock))
         {
-            // Resize UI if console size changed
-            ConsoleManager.AdjustBufferSize();
+            // Resize and redraw UI if console size changed
+            bool resized = ConsoleManager.AdjustBufferSize();
+            
+            // If not resized then just redraw
+            if (!resized) ConsoleManager.Redraw();
+
             Monitor.Exit(Lock);            
-            _Paint?.Invoke(null, paintEventArgs);
+            _Paint?.Invoke(null, paintEventArgs);            
         }        
     }
     #endregion

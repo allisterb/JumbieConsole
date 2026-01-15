@@ -147,8 +147,6 @@ public abstract class Control : CControl, IFocusable, IDisposable
     {
         // Render the control's content to the console buffer.
         Render();
-        // Notify parent containers that the control needs to be redrawn.
-        Redraw();
         // Mark the control region as valid.
         Validate();
     }
