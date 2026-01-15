@@ -11,6 +11,7 @@ public readonly struct Color
         R = r;
         G = g;
         B = b;
+        SystemColor = SystemDrawingColor.FromArgb(r, g, b);
     }
     #endregion
 
@@ -18,6 +19,7 @@ public readonly struct Color
     public byte R { get; }
     public byte G { get; }
     public byte B { get; }
+    public SystemDrawingColor SystemColor { get; }
     #endregion
     
     #region Methods
@@ -52,7 +54,7 @@ public readonly struct Color
 
     public static implicit operator Color(ConsoleGUIColor color) => FromConsoleGUIColor(color);
 
-    public static implicit operator SystemDrawingColor(Color color) => SystemDrawingColor.FromArgb(color.R, color.G, color.B);  
+    public static implicit operator SystemDrawingColor(Color color) => color.SystemColor;  
     #endregion
 
     #region Fields
