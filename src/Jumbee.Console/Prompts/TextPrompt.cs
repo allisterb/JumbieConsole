@@ -2,6 +2,7 @@ namespace Jumbee.Console;
 
 using System;
 using System.Linq;
+using System.Threading;
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
@@ -56,6 +57,15 @@ public class TextPrompt : Prompt
         }
     }
 
+    public int CaretPosition
+    {
+        get => _caretPosition;
+        set
+        {
+            _caretPosition = value;
+            DrawCursor();
+        }
+    }
     #endregion
 
     #region Methods       
@@ -64,11 +74,6 @@ public class TextPrompt : Prompt
         ansiConsole.Clear(true);
         var markup = _prompt.Trim();
         ansiConsole.Markup(markup + " ");
-        if (newInput is not null)
-        {
-            input = newInput;
-            newInput = null;                                                     
-        }
         inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
         ansiConsole.Write(input);
         _cursorScreenX = ansiConsole.CursorX;
@@ -84,38 +89,37 @@ public class TextPrompt : Prompt
     public override void OnInput(InputEvent inputEvent)
     {        
         bool handled = false;
-      
         _blinkState = true;            
         switch (inputEvent.Key.Key)
         {
             case ConsoleKey.LeftArrow:
-                _caretPosition = Math.Max(0, _caretPosition - 1);
+                CaretPosition = Math.Max(0, _caretPosition - 1);
                 handled = true;
                 break;
             case ConsoleKey.RightArrow:
-                _caretPosition = Math.Min(input.Length, _caretPosition + 1);
+                CaretPosition = Math.Min(input.Length, _caretPosition + 1);
                 handled = true;
                 break;
             case ConsoleKey.Home:
-                _caretPosition = 0;
+                CaretPosition = 0;
                 handled = true;
                 break;
             case ConsoleKey.End:
-                _caretPosition = input.Length;
+                CaretPosition = input.Length;
                 handled = true;
                 break;
             case ConsoleKey.Backspace:
                 if (_caretPosition > 0)
                 {
-                    newInput = input.Remove(_caretPosition - 1, 1);
-                    _caretPosition--;
+                    input = input.Remove(--_caretPosition, 1);
+                    Invalidate();
                     handled = true;
                 }
                 break;
             case ConsoleKey.Delete:
                 if (_caretPosition < input.Length)
                 {
-                    newInput = input.Remove(_caretPosition, 1);
+                    input = input.Remove(_caretPosition, 1);
                     handled = true;
                 }
                 break;
@@ -126,21 +130,12 @@ public class TextPrompt : Prompt
             default:
                 if (!char.IsControl(inputEvent.Key.KeyChar))
                 {
-                    newInput = input.Insert(_caretPosition, inputEvent.Key.KeyChar.ToString());
-                    _caretPosition++;
+                    input = input.Insert(CaretPosition++, inputEvent.Key.KeyChar.ToString());
+                    Invalidate();
                     handled = true;
                 }
                 break;
         }
-        if (newInput is not null)
-        {
-            Paint();
-        }
-        else
-        {
-            (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);   
-        }
-
         if (handled)
         {
             inputEvent.Handled = true;
@@ -168,6 +163,7 @@ public class TextPrompt : Prompt
     protected void DrawCursor()
     {
         _blinkState = !_blinkState;
+        (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);
         if (ShowCursor && _blinkState && _cursorScreenX >= 0 && _cursorScreenX < Size.Width &&
                     _cursorScreenY >= 0 && _cursorScreenY < Size.Height)
         {

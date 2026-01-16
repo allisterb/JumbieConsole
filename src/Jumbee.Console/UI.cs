@@ -56,7 +56,7 @@ public static class UI
                 }
                 else
                 {
-                    Thread.Sleep(10);
+                    Thread.Sleep(interval / 4);
                 }                    
             }
         });

@@ -17,7 +17,7 @@ public class Spinner : AnimatedControl
             frameCount = _spinner.Frames.Count;
             interval = _spinner.Interval.Ticks;
             spinnerFrames = _spinner.Frames.Select(Style.EscapeMarkup).ToArray();
-            spinnerFramesMarkup = spinnerFrames.Select(f => $"[{styleMarkup}]{f}[/]" + (string.IsNullOrEmpty(_text) ? "" : " " + _text)).ToArray();
+            spinnerFramesMarkup = spinnerFrames.Map(f => $"[{styleMarkup}]{f}[/]" + (string.IsNullOrEmpty(_text) ? "" : " " + _text));
         }
     }
 
@@ -28,7 +28,7 @@ public class Spinner : AnimatedControl
         {
             _style = value;
             styleMarkup = _style;
-            spinnerFramesMarkup = spinnerFrames.Select(f => $"[{styleMarkup}]{f}[/]" + (string.IsNullOrEmpty(_text) ? "" : " " + _text)).ToArray();
+            spinnerFramesMarkup = spinnerFrames.Map(f => $"[{styleMarkup}]{f}[/]" + (string.IsNullOrEmpty(_text) ? "" : " " + _text));
         }
     }
 
@@ -38,7 +38,7 @@ public class Spinner : AnimatedControl
         set
         {
             _text = value;
-            spinnerFramesMarkup = spinnerFrames.Select(f => $"[{styleMarkup}]{f}[/]" + (string.IsNullOrEmpty(_text) ? "" : " " + _text)).ToArray();
+            spinnerFramesMarkup = spinnerFrames.Map(f => $"[{styleMarkup}]{f}[/]" + (string.IsNullOrEmpty(_text) ? "" : " " + _text));
         }
     }
     #endregion

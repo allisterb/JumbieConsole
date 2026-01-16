@@ -149,7 +149,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     /// Handles the paint event triggered by the UI timer.
     /// </summary>
     /// <remarks>
-    /// This method tries to implement thread-safe painting by locking on the provided synchronization object.
+    /// This method tries to implement thread-safe painting by always running inside a lock on the provided synchronization object.
     /// If one or more paint requests are pending, it runs the painting process and resets the paint request count.
     /// </remarks>
     /// <param name="sender">The source of the event. This parameter can be <see langword="null"/>.</param>
@@ -158,8 +158,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
     {
         if (paintRequests > 0)
         {
-            Paint();
-            Validate();
+            lock (e.Lock)
+            {
+                Paint();
+                Validate();
+            }
         }
     }
     
