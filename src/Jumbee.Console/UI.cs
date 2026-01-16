@@ -48,10 +48,10 @@ public static class UI
             {
                 if (Console.KeyAvailable)
                 {
-                    if (Monitor.TryEnter(Lock))
+                    if (_lock.TryEnter())
                     {
                         inputHandler.OnInput(new InputEvent(Console.ReadKey(true)));
-                        Monitor.Exit(Lock);
+                        _lock.Exit();
                     }
                 }
                 else
@@ -82,7 +82,7 @@ public static class UI
     /// <param name="state">An optional state object passed by the timer. This parameter is not used in the method.</param>
     private static void OnTick(object? state)
     {
-        if (Monitor.TryEnter(Lock))
+        if (_lock.TryEnter())
         {
             // Resize and redraw UI if console size changed
             bool resized = ConsoleManager.AdjustBufferSize();
@@ -90,7 +90,7 @@ public static class UI
             // Resizing will automatically redraw, so just redraw if resize not needed.
             if (!resized) ConsoleManager.Redraw();
 
-            Monitor.Exit(Lock);            
+            _lock.Exit();            
             _Paint?.Invoke(null, paintEventArgs);            
         }        
     }   
@@ -101,8 +101,8 @@ public static class UI
     #endregion
 
     #region Fields   
-    internal static readonly object Lock = new object();
-    private static PaintEventArgs paintEventArgs = new PaintEventArgs(Lock);
+    private static readonly Lock _lock = new Lock();
+    private static PaintEventArgs paintEventArgs = new PaintEventArgs(_lock);
     private static Timer? timer;
     private static Task task = Task.CompletedTask;
     private static CancellationTokenSource cts = new CancellationTokenSource();
@@ -146,9 +146,9 @@ public static class UI
     #region Types
     public class PaintEventArgs : EventArgs
     {
-        public readonly object Lock;
+        public readonly Lock Lock;
 
-        public PaintEventArgs(object lockObject)
+        public PaintEventArgs(Lock lockObject)
         {
             Lock = lockObject;
         }

@@ -29,18 +29,15 @@ public abstract class Control : CControl, IFocusable, IDisposable
     public override Cell this[Position position]
     {
         get
-        {
-            lock (UI.Lock)
+        {            
+            if (position.X >= Size.Width || position.Y >= Size.Height)
             {
-                if (position.X >= Size.Width || position.Y >= Size.Height)
-                {
-                    return emptyCell;
-                }
-                else
-                {
-                    return consoleBuffer[position];
-                }
+                return emptyCell;
             }
+            else
+            {
+                return consoleBuffer[position];
+            }            
         }
     }
     #endregion
@@ -109,15 +106,12 @@ public abstract class Control : CControl, IFocusable, IDisposable
     protected abstract void Render();
 
     protected override void Initialize()
-    {
-        lock (UI.Lock)
-        {
-            var (width, height) = CalculateSize();
-            var size = new Size(width, height);                             
-            Resize(size);
-            consoleBuffer.Size = Size;
-            Paint();
-        }
+    {       
+        var (width, height) = CalculateSize();
+        var size = new Size(width, height);                             
+        Resize(size);
+        consoleBuffer.Size = Size;
+        Paint();        
     }
 
     /// <summary>
@@ -130,14 +124,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
     /// <param name="sender">The source of the event. This parameter can be <see langword="null"/>.</param>
     /// <param name="e">An instance of <see cref="PaintEventArgs"/> containing event data, including a synchronization lock.</param>
     protected virtual void OnPaint(object? sender, UI.PaintEventArgs e)
-    {
-        lock (e.Lock)
+    {       
+        if (paintRequests > 0)
         {
-            if (paintRequests > 0)
-            {
-                Paint();                
-            }
-        }
+            Paint();                
+        }        
     }
 
     /// <summary>

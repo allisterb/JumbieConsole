@@ -22,27 +22,24 @@ public abstract class RenderableControl : Control, IRenderable
     protected virtual Measurement Measure(RenderOptions options, int maxWidth) => new Measurement(maxWidth, maxWidth);
 
     protected override void Initialize()
-    {
-        lock (UI.Lock)
-        {
-            var (width, height) = CalculateSize();
+    {        
+        var (width, height) = CalculateSize();
 
-            // Create RenderOptions based on the virtual console and max width and height
-            var options = new RenderOptions(ansiConsole.Profile.Capabilities, new Spectre.Console.Size(width, height));
+        // Create RenderOptions based on the virtual console and max width and height
+        var options = new RenderOptions(ansiConsole.Profile.Capabilities, new Spectre.Console.Size(width, height));
 
-            // Determine Spectre.Console control measurement
-            var measurement = this.Measure(options, width);
+        // Determine Spectre.Console control measurement
+        var measurement = this.Measure(options, width);
         
-            // Resize the ConsoleGUI control            
-            var size = new ConsoleGUI.Space.Size(width, height);
-            Resize(size);
+        // Resize the ConsoleGUI control            
+        var size = new ConsoleGUI.Space.Size(width, height);
+        Resize(size);
 
-            // Update buffer size
-            consoleBuffer.Size = Size;
+        // Update buffer size
+        consoleBuffer.Size = Size;
 
-            // Trigger Paint/Render to fill the buffer
-            Paint();
-        }
+        // Trigger Paint/Render to fill the buffer
+        Paint();        
     }
 
     /// Renders the control's content to the console buffer.

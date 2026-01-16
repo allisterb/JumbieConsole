@@ -16,14 +16,15 @@ using System.Diagnostics;
 
 public class Program
 {
-    static void Main(string[] args) => DockPanelTest(args);
+    static void Main(string[] args) => TestGrid(args);
     
-    /*
-    static void Test1(string[] args)
+    
+    static void TestGrid(string[] args)
     {
         // --- Spectre.Console Controls ---
         // 1. Table
         var table = new Spectre.Console.Table();
+        /*
         table.Title("[bold yellow]Jumbee Console[/]");
         table.AddColumn("Library");
         table.AddColumn("Role");
@@ -32,7 +33,7 @@ public class Program
         table.AddRow("ConsoleGUI", "Layout & Windowing", "[blue]Integrated[/]");
         table.AddRow("Jumbee", "The Bridge", "[bold red]Working![/]");
         table.Border(TableBorder.DoubleEdge);
-
+        */
         // 2. Bar Chart
         var barChart = new Jumbee.Console.BarChart(
             ("Planning", 12, Yellow),
@@ -63,7 +64,7 @@ public class Program
 
         // --- ConsoleGUI Controls ---
         // Spinner
-        var spinner = new Jumbee.Console.Spinner
+        var spinner = new Spinner
         {
             SpinnerType = Spectre.Console.Spinner.Known.Dots,
             Text = "Waiting for input...",
@@ -114,7 +115,7 @@ public class Program
         
         t.Wait();
     }
-    */
+    
     static void DockPanelTest(string[] args)
     {
         var p = new TextPrompt(">", blinkCursor: true)

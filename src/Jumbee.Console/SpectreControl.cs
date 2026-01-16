@@ -57,40 +57,38 @@ public class SpectreControl<T> : RenderableControl where T : IRenderable
     }
 
     protected override void Initialize()
-    {
-        lock (UI.Lock)
-        {
-            // Handle the case when negative or overflow sizes may get passed down by parent containers
-            int maxWidth = Math.Min(1000, Math.Max(0, MaxSize.Width));
-            int maxHeight = Math.Min(1000, Math.Max(0, MaxSize.Height));
+    {        
+        // Handle the case when negative or overflow sizes may get passed down by parent containers
+        int maxWidth = Math.Min(1000, Math.Max(0, MaxSize.Width));
+        int maxHeight = Math.Min(1000, Math.Max(0, MaxSize.Height));
 
-            // Create RenderOptions based on the virtual console and max width and height
-            var options = new RenderOptions(ansiConsole.Profile.Capabilities, new Spectre.Console.Size(maxWidth, maxHeight));
+        // Create RenderOptions based on the virtual console and max width and height
+        var options = new RenderOptions(ansiConsole.Profile.Capabilities, new Spectre.Console.Size(maxWidth, maxHeight));
 
-            // Determine Spectre.Console control measurement
-            var measurement = Content.Measure(options, maxWidth);
+        // Determine Spectre.Console control measurement
+        var measurement = Content.Measure(options, maxWidth);
 
-            // Determine final size
-            // Respect MinSize/MaxSize constraints from ConsoleGUI parent
-            var width = Math.Clamp(measurement.Max, MinSize.Width, MaxSize.Width);
+        // Determine final size
+        // Respect MinSize/MaxSize constraints from ConsoleGUI parent
+        var width = Math.Clamp(measurement.Max, MinSize.Width, MaxSize.Width);
 
-            // Height might be determined by the content (if available) or calculated
-            // For many widgets, height is dynamic. 
-            // If Measure doesn't return height, we might need a test Render or heuristics.
-            // Assuming we fit in MaxSize.Height:
-            var height = Math.Min(measurement.Max, MaxSize.Height); // Simplified
+        // Height might be determined by the content (if available) or calculated
+        // For many widgets, height is dynamic. 
+        // If Measure doesn't return height, we might need a test Render or heuristics.
+        // Assuming we fit in MaxSize.Height:
+        var height = Math.Min(measurement.Max, MaxSize.Height); // Simplified
             
-            // Resize the ConsoleGUI control            
-            var size = new ConsoleGUI.Space.Size(width, height);    
-            Resize(size);
+        // Resize the ConsoleGUI control            
+        var size = new ConsoleGUI.Space.Size(width, height);    
+        Resize(size);
 
-            // Update buffer size
-            consoleBuffer.Size = Size;
+        // Update buffer size
+        consoleBuffer.Size = Size;
 
-            // Trigger Paint/Render to fill the buffer
-            Paint();
-        }
+        // Trigger Paint/Render to fill the buffer
+        Paint();
     }
+    
 
 
     protected override Measurement Measure(RenderOptions options, int maxWidth) => _content.Measure(options, maxWidth);
