@@ -24,38 +24,6 @@ public class TextPrompt : Prompt
     public event EventHandler<string>? Committed;
     #endregion
 
-    #region Indexers
-    public override Cell this[Position position]
-    {
-        get
-        {
-            lock (UI.Lock)
-            {
-                Cell cell = emptyCell;
-                if (
-                    position.X >= 0 && position.X < Size.Width &&
-                    position.Y >= 0 && position.Y < Size.Height)
-                {
-                    cell = consoleBuffer[position];
-                }
-                // Render Cursor
-                if (ShowCursor && _blinkState)
-                {
-                    if (position.X == _cursorScreenX && position.Y == _cursorScreenY)
-                    {
-                        if (cell.Content == null || cell.Content == '\0')
-                        {
-                            return _cursorEmptyCell;
-                        }
-                        return cell.WithBackground(_cursorBackgroundColor);
-                    }
-                }
-                return cell;
-            }
-        }
-    }
-    #endregion
-
     #region Properties
 
     public bool ShowCursor 
@@ -121,71 +89,70 @@ public class TextPrompt : Prompt
 
     public override void OnInput(InputEvent inputEvent)
     {
-        lock (UI.Lock)
+        
+        bool handled = false;
+        newInput = null;
+        _blinkState = true;            
+        switch (inputEvent.Key.Key)
         {
-            bool handled = false;
-            newInput = null;
-            _blinkState = true;            
-            switch (inputEvent.Key.Key)
-            {
-                case ConsoleKey.LeftArrow:
-                    _caretPosition = Math.Max(0, _caretPosition - 1);
+            case ConsoleKey.LeftArrow:
+                _caretPosition = Math.Max(0, _caretPosition - 1);
+                handled = true;
+                break;
+            case ConsoleKey.RightArrow:
+                _caretPosition = Math.Min(input.Length, _caretPosition + 1);
+                handled = true;
+                break;
+            case ConsoleKey.Home:
+                _caretPosition = 0;
+                handled = true;
+                break;
+            case ConsoleKey.End:
+                _caretPosition = input.Length;
+                handled = true;
+                break;
+            case ConsoleKey.Backspace:
+                if (_caretPosition > 0)
+                {
+                    newInput = input.Remove(_caretPosition - 1, 1);
+                    _caretPosition--;
                     handled = true;
-                    break;
-                case ConsoleKey.RightArrow:
-                    _caretPosition = Math.Min(input.Length, _caretPosition + 1);
+                }
+                break;
+            case ConsoleKey.Delete:
+                if (_caretPosition < input.Length)
+                {
+                    newInput = input.Remove(_caretPosition, 1);
                     handled = true;
-                    break;
-                case ConsoleKey.Home:
-                    _caretPosition = 0;
+                }
+                break;
+            case ConsoleKey.Enter:
+                AttemptCommit();
+                handled = true;
+                break;
+            default:
+                if (!char.IsControl(inputEvent.Key.KeyChar))
+                {
+                    newInput = input.Insert(_caretPosition, inputEvent.Key.KeyChar.ToString());
+                    _caretPosition++;
                     handled = true;
-                    break;
-                case ConsoleKey.End:
-                    _caretPosition = input.Length;
-                    handled = true;
-                    break;
-                case ConsoleKey.Backspace:
-                    if (_caretPosition > 0)
-                    {
-                        newInput = input.Remove(_caretPosition - 1, 1);
-                        _caretPosition--;
-                        handled = true;
-                    }
-                    break;
-                case ConsoleKey.Delete:
-                    if (_caretPosition < input.Length)
-                    {
-                        newInput = input.Remove(_caretPosition, 1);
-                        handled = true;
-                    }
-                    break;
-                case ConsoleKey.Enter:
-                    AttemptCommit();
-                    handled = true;
-                    break;
-                default:
-                    if (!char.IsControl(inputEvent.Key.KeyChar))
-                    {
-                        newInput = input.Insert(_caretPosition, inputEvent.Key.KeyChar.ToString());
-                        _caretPosition++;
-                        handled = true;
-                    }
-                    break;
-            }
-            if (newInput is not null)
-            {
-                Paint();
-            }
-            else
-            {
-                (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);   
-            }
-
-            if (handled)
-            {
-                inputEvent.Handled = true;
-            }
+                }
+                break;
         }
+        if (newInput is not null)
+        {
+            Paint();
+        }
+        else
+        {
+            (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);   
+        }
+
+        if (handled)
+        {
+            inputEvent.Handled = true;
+        }
+        
     }
 
     protected override void Control_OnFocus()

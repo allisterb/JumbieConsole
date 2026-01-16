@@ -123,9 +123,9 @@ public class Program
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20 };
         tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions");
         p.Focus();
-        var d = new DockPanel(DockedControlPlacement.Right, tree, p);
-        //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
-        var t = UI.Start(d, paintInterval: 20);
+        //var d = new DockPanel(DockedControlPlacement.Right, tree, p);
+        var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
+        var t = UI.Start(g);
         t.Wait();
     }
 

@@ -20,7 +20,7 @@ public static class UI
     /// <summary>
     /// Initializes the console and starts the UI.
     /// </summary>
-    public static Task Start(ILayout layout, int width = 110, int height = 25, int paintInterval = 100, int inputInterval = 100, bool isTrueColorTerminal = true)
+    public static Task Start(ILayout layout, int width = 110, int height = 25, int paintInterval = 100, bool isTrueColorTerminal = true)
     {
         if (isRunning) return task;
         if (!isTrueColorTerminal)
@@ -45,11 +45,21 @@ public static class UI
         {
             // Main input loop
             while (!cancellationToken.IsCancellationRequested)
-            {                
-                ConsoleManager.ReadInput([inputHandler]);
-                Thread.Sleep(inputInterval);
+            {
+                if (Console.KeyAvailable)
+                {
+                    if (Monitor.TryEnter(Lock))
+                    {
+                        inputHandler.OnInput(new InputEvent(Console.ReadKey(true)));
+                        Monitor.Exit(Lock);
+                    }
+                }
+                else
+                {
+                    Thread.Sleep(10);
+                }                    
             }
-        }, cancellationToken);
+        });
         isRunning = true;
         return task;
     }
@@ -77,13 +87,13 @@ public static class UI
             // Resize and redraw UI if console size changed
             bool resized = ConsoleManager.AdjustBufferSize();
             
-            // If not resized then just redraw
+            // Resizing will automatically redraw, so just redraw if resize not needed.
             if (!resized) ConsoleManager.Redraw();
 
             Monitor.Exit(Lock);            
             _Paint?.Invoke(null, paintEventArgs);            
         }        
-    }
+    }   
     #endregion
 
     #region Properties
