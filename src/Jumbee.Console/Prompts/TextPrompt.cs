@@ -17,6 +17,7 @@ public class TextPrompt : Prompt
         this._showCursor = showCursor;
         this.blinkCursor = blinkCursor;
         this.newInput = "";
+        Invalidate();
     }
     #endregion
 
@@ -60,38 +61,30 @@ public class TextPrompt : Prompt
     #region Methods       
     protected override void Render()
     {
-        // Assume lock is held by caller (Initialize or OnInput)
-
+        ansiConsole.Clear(true);
+        var markup = _prompt.Trim();
+        ansiConsole.Markup(markup + " ");
         if (newInput is not null)
         {
             input = newInput;
-            ansiConsole.Clear(true);
-            var markup = _prompt.Trim();
-            ansiConsole.Markup(markup + " ");                        
-            inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
-            ansiConsole.Write(input);
-            _cursorScreenX = ansiConsole.CursorX;
-            _cursorScreenY = ansiConsole.CursorY;                       
-        }       
+            newInput = null;                                                     
+        }
+        inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
+        ansiConsole.Write(input);
+        _cursorScreenX = ansiConsole.CursorX;
+        _cursorScreenY = ansiConsole.CursorY;
     }
 
-    protected override void OnPaint(object? sender, UI.PaintEventArgs e)
+    protected override void Paint()
     {
-        lock (e.Lock)
-        {            
-            if (paintRequests > 0)
-            {
-                Paint();
-            }
-            DrawCursor();
-        }                       
+        Render();
+        DrawCursor();
     }
-
+  
     public override void OnInput(InputEvent inputEvent)
-    {
-        
+    {        
         bool handled = false;
-        newInput = null;
+      
         _blinkState = true;            
         switch (inputEvent.Key.Key)
         {

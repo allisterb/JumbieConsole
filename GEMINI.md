@@ -36,9 +36,9 @@ The project Jumbee.Console at @src/Jumbee.Console is a .NET library for building
 The initial plan created a bridge between the two libraries by implementing `IAnsiConsole` from Spectre.Console in the `AnsiConsoleBuffer` class at @src/Jumbee.Console/AnsiConsoleBuffer.cs to store Spectre.Console control output instead of writing it to the console immediately, 
 and a `SpectreControl` class for wrapping Spectre.Console controls as ConsoleGUI `IControl` to be used with ConsoleGUI control and layout classes.
 
-Support for updating and animating controls was added by using a single background thread started by the UI class running a timer that fires Paint events at regular intervals that controls use to update
-their state. Drawing conflicts during updates are mitigated by using a single lock object that gets passed to all controls derived from Control in Paint events to synchronize access to their internal state
-so that they can be properly rendered and drawn by ConsoleGUI. Paint events are only raised by the UI class when the lock is not held by any control.
+Support for updating and animating controls was added by using a single background thread started by the UI class running a timer that redraws the UI and fires Paint events at regular intervals that controls use to update
+their state. Drawing conflicts are mitigated by using a single lock object that gets passed to all controls derived from Control in Paint events to synchronize access to their internal state
+so that they can be properly rendered. UI redraws and paint events only occur in the UI class when the lock is not held by any control.
 
 ## Project design and architecture
 

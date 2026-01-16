@@ -5,7 +5,10 @@ using System;
 public abstract class AnimatedControl : Control
 {
     #region Constructors
-    public AnimatedControl() : base() {}
+    public AnimatedControl() : base() 
+    {
+        Invalidate();
+    }
     #endregion
    
     #region Methods
@@ -29,22 +32,24 @@ public abstract class AnimatedControl : Control
         base.Dispose();        
     }
         
-    protected sealed override void OnPaint(object? sender, UI.PaintEventArgs e)
-    {
-        lock (e.Lock)
+    protected override void Paint()
+    {        
+        if (!isRunning) return;
+        var now = DateTime.Now.Ticks;
+        var delta = now - lastUpdate;
+        lastUpdate = now;
+        accumulated += delta;
+        if (accumulated >= interval)
         {
-            if (!isRunning) return;
-            var now = DateTime.Now.Ticks;
-            var delta = now - lastUpdate;
-            lastUpdate = now;
-            accumulated += delta;
-            if (accumulated >= interval)
-            {
-                accumulated = 0L;
-                frameIndex = (frameIndex + 1) % frameCount;
-                Paint();
-            }
-        }
+            accumulated = 0L;
+            frameIndex = (frameIndex + 1) % frameCount;
+            Render();
+        }        
+    }
+
+    protected override void Validate()
+    {
+       
     }
     #endregion
 
