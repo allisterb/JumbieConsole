@@ -124,11 +124,14 @@ public abstract class Control : CControl, IFocusable, IDisposable
     /// <param name="sender">The source of the event. This parameter can be <see langword="null"/>.</param>
     /// <param name="e">An instance of <see cref="PaintEventArgs"/> containing event data, including a synchronization lock.</param>
     protected virtual void OnPaint(object? sender, UI.PaintEventArgs e)
-    {       
-        if (paintRequests > 0)
+    {
+        lock (e.Lock)
         {
-            Paint();                
-        }        
+            if (paintRequests > 0)
+            {
+                Paint();
+            }
+        }
     }
 
     /// <summary>
