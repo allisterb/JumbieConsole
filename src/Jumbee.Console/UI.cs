@@ -106,6 +106,17 @@ public static class UI
             _Paint?.Invoke(null, paintEventArgs);            
         }        
     }   
+    /// <summary>
+    /// Executes an action within the UI lock, ensuring thread safety for UI updates.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    internal static void Invoke(Action action)
+    {
+        lock (_lock)
+        {
+            action();
+        }
+    }
     #endregion
 
     #region Properties

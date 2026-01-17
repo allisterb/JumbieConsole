@@ -47,8 +47,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
         get => field;
         set
         {
-            field = value;            
-            Resize(new Size(value, Height));
+            UI.Invoke(() => 
+            {
+                field = value;            
+                Resize(new Size(value, Height));
+            });
         }
     }
 
@@ -57,8 +60,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
         get => field;
         set
         {
-            field = value;
-            Resize(new Size(Width, value));
+            UI.Invoke(() => 
+            {
+                field = value;
+                Resize(new Size(Width, value));
+            });
         }
     }   
 
@@ -119,11 +125,14 @@ public abstract class Control : CControl, IFocusable, IDisposable
 
     protected override void Initialize()
     {       
-        var (width, height) = CalculateSize();
-        var size = new Size(width, height);                             
-        Resize(size);
-        consoleBuffer.Size = Size;
-        Paint();        
+        UI.Invoke(() => 
+        {
+            var (width, height) = CalculateSize();
+            var size = new Size(width, height);                             
+            Resize(size);
+            consoleBuffer.Size = Size;
+            Paint();        
+        });
     }
             
     protected virtual void Paint() => Render();
