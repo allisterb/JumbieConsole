@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
 using ConsoleGUI;
 using ConsoleGUI.Common;
 using ConsoleGUI.Data;
@@ -18,7 +18,7 @@ public enum LayoutKeyboardNavigation
     Right
 }
 
-public interface ILayout : IFocusable, IDrawingContextListener, IInputListener
+public interface ILayout : IFocusable, IDrawingContextListener
 {
     int Rows { get; }
     
@@ -102,6 +102,8 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
             }
         }
     }
+
+    public bool HandlesInput => true;
     #endregion
 
     #region Events
@@ -115,8 +117,8 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
 
     public void OnUpdate(DrawingContext drawingContext, Rect rect) => control.OnUpdate(drawingContext, rect);
 
-    public void OnInput(InputEvent inputEvent) => Array.ForEach(inputListeners, il => il.FocusedControl?.OnInput(inputEvent));
-
+    public void OnInput(UI.InputEventArgs inputEventArgs) => Array.ForEach(inputListeners, il => il.OnInput(inputEventArgs));
+       
     protected void UpdateInputListeners()
     {        
         inputListeners = 

@@ -40,18 +40,30 @@ public static class UI
             }               
         }
         timer = new Timer(OnTick, null, interval, interval);
-        var inputHandler = new GlobalInputListener();
+        var globalInputListener = new GlobalInputListener();
         task = Task.Run(() =>
         {
             // Main input loop
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (Console.KeyAvailable)
-                {
+                {                                       
                     if (_lock.TryEnter())
                     {
-                        inputHandler.OnInput(new InputEvent(Console.ReadKey(true)));
+                        var inputEvent = new InputEvent(Console.ReadKey(true));
+                        // Invoke global input event
+                        globalInputListener.OnInput(inputEvent);
                         _lock.Exit();
+                        if (inputEvent.Handled)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            // Invoke control input events
+                            inputEventArgs.InputEvent = inputEvent;
+                            layout!.OnInput(inputEventArgs);
+                        }
                     }
                 }
                 else
@@ -77,20 +89,20 @@ public static class UI
     }
     
     /// <summary>
-    /// Handles periodic timer ticks by invoking the <see cref="Paint"/> event, if the lock is available.
+    /// Handles periodic timer ticks by redrawing the UI and invoking the <see cref="Paint"/> event, if the lock is available.
     /// </summary>
-    /// <param name="state">An optional state object passed by the timer. This parameter is not used in the method.</param>
     private static void OnTick(object? state)
     {
         if (_lock.TryEnter())
         {
-            // Resize and redraw UI if console size changed
+            // Resize and redraw UI on console if console size changed
             bool resized = ConsoleManager.AdjustBufferSize();
             
             // Resizing will automatically redraw, so just redraw if resize not needed.
             if (!resized) ConsoleManager.Redraw();
 
-            _lock.Exit();            
+            _lock.Exit();
+            // Invoke control paint events
             _Paint?.Invoke(null, paintEventArgs);            
         }        
     }   
@@ -103,6 +115,7 @@ public static class UI
     #region Fields   
     private static readonly Lock _lock = new Lock();
     private static PaintEventArgs paintEventArgs = new PaintEventArgs(_lock);
+    private static InputEventArgs inputEventArgs = new InputEventArgs(_lock);
     private static Timer? timer;
     private static Task task = Task.CompletedTask;
     private static CancellationTokenSource cts = new CancellationTokenSource();
@@ -140,7 +153,7 @@ public static class UI
                 controls.Remove(control);
             }           
         }
-    }        
+    }
     #endregion
 
     #region Types
@@ -154,21 +167,28 @@ public static class UI
         }
     }
 
+    public class InputEventArgs : EventArgs
+    {
+        public readonly Lock Lock;
+
+        public InputEvent? InputEvent { get; internal set; }
+
+        public InputEventArgs(Lock lockObject)
+        {
+            Lock = lockObject;
+        }
+    }
+
     public class GlobalInputListener: IInputListener
     {
         public void OnInput(InputEvent inputEvent)
         {
             if (GlobalHotKeys.TryGetValue(inputEvent.Key, out var action))
-            {
+            {               
                 action?.Invoke();
                 inputEvent.Handled = true;
-                return;
-            }
-
-            else
-            {
-                layout!.OnInput(inputEvent);
-            }
+                return;                
+            }           
         }
     }
 

@@ -14,7 +14,6 @@ public abstract class Control : CControl, IFocusable, IDisposable
     {
         consoleBuffer = new ConsoleBuffer();
         ansiConsole = new AnsiConsoleBuffer(consoleBuffer);
-        //((IControl)this).Context = UI.Layout;
         UI.Paint += OnPaint;
         OnFocus += Control_OnFocus;
         OnLostFocus += Control_OnLostFocus;
@@ -85,6 +84,19 @@ public abstract class Control : CControl, IFocusable, IDisposable
     }
 
     public IFocusable FocusableControl => this.Frame is not null ? this.Frame : this;
+
+    public virtual bool HandlesInput { get; } = false;
+
+    public void OnInput(UI.InputEventArgs inputEventArgs)
+    {
+        if (HandlesInput)
+        {
+            lock(inputEventArgs.Lock)
+            {
+                (this as IFocusable).OnInput(inputEventArgs.InputEvent);
+            }
+        }
+    }
     #endregion
 
     #region Methods
@@ -165,7 +177,14 @@ public abstract class Control : CControl, IFocusable, IDisposable
             }
         }
     }
-    
+
+    private void OnInput(object? sender, UI.InputEventArgs inputEventArgs)
+    {
+        lock (inputEventArgs.Lock)
+        {
+            (this as IInputListener).OnInput(inputEventArgs.InputEvent);
+        }
+    }
     #endregion
 
     #region Events

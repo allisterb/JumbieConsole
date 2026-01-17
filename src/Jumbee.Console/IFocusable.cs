@@ -16,12 +16,16 @@ public interface IFocusable : IControl, IInputListener
     event FocusableEventHandler OnFocus;
 
     event FocusableEventHandler OnLostFocus;
-
-    void IInputListener.OnInput(InputEvent inputEvent) {}
-
+    
     void Focus() => IsFocused = true;
 
     void UnFocus() => IsFocused = false;
-    
+
+    bool HandlesInput { get; }
+
+    void OnInput(UI.InputEventArgs inputEventArgs);
+
+    void IInputListener.OnInput(InputEvent inputEvent) {}
+
     IFocusable? FocusedControl => Focusable && IsFocused ? FocusableControl : null;
 }

@@ -11,14 +11,12 @@ using Spectre.Console;
 public class TextPrompt : Prompt
 {
     #region Constructors
-    public TextPrompt(string prompt, StringComparer? comparer = null, bool showCursor = true, bool blinkCursor = true)
+    public TextPrompt(string prompt, StringComparer? comparer = null, bool showCursor = true, bool blinkCursor = true) : base()
     {
         this._prompt = prompt;
         this._comparer = comparer;
         this._showCursor = showCursor;
-        this.blinkCursor = blinkCursor;
-        this.newInput = "";
-        Invalidate();
+        this.blinkCursor = blinkCursor;        
     }
     #endregion
 
@@ -187,8 +185,6 @@ public class TextPrompt : Prompt
     private bool _showCursor;
     private bool blinkCursor;
     private string input = string.Empty;
-    private string? newInput = null;
-
     private int _caretPosition = 0;
     private Position inputStart = default;
     private int _cursorScreenX = 0;

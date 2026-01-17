@@ -36,9 +36,14 @@ The project Jumbee.Console at @src/Jumbee.Console is a .NET library for building
 The initial plan created a bridge between the two libraries by implementing `IAnsiConsole` from Spectre.Console in the `AnsiConsoleBuffer` class at @src/Jumbee.Console/AnsiConsoleBuffer.cs to store Spectre.Console control output instead of writing it to the console immediately, 
 and a `SpectreControl` class for wrapping Spectre.Console controls as ConsoleGUI `IControl` to be used with ConsoleGUI control and layout classes.
 
+`SpectreConsole` inherits from the base `Jumbee.Console.Control` class that provides the base functionality for all Jumbee.Console controls that display output and recieve user input.
 Support for updating and animating controls was added by using a single background thread started by the UI class running a timer that redraws the UI and fires Paint events at regular intervals that controls use to update
-their state. Drawing conflicts are mitigated by using a single lock object that gets passed to all controls derived from Control in Paint events to synchronize access to their internal state
-so that they can be properly rendered. UI redraws and paint events only occur in the UI class when the lock is not held by any control.
+their state. Concurrent drawing conflicts are mitigated by using a single lock object that is acquired by each control derived from Control in Paint and OnInput events to synchronize access to their internal state
+so that they can be properly rendered. UI redraws and paint events only occur in the UI class when the lock is not held by any control. Concurrent updates to control state by multiple threads
+are handled using a copy-on-write strategy using the `CloneContent` and `UpdateContent` methods in the `Control` class.
+
+Control layout is handled using `Jumbee.Console.Layout` derived classes that wrap ConsoleGUI layout classes. Drawing conflicts from concurrent updates in ConsoleGUI layout classes are mitigated using the library's `FreezeContext` type 
+which waits until all concurrent requests for changes to a layout control are completed before redrawing and propagating the changes upward to parent containers.
 
 ## Project design and architecture
 

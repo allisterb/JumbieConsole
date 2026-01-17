@@ -393,6 +393,17 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
 
     public IFocusable FocusableControl => this;
 
+    public bool HandlesInput => true;
+
+    public void OnInput(UI.InputEventArgs inputEventArgs)
+    {
+        (this as IFocusable).OnInput(inputEventArgs.InputEvent);
+        if (!inputEventArgs.InputEvent?.Handled ?? true)
+        {
+            Control.OnInput(inputEventArgs);
+        }
+    }
+
     private DrawingContext ControlContext
     {
         get => _controlContext;

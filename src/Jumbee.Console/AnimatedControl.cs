@@ -47,10 +47,8 @@ public abstract class AnimatedControl : Control
         }        
     }
 
-    protected override void Validate()
-    {
-       
-    }
+    // Control should always repaint itself
+    protected override void Validate() {}
     #endregion
 
     #region Fields
