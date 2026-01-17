@@ -11,10 +11,9 @@ using Spectre.Console;
 public class TextPrompt : Prompt
 {
     #region Constructors
-    public TextPrompt(string prompt, StringComparer? comparer = null, bool showCursor = true, bool blinkCursor = true) : base()
+    public TextPrompt(string prompt, bool showCursor = true, bool blinkCursor = true) : base()
     {
         this._prompt = prompt;
-        this._comparer = comparer;
         this._showCursor = showCursor;
         this.blinkCursor = blinkCursor;        
     }
@@ -25,6 +24,16 @@ public class TextPrompt : Prompt
     #endregion
 
     #region Properties
+    public string Prompt
+    {
+        get => _prompt;
+        set
+        {
+            _prompt = string.IsNullOrEmpty(value) ? "" : value + " ";
+            Invalidate();
+        }
+
+    }
 
     public bool ShowCursor 
     { 
@@ -61,16 +70,62 @@ public class TextPrompt : Prompt
     #region Methods       
     protected override void Render()
     {
+        var (x, y) = consoleBuffer.GetPosition(input.Length + _prompt.Length + 1);
+        if ( x == _cursorScreenX && y == _cursorScreenY) 
+        {
+            return;
+        }
+       
         ansiConsole.Clear(true);
-        ansiConsole.Markup(_prompt + " ");
+        ansiConsole.Markup(_prompt);
         inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
         ansiConsole.Write(input);
+    }
+
+    protected void DrawCursor()
+    {
+        if (!_showCursor) return;
+        (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);
+        if (_showCursor && _cursorScreenX >= 0 && _cursorScreenX < Size.Width &&
+                    _cursorScreenY >= 0 && _cursorScreenY < Size.Height)
+        {
+            var cell = consoleBuffer[_cursorScreenX, _cursorScreenY];
+            blinkState = !blinkState;
+            if (cell.Content == null || cell.Content == '\0')
+            {
+                if (blinkCursor && blinkState)
+                {
+                    consoleBuffer.Write(_cursorScreenX, _cursorScreenY, _cursorEmptyCellBlink);
+                }
+                else
+                {
+                    consoleBuffer.Write(_cursorScreenX, _cursorScreenY, _cursorEmptyCell);
+                }
+
+            }
+            else
+            {
+                if (blinkCursor && blinkState)
+                {
+                    consoleBuffer.Write(_cursorScreenX, _cursorScreenY, cell);
+                }
+                else
+                {
+                    consoleBuffer.Write(_cursorScreenX, _cursorScreenY, cell.WithBackground(_cursorBackgroundColor)); 
+                }
+            }
+        }
     }
 
     protected override void Paint()
     {
         Render();
         DrawCursor();
+    }
+
+    protected override void Validate()
+    {
+        if (!blinkCursor) base.Validate();
     }
   
     public override void OnInput(InputEvent inputEvent)
@@ -141,32 +196,14 @@ public class TextPrompt : Prompt
         Committed?.Invoke(this, input);
     }
 
-    protected void DrawCursor()
-    {
-        (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);
-        if (_showCursor && _cursorScreenX >= 0 && _cursorScreenX < Size.Width &&
-                    _cursorScreenY >= 0 && _cursorScreenY < Size.Height)
-        {
-            var cell = consoleBuffer[_cursorScreenX, _cursorScreenY];
-            if (cell.Content == null || cell.Content == '\0')
-            {
-                consoleBuffer.Write(_cursorScreenX, _cursorScreenY, _cursorEmptyCell);
-
-            }
-            else
-            {
-                consoleBuffer.Write(_cursorScreenX, _cursorScreenY, cell.WithBackground(_cursorBackgroundColor));
-                
-            }
-        }
-    }
+    
     #endregion
 
     #region Fields
-    private readonly string _prompt;
-    private readonly StringComparer? _comparer;
+    private string _prompt;
     private bool _showCursor;
     private bool blinkCursor;
+    private bool blinkState;
     private string input = string.Empty;
     private int _caretPosition = 0;
     private Position inputStart = default;
@@ -174,6 +211,7 @@ public class TextPrompt : Prompt
     private int _cursorScreenY = 0;
     private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
     private static readonly Cell _cursorEmptyCell = new Cell(' ').WithBackground(_cursorBackgroundColor);
+    private static readonly Cell _cursorEmptyCellBlink = new Cell(' ');
     #endregion    
 }
 
