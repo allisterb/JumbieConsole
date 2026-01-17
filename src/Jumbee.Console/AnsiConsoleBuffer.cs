@@ -66,33 +66,49 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
         var segments = renderable.GetSegments(this);
         foreach (var segment in segments)
         {
-            if (segment.IsControlCode) continue;
+            if (segment.IsControlCode)
+            {                
+                foreach (var c in segment.Text)
+                {
+                    var width = c.ToString().GetCellWidth();
+                    if (width <= 0) continue; // Skip zero-width chars
 
-            var style = segment.Style;
-            var fg = Color.ToConsoleGUIColor(style.Foreground);
-            var bg = Color.ToConsoleGUIColor(style.Background);
-
-            foreach (char c in segment.Text)
+                    var position = new Position(_cursorX, _cursorY);
+                    if (IsValidPosition(position))
+                    {
+                        _console.Write(position, new Character(c, isControl: true));
+                    }
+                    _cursorX += width;
+                }                
+            }
+            else
             {
-                if (c == '\n')
+                var style = segment.Style;
+                var fg = Color.ToConsoleGUIColor(style.Foreground);
+                var bg = Color.ToConsoleGUIColor(style.Background);
+                var decoration = (ConsoleGUI.Data.Decoration)style.Decoration;
+                foreach (char c in segment.Text)
                 {
-                    _cursorY++;
-                    _cursorX = 0;
-                    continue;
-                }
-                
-                if (c == '\r') continue;
+                    if (c == '\n')
+                    {
+                        _cursorY++;
+                        _cursorX = 0;
+                        continue;
+                    }
 
-                var width = c.ToString().GetCellWidth();
-                if (width <= 0) continue; // Skip zero-width chars
+                    if (c == '\r') continue;
 
-                var position = new Position(_cursorX, _cursorY);
-                if (IsValidPosition(position))
-                {
-                    _console.Write(position, new Character(c, fg, bg));
+                    var width = c.ToString().GetCellWidth();
+                    if (width <= 0) continue; // Skip zero-width chars
+
+                    var position = new Position(_cursorX, _cursorY);
+                    if (IsValidPosition(position))
+                    {
+                        _console.Write(position, new Character(c, fg, bg, decoration));
+                    }
+
+                    _cursorX += width;
                 }
-                
-                _cursorX += width;
             }
         }
     }

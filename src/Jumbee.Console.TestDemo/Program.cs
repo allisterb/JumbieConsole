@@ -16,7 +16,7 @@ using System.Diagnostics;
 
 public class Program
 {
-    static void Main(string[] args) => DockPanelTest(args);
+    static void Main(string[] args) => GridTest(args);
     
     
     static void GridTest(string[] args)
