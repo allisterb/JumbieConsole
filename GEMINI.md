@@ -40,10 +40,11 @@ and a `SpectreControl` class for wrapping Spectre.Console controls as ConsoleGUI
 Support for updating and animating controls was added by using a single background thread started by the UI class running a timer that redraws the UI and fires Paint events at regular intervals that controls use to update
 their state. Concurrent drawing conflicts are mitigated by using a single lock object that is acquired by each control derived from Control in Paint and OnInput events to synchronize access to their internal state
 so that they can be properly rendered. UI redraws and paint events only occur in the UI class when the lock is not held by any control. Concurrent updates to control state by multiple threads
-are handled using a copy-on-write strategy using the `CloneContent` and `UpdateContent` methods in the `Control` class.
+are handled using a copy-on-write strategy using the `CloneContent` and `UpdateContent` methods in the `Control` class, and by using the UI.Invoke method to acquire the UI lock when changes that affect
+the global UI state and layout, like setting a Control's size, are performed.
 
-Control layout is handled using `Jumbee.Console.Layout` derived classes that wrap ConsoleGUI layout classes. Drawing conflicts from concurrent updates in ConsoleGUI layout classes are mitigated using the library's `FreezeContext` type 
-which waits until all concurrent requests for changes to a layout control are completed before redrawing and propagating the changes upward to parent containers.
+Control layout is handled using `Jumbee.Console.Layout` derived classes that wrap ConsoleGUI layout classes. Drawing conflicts from concurrent updates in ConsoleGUI layout classes are mitigated using the UI.Invoke method 
+to synchronize concurrent requests for changes to a layout control before redrawing and propagating the changes upward to parent containers.
 
 ## Project design and architecture
 
@@ -60,7 +61,7 @@ of ConsoleGUI classes like Border, Margin, and VerticalScrollPanel.
 Controls and ControlFrames can be placed in Jumbee.Console.Layout classes for arrangement. This class wraps existing ConsoleGUI layout controls like ConsoleGUI.Controls.Grid.
 
 ### SpectreControl class
-The SpectreControl class is a generic class that wraps a Spectre.Console IRenderable control as a ConsoleGUI IControl. It uses the AnsiConsoleBuffer to render the Spectre control to a buffer, 
+The SpectreControl class is a generic class that wraps an existing Spectre.Console IRenderable control as a ConsoleGUI IControl. It uses the AnsiConsoleBuffer to render the Spectre control to a buffer, 
 which is used by ConsoleGUI to draw the control to the console screen. Note the following important considerations when deriving from this class:
 
 - Any public properties or methods that change the visual state of the control must call the Invalidate() method to indicate that the control needs to be re-rendered and re-drawn by parent containers. 

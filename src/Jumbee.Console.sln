@@ -15,11 +15,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jumbee.Console.TestDemo", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{C9B2828B-DAC4-4D99-B75E-890596A0B988}"
 	ProjectSection(SolutionItems) = preProject
-		..\docs\ConsoleGUI and Spectre.Console Control Integration.md = ..\docs\ConsoleGUI and Spectre.Console Control Integration.md
-		..\docs\ConsoleGUI Control Rendering.md = ..\docs\ConsoleGUI Control Rendering.md
+		..\docs\internal\ConsoleGUI and Spectre.Console Control Integration.md = ..\docs\internal\ConsoleGUI and Spectre.Console Control Integration.md
+		..\docs\internal\ConsoleGUI Control Rendering.md = ..\docs\internal\ConsoleGUI Control Rendering.md
 		..\GEMINI.md = ..\GEMINI.md
 		..\README.md = ..\README.md
-		..\docs\Spectre.Console Control Rendering.md = ..\docs\Spectre.Console Control Rendering.md
+		..\docs\internal\Spectre.Console Control Rendering.md = ..\docs\internal\Spectre.Console Control Rendering.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{28E2EEB4-6314-439F-A73B-2B95203051D2}"
