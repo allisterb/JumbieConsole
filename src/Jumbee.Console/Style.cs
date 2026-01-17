@@ -14,11 +14,7 @@ public readonly struct Style
 
     public Style(string style) : this(SCStyle.Parse(style)) {}
     #endregion
-
-    #region Properties
-    public SCStyle SpectreConsoleStyle { get; }
-    #endregion
-
+    
     #region Indexers
     public string this[string text] => $"[{this.ToMarkup()}]{EscapeMarkup(text)}[/]";
     #endregion
@@ -50,6 +46,8 @@ public readonly struct Style
     #endregion
 
     #region Fields
+
+    public readonly SCStyle SpectreConsoleStyle;
 
     #region Text decorations
     public readonly static Style Plain = SCStyle.Plain;

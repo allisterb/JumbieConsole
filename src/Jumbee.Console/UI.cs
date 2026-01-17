@@ -62,7 +62,7 @@ public static class UI
                         {
                             // Invoke control input events
                             inputEventArgs.InputEvent = inputEvent;
-                            layout!.OnInput(inputEventArgs);
+                            layout.OnInput(inputEventArgs);
                         }
                     }
                 }
@@ -137,7 +137,7 @@ public static class UI
     private static List<IFocusable> controls = new List<IFocusable>();    
     private static Dictionary<ConsoleKeyInfo, Action> GlobalHotKeys = new Dictionary<ConsoleKeyInfo, Action>
     {
-        { HotKeys.CtrlN, Stop }
+        { HotKeys.CtrlQ, Stop }
     };
     #endregion
 

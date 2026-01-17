@@ -16,9 +16,7 @@ public readonly struct Color
     #endregion
 
     #region Properties
-    public byte R { get; }
-    public byte G { get; }
-    public byte B { get; }
+    
     public SystemDrawingColor SystemColor { get; }
     #endregion
     
@@ -54,10 +52,14 @@ public readonly struct Color
 
     public static implicit operator Color(ConsoleGUIColor color) => FromConsoleGUIColor(color);
 
-    public static implicit operator SystemDrawingColor(Color color) => color.SystemColor;  
+    public static implicit operator SystemDrawingColor(Color color) => color.SystemColor;
     #endregion
 
     #region Fields
+    public readonly byte R;
+    public readonly byte G;
+    public readonly byte B;
+
     // The following color names are imported from the Spectre.Console definitions.
 
     public static readonly Color Black = FromSpectreColor(SpectreColor.Black);

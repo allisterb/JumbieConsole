@@ -5,6 +5,7 @@ using System;
 using ConsoleGUI.Api;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
+using Spectre.Console.Interop;
 
 
 /// <summary>
@@ -104,15 +105,11 @@ public class ConsoleBuffer : IConsole
     /// <param name="size"></param>
     protected void Resize(Size size)
     {
-        buffer = new Cell[size.Height][] ;
+        Array.Resize(ref buffer, size.Height);                
         for (int i = 0; i < size.Height; i++)
         {
-            buffer[i] = new Cell[size.Width + 1];
-        }
-        for (int y = 0; y < size.Height; y++)
-        {
-            Array.Fill(buffer[y], emptyCell);
-        }
+            Array.Resize(ref buffer[i], size.Width);
+        }       
     }
     #endregion
 

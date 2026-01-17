@@ -16,10 +16,10 @@ using System.Diagnostics;
 
 public class Program
 {
-    static void Main(string[] args) => TestGrid(args);
+    static void Main(string[] args) => DockPanelTest(args);
     
     
-    static void TestGrid(string[] args)
+    static void GridTest(string[] args)
     {
         // --- Spectre.Console Controls ---
         // 1. Table
