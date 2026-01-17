@@ -32,10 +32,6 @@ public class TextPrompt : Prompt
         set
         {
             _showCursor = value;
-            if (!_showCursor)
-            {
-                _blinkState = false;
-            }
             Invalidate();
         } 
     
@@ -47,10 +43,6 @@ public class TextPrompt : Prompt
         set
         {
             blinkCursor = value;
-            if (!blinkCursor)
-            {
-                _blinkState = true;
-            }
             Invalidate();  
         }
     }
@@ -70,12 +62,9 @@ public class TextPrompt : Prompt
     protected override void Render()
     {
         ansiConsole.Clear(true);
-        var markup = _prompt.Trim();
-        ansiConsole.Markup(markup + " ");
+        ansiConsole.Markup(_prompt + " ");
         inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
         ansiConsole.Write(input);
-        _cursorScreenX = ansiConsole.CursorX;
-        _cursorScreenY = ansiConsole.CursorY;
     }
 
     protected override void Paint()
@@ -86,59 +75,53 @@ public class TextPrompt : Prompt
   
     public override void OnInput(InputEvent inputEvent)
     {        
-        bool handled = false;
-        _blinkState = true;            
         switch (inputEvent.Key.Key)
         {
             case ConsoleKey.LeftArrow:
                 CaretPosition = Math.Max(0, _caretPosition - 1);
-                handled = true;
+                inputEvent.Handled = true; 
                 break;
             case ConsoleKey.RightArrow:
                 CaretPosition = Math.Min(input.Length, _caretPosition + 1);
-                handled = true;
+                inputEvent.Handled = true;
                 break;
             case ConsoleKey.Home:
                 CaretPosition = 0;
-                handled = true;
+                inputEvent.Handled = true;
                 break;
             case ConsoleKey.End:
                 CaretPosition = input.Length;
-                handled = true;
+                inputEvent.Handled = true;
                 break;
             case ConsoleKey.Backspace:
                 if (_caretPosition > 0)
                 {
                     input = input.Remove(--_caretPosition, 1);
                     Invalidate();
-                    handled = true;
+                    inputEvent.Handled = true;
                 }
                 break;
             case ConsoleKey.Delete:
                 if (_caretPosition < input.Length)
                 {
-                    input = input.Remove(_caretPosition, 1);
-                    handled = true;
+                    input = input.Remove(_caretPosition--, 1);
+                    Invalidate();
+                    inputEvent.Handled = true;
                 }
                 break;
             case ConsoleKey.Enter:
                 AttemptCommit();
-                handled = true;
+                inputEvent.Handled = true;
                 break;
             default:
                 if (!char.IsControl(inputEvent.Key.KeyChar))
                 {
-                    input = input.Insert(CaretPosition++, inputEvent.Key.KeyChar.ToString());
+                    input = input.Insert(_caretPosition++, inputEvent.Key.KeyChar.ToString());
                     Invalidate();
-                    handled = true;
+                    inputEvent.Handled = true;
                 }
                 break;
-        }
-        if (handled)
-        {
-            inputEvent.Handled = true;
-        }
-        
+        }   
     }
 
     protected override void Control_OnFocus()
@@ -160,15 +143,15 @@ public class TextPrompt : Prompt
 
     protected void DrawCursor()
     {
-        _blinkState = !_blinkState;
         (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);
-        if (ShowCursor && _blinkState && _cursorScreenX >= 0 && _cursorScreenX < Size.Width &&
+        if (_showCursor && _cursorScreenX >= 0 && _cursorScreenX < Size.Width &&
                     _cursorScreenY >= 0 && _cursorScreenY < Size.Height)
         {
             var cell = consoleBuffer[_cursorScreenX, _cursorScreenY];
             if (cell.Content == null || cell.Content == '\0')
             {
                 consoleBuffer.Write(_cursorScreenX, _cursorScreenY, _cursorEmptyCell);
+
             }
             else
             {
@@ -189,9 +172,6 @@ public class TextPrompt : Prompt
     private Position inputStart = default;
     private int _cursorScreenX = 0;
     private int _cursorScreenY = 0;
-
-    private bool _blinkState = true;
-
     private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
     private static readonly Cell _cursorEmptyCell = new Cell(' ').WithBackground(_cursorBackgroundColor);
     #endregion    
