@@ -65,29 +65,43 @@ public class TextPrompt : Prompt
             DrawCursor();
         }
     }
+
+    public int CursorScreenX
+    {
+        get => _cursorScreenX;
+        set
+        {
+            _cursorScreenX = ClampWidth(value);
+            DrawCursor();
+        }
+    }
+
+    public int CursorScreenY
+    {
+        get => _cursorScreenY;
+        set
+        {
+            _cursorScreenY = ClampHeight(value);
+            DrawCursor();
+        }
+    }
     #endregion
 
     #region Methods       
     protected override void Render()
-    {
-        var (x, y) = consoleBuffer.GetPosition(input.Length + _prompt.Length + 1);
-        if ( x == _cursorScreenX && y == _cursorScreenY) 
-        {
-            return;
-        }
-       
+    {        
         ansiConsole.Clear(true);
         ansiConsole.Markup(_prompt);
         inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
         ansiConsole.Write(input);
+        _cursorScreenX = ansiConsole.CursorX;
+        _cursorScreenY = ansiConsole.CursorY;
     }
 
     protected void DrawCursor()
     {
         if (!_showCursor) return;
-        (_cursorScreenX, _cursorScreenY) = consoleBuffer.AddX(inputStart, _caretPosition);
-        if (_showCursor && _cursorScreenX >= 0 && _cursorScreenX < Size.Width &&
-                    _cursorScreenY >= 0 && _cursorScreenY < Size.Height)
+        if (_showCursor && _cursorScreenX < Size.Width && _cursorScreenY < Size.Height)
         {
             var cell = consoleBuffer[_cursorScreenX, _cursorScreenY];
             blinkState = !blinkState;
@@ -133,19 +147,21 @@ public class TextPrompt : Prompt
         switch (inputEvent.Key.Key)
         {
             case ConsoleKey.LeftArrow:
-                CaretPosition = Math.Max(0, _caretPosition - 1);
+                _caretPosition = Math.Max(0, _caretPosition - 1);
+                --CursorScreenX;
                 inputEvent.Handled = true; 
                 break;
             case ConsoleKey.RightArrow:
-                CaretPosition = Math.Min(input.Length, _caretPosition + 1);
+                _caretPosition = Math.Min(input.Length, _caretPosition + 1);
+                ++CursorScreenX;
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.Home:
-                CaretPosition = 0;
+                _caretPosition = 0;
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.End:
-                CaretPosition = input.Length;
+                _caretPosition = input.Length;
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.Backspace:

@@ -5,8 +5,6 @@ using System;
 using ConsoleGUI.Api;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
-using Spectre.Console.Interop;
-
 
 /// <summary>
 /// A ConsoleGUI.IConsole implementation that writes to a buffer.
@@ -51,29 +49,19 @@ public class ConsoleBuffer : IConsole
     /// </summary>
     /// <param name="position"></param>
     /// <param name="character"></param>
-    public void Write(Position position, in Character character)
-    {
-        if (position.X >= 0 && position.X < Size.Width && position.Y >= 0 && position.Y < Size.Height)
-        {
-            buffer[position.Y][position.X] = new Cell(character);
-        }
-    }
-
+    public void Write(Position position, in Character character) => buffer[position.Y][position.X] = new Cell(character);
+        
+    
     /// <summary>
     /// Sets the console buffer cell character.
     /// </summary>
-    public void Write(in int X, in int Y, in Cell cell)
-    {
-        if (X >= 0 && X < Size.Width && Y >= 0 && Y < Size.Height)
-        {
-            buffer[Y][X] = cell;
-        }
-    }
+    public void Write(in int X, in int Y, in Cell cell) => buffer[Y][X] = cell;
+        
     /// <summary>
     /// Will be handled by IInputListeners.
     /// </summary>
     /// <returns></returns>
-    public ConsoleKeyInfo ReadKey() => default;
+    public ConsoleKeyInfo ReadKey() => throw new NotImplementedException();
     
     public Position GetPosition(int distance)
     {

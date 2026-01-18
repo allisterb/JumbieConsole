@@ -166,6 +166,9 @@ public abstract class Control : CControl, IFocusable, IDisposable
         return (width, height);
     }
 
+    public int ClampWidth(int width) => Math.Clamp(width, 0, Size.Width);
+
+    public int ClampHeight(int height) => Math.Clamp(height, 0, Size.Height);
     /// <summary>
     /// Handles the paint event triggered by the UI timer.
     /// </summary>
