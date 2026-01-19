@@ -35,16 +35,16 @@ public class Program
         table.Border(TableBorder.DoubleEdge);
         */
         // 2. Bar Chart
-        var barChart = new Jumbee.Console.BarChart(ChartOrientation.Vertical,
+        var barChart = new BarChart(ChartOrientation.Horizontal,
             ("Planning", 12, Yellow),
             ("Coding", 54, Green),
             ("Testing", 33, Red)
-        );
-
-        barChart.BarWidth = 50;
-        barChart.Label = "[green bold]Activity[/]";
-        barChart.CenterLabel = true;
-
+        )
+        {
+            BarWidth = 50,
+            Label = "[green bold]Activity[/]",
+            CenterLabel = true
+        };       
         // 3. Tree
         var treeControl = new Jumbee.Console.Tree("Root", guide: Jumbee.Console.TreeGuide.Ascii);
         treeControl.AddNode("[yellow]Foo[/]").AddChildren("[blue]Bar[/]", "Baz", "Qux");
