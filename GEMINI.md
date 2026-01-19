@@ -54,20 +54,26 @@ Read all the markdown docs at @docs/*.md to understand the integration between C
 Controls are represented by the common Jumbee.Console.Control class. 
 
 ### ControlFrame class
-The Jumbee.Console.ControlFrame class has a single Jumbee.Console.Control as its child and draws borders, margins, scrollbars, a titlebar, and other control adornments around its child control, combining the drawing logic
+A Control can have an optional ControlFrame object in its Frame property. The Jumbee.Console.ControlFrame class has a single Jumbee.Console.Control as its child and draws borders, margins, scrollbars, a titlebar, and other control adornments around its child control, combining the drawing logic
 of ConsoleGUI classes like Border, Margin, and VerticalScrollPanel.
 
 ### Layout class
 Controls and ControlFrames can be placed in Jumbee.Console.Layout classes for arrangement. This class wraps existing ConsoleGUI layout controls like ConsoleGUI.Controls.Grid.
 
+### RenderableControl class
+The RenderableControl implements Spectre.Console.IRenderable and is designed for new control implementations that want to use the Spectre.Console text styling and layout and rendering
+features. It uses an AnsiConsoleBuffer to render to a ConsoleBuffer which is used by ConsoleGUI to draw the control to the console screen.
+
 ### SpectreControl class
 The SpectreControl class is a generic class that wraps an existing Spectre.Console IRenderable control as a ConsoleGUI IControl. It uses the AnsiConsoleBuffer to render the Spectre control to a buffer, 
-which is used by ConsoleGUI to draw the control to the console screen. Note the following important considerations when deriving from this class:
 
-- Any public properties or methods that change the visual state of the control must call the Invalidate() method to indicate that the control needs to be re-rendered and re-drawn by parent containers. 
+### Control implementation considerations
+Note the following important considerations when deriving from these classes:
+
+- Any public properties or methods that change the visual state of a control must call the Invalidate() method to indicate that the control needs to be re-rendered and re-drawn by parent containers. 
 - *Do not acquire the UI lock in publicly visible properties or methods of a control* as this will inevitably lead to deadlocks. Instead, call `Invalidate()` to signal that a control needs to be redrawn in the next Paint event.
-- When modifying control state stored in collections, use a copy-on-write strategy using the `UpdateContent` method which invokes `CloneContent()`, to avoid modifying collections while they might be enumerated during rendering.
-Since this is inefficient, try to batch multiple changes to control state collections into a single property or index setter when possible.
+- When modifying control state stored in collections, use .NET types designed for concurrent access like ConcurrentDictionary. For wrapping existing Spectre.Console controls, use a copy-on-write strategy using the `UpdateContent` method which invokes `CloneContent()`, to avoid modifying collections while they might be enumerated during rendering.
+- Since each state change must trigger invalidation, try to batch multiple changes to control state collections into a single property or index setter when possible.
 
 ## Project coding instructions:
 - When generating new C# code, please follow the existing coding style.

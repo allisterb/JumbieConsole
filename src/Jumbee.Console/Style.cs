@@ -4,6 +4,19 @@ using SCStyle = Spectre.Console.Style;
 using SCDecoration = Spectre.Console.Decoration;    
 using SystemDrawingColor = System.Drawing.Color;    
 
+public enum Justify
+{
+    Left,
+    Center,
+    Right
+}
+
+public enum ChartOrientation
+{
+    Horizontal,
+    Vertical,
+    
+}
 public readonly struct Style
 {    
     #region Constructors
@@ -46,7 +59,6 @@ public readonly struct Style
     #endregion
 
     #region Fields
-
     public readonly SCStyle SpectreConsoleStyle;
 
     #region Text decorations

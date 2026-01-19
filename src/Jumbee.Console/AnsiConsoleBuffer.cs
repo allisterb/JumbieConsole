@@ -70,15 +70,12 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
             {                
                 foreach (var c in segment.Text)
                 {
-                    var width = c.ToString().GetCellWidth();
-                    if (width <= 0) continue; // Skip zero-width chars
-
                     var position = new Position(_cursorX, _cursorY);
                     if (IsValidPosition(position))
                     {
                         _console.Write(position, new Character(c, isControl: true));
                     }
-                    _cursorX += width;
+                    _cursorX++;
                 }                
             }
             else
