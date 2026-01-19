@@ -81,7 +81,7 @@ Note the following important considerations when deriving from these classes:
 - Prefer new C# 14.0 features and syntax where applicable.
 - Prefer functional programming paradigms and constructs where appropriate.
 - Prefer concise code over more verbose constructs.
-- Do not modify external library code located in the @ext directory. Changes should be limited to the code in the @src directory only.
+- Avoid modifying external library code located in the @ext directory. Changes should be limited to the code in the @src directory only whenever possible.
 
 ## Project coding Style:
 - Use the existing #regions in a file to organize class constructors, indexers, events, properties, methods, fields, and child types.

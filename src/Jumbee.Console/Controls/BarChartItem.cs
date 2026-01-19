@@ -6,16 +6,22 @@ namespace Jumbee.Console;
 
 public struct BarChartItem
 {   
-    public BarChartItem(BarChart chart, string label, double value, Color color)
-    {        
+    public BarChartItem(BarChart chart, int index, string label, double value, Color color)
+    {
+        this.Index = index;
         this.Label = label;
         this.Value = value;
         this.Color = color;
         this.chart = chart;
         UpdateChart();
     }
-    public BarChart? chart;
+
+    public readonly int Index;
+
+    private BarChart? chart;
     
+    public BarChart? Chart => chart;
+
     /// <summary>
     /// Gets the item label.
     /// </summary>
@@ -25,7 +31,7 @@ public struct BarChartItem
         set
         {
             field = value;
-            UpdateChart();
+            chart?.UpdateItemLabel(Index, value);
         }
     }
 
@@ -38,7 +44,7 @@ public struct BarChartItem
         set
         {
             field = value;
-            UpdateChart();
+            chart?.UpdateItemValue(Index, value);
         }
     }
 
@@ -51,7 +57,7 @@ public struct BarChartItem
         set
         {
             field = value;
-            UpdateChart();
+            chart?.UpdateItemColor(Index, value);
         }
     }
 
