@@ -35,7 +35,7 @@ public class Program
         table.Border(TableBorder.DoubleEdge);
         */
         // 2. Bar Chart
-        var barChart = new BarChart(ChartOrientation.Horizontal,
+        var barChart = new BarChart(ChartOrientation.Vertical,
             ("Planning", 12, Yellow),
             ("Coding", 54, Green),
             ("Testing", 33, Red)

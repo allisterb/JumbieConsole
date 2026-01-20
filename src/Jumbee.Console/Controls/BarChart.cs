@@ -1,21 +1,40 @@
 ﻿namespace Jumbee.Console;
 ﻿
-﻿using Spectre.Console;
-﻿using Spectre.Console.Rendering;
 ﻿using System;
 ﻿using System.Collections.Concurrent;
 ﻿using System.Collections.Generic;
 ﻿using System.Globalization;
 ﻿using System.Linq;
 ﻿using System.Threading;
-﻿
-﻿/// <summary>
+
+using Spectre.Console;
+using Spectre.Console.Rendering;
+
+/// <summary>
 ﻿/// A bar chart. Based on Spectre.Console.BarChart
 ﻿/// </summary>
-﻿public class BarChart : RenderableControl, Spectre.Console.IHasCulture
-﻿{
-﻿    public void Update() => Invalidate();
-﻿
+public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
+﻿{﻿    
+    #region Constructors    
+    public BarChart(ChartOrientation orientation, params (string label, double value, Color color)[] items)
+    {
+        Orientation = orientation;
+        int index;
+        foreach (var item in items)
+        {
+            index = Interlocked.Increment(ref itemIndex);
+            while (!data.TryAdd(index, new BarChartItem(this, index, item.label, item.value, item.color))) ;
+        }
+        CreateChartElements();
+        Invalidate();
+    }
+
+    public BarChart(params (string label, double value, Color color)[] items) : this(ChartOrientation.Horizontal, items) {}
+
+    #endregion
+
+    #region Properties
+    public ICollection<BarChartItem> Data => data.Values;
     /// <summary>
     /// Gets the bar chart data.
     /// </summary>
@@ -32,13 +51,11 @@
             }
         }
     }
-
-    public ICollection<BarChartItem> Data => data.Values;
-
+  
     /// <summary>
     /// Gets or sets the bar chart label.
     /// </summary>
-    public string? Label 
+    public string? Label
     {
         get => field;
         set
@@ -55,10 +72,10 @@
     /// <summary>
     /// Gets or sets the bar chart label alignment.
     /// </summary>
-    public Justify? LabelAlignment 
+    public Justify? LabelAlignment
     {
         get => field;
-        set 
+        set
         {
             if (field != value)
             {
@@ -67,14 +84,14 @@
                 Invalidate();
             }
         }
-    } 
+    }
 
     private bool _showValues = true;
     public bool ShowValues
     {
         get => _showValues;
         set
-        {            
+        {
             if (_showValues != value)
             {
                 _showValues = value;
@@ -103,23 +120,6 @@
 
     public Func<double, CultureInfo, string>? ValueFormatter { get; set; }
 
-    public BarChart(params (string label, double value, Color color)[] items) : this(ChartOrientation.Horizontal, items)
-    {
-    }
-
-    public BarChart(ChartOrientation orientation, params (string label, double value, Color color)[] items)
-    {
-        Orientation = orientation;
-        int index;
-        foreach (var item in items)
-        {
-            index = Interlocked.Increment(ref itemIndex);
-            while (!data.TryAdd(index, new BarChartItem(this, index, item.label, item.value, item.color))) ;
-        }
-        CreateChartElements();
-        Invalidate();
-    }
-
     public int? BarWidth
     {
         get => Width;
@@ -146,8 +146,11 @@
             }
         }
     }
-﻿
-﻿    public double[] this[params string[] labels]
+
+    #endregion
+
+    #region Indexers
+    public double[] this[params string[] labels]
 ﻿    {
 ﻿        set
 ﻿        {
@@ -169,8 +172,12 @@
 ﻿            }
 ﻿        }
 ﻿    }
-﻿
-﻿    public BarChartItem AddItem(string label, double value, Color color)
+    #endregion
+
+    #region Methods
+    public void Update() => Invalidate();
+
+    public BarChartItem AddItem(string label, double value, Color color)
 ﻿    {
 ﻿        int index = -1;
 ﻿        bool completed = false;
@@ -223,20 +230,8 @@
 ﻿        var width = Math.Min(Width, maxWidth);
 ﻿        return new Measurement(width, width);
 ﻿    }
-﻿
-﻿    protected int itemIndex = -1;
-﻿    protected char VerticalUnicodeBar { get; set; } = '━';
-﻿    protected char AsciiBar { get; set; } = '-';
-﻿    protected static char HorizontalUnicodeBar { get; set; } = '█';
-﻿    protected readonly ConcurrentDictionary<int, BarChartItem> data = new();
-﻿
-﻿    protected Spectre.Console.Grid _grid = new();
-    protected Spectre.Console.Grid? _containerGrid = new();
-    protected List<IBarControl> _bars = new();
-﻿    protected List<IRenderable> _labels = new();
-﻿    protected List<IRenderable> _values = new();
-﻿
-﻿    private int GetListIndex(int id)
+
+    private int GetListIndex(int id)
 ﻿    {
 ﻿        // Data keys are sorted in CreateChartElements to populate the lists.
 ﻿        // We need to match that order.
@@ -443,157 +438,20 @@
         grid.Width = width;       
         return ((IRenderable)grid).Render(options, width);
     }
+    #endregion   
 
-    public interface IBarControl : IRenderable
-﻿    {
-﻿        double Value { get; set; }
-﻿        double MaxValue { get; set; }
-﻿        Color Color { get; set; }
-﻿    }
-﻿﻿   ﻿
-﻿    internal sealed class VerticalBar : Renderable, IBarControl
-﻿    {
-﻿        public double Value { get; set; }
-﻿        public double MaxValue { get; set; }
-﻿        public int Height { get; set; }
-﻿        public Color Color { get; set; }
-﻿        public char UnicodeBar { get; set; } = '█';
-﻿        public char AsciiBar { get; set; } = '|';
-﻿
-﻿        protected override Measurement Measure(RenderOptions options, int maxWidth)
-﻿        {
-﻿            return new Measurement(1, maxWidth); 
-﻿        }
-﻿
-﻿        protected override IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
-﻿        {
-﻿            var barChar = !options.Unicode ? AsciiBar : UnicodeBar;
-﻿            var ratio = MaxValue > 0 ? Math.Clamp(Value / MaxValue, 0, 1) : 0;
-﻿            var barHeight = (int)Math.Round(ratio * Height);
-﻿            var emptyHeight = Height - barHeight;
-﻿
-﻿            var style = new Spectre.Console.Style(foreground: Color);
-﻿
-﻿            for (int i = 0; i < emptyHeight; i++)
-﻿            {
-﻿                yield return new Segment(new string(' ', 1) + "\n"); // Or just " \n"
-﻿                // Actually Segment usually doesn't contain newline for Grid cells? 
-﻿                // Grid handles newlines. If we return multiple segments, they are just concatenated?
-﻿                // No, IRenderable.Render usually returns a flow of segments. 
-﻿                // In a Grid cell, if we want multiple lines, we must emit newlines.
-﻿                // However, Spectre.Console Grid cells can wrap or handle explicit newlines.
-﻿                // Let's try explicit newlines.
-﻿            }
-﻿            
-﻿            for (int i = 0; i < barHeight; i++)
-﻿            {
-﻿                // We render the bar character. 
-﻿                // We should probably repeat it for width? 
-﻿                // But VerticalBar is usually 1 char wide or full cell width?
-﻿                // Let's assume full cell width. But we don't know the exact width assigned by Grid here easily 
-﻿                // unless we use maxWidth.
-﻿                // For a simple vertical bar, let's use 3 chars wide? Or just 1? 
-﻿                // Let's use maxWidth to fill the column.
-﻿                // But Grid column width is determined by content... circular dependency?
-﻿                // No, Grid passes maxWidth.
-﻿                // Let's default to a fixed width if maxWidth is huge (which it is in Grid auto-sizing).
-﻿                // Let's say 3 chars wide.
-﻿                var w = Math.Min(3, maxWidth);
-﻿                var text = new string(barChar, w);
-﻿                
-﻿                // If it's not the last line, add newline
-﻿                // Actually, for the empty lines above, we also need width.
-﻿            }
-﻿             
-﻿            // Re-thinking render strategy:
-﻿            // We want to return a block of text.
-﻿            // Empty lines first, then filled lines.
-﻿            
-﻿            var w2 = Math.Min(3, maxWidth); // Fixed width of 3 for now
-﻿            
-﻿            for (int i = 0; i < emptyHeight; i++)
-﻿            {
-﻿                 yield return new Segment(new string(' ', w2));
-﻿                 yield return Segment.LineBreak;
-﻿            }
-﻿             
-﻿            for (int i = 0; i < barHeight; i++)
-﻿            {
-﻿                 yield return new Segment(new string(barChar, w2), style);
-﻿                 if (i < barHeight - 1) yield return Segment.LineBreak;
-﻿            }
-﻿        }
-﻿    }
-﻿
-﻿    internal sealed class HorizontalBar : Renderable, IBarControl
-﻿    {
-﻿        public double Value { get; set; }
-﻿        public double MaxValue { get; set; } = 100;
-﻿
-﻿        public int? Width { get; set; }
-﻿        public bool ShowRemaining { get; set; } = true;
-﻿        public char UnicodeBar { get; set; } = '━';
-﻿        public char AsciiBar { get; set; } = '-';
-﻿        public bool ShowValue { get; set; }
-﻿        public CultureInfo? Culture { get; set; }
-﻿        public Func<double, CultureInfo, string>? ValueFormatter { get; set; }
-﻿
-﻿        public Color Color { get => CompletedStyle; set { CompletedStyle = value; FinishedStyle = value; } }
-﻿
-﻿        public Style CompletedStyle { get; set; } = Color.Yellow;
-﻿        public Style FinishedStyle { get; set; } = Color.Green;
-﻿        public Style RemainingStyle { get; set; } = Color.Grey;
-﻿
-﻿        protected override Measurement Measure(RenderOptions options, int maxWidth)
-﻿        {
-﻿            var width = Math.Min(Width ?? maxWidth, maxWidth);
-﻿            return new Measurement(4, width);
-﻿        }
-﻿
-﻿        protected override IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
-﻿        {
-﻿            var width = Math.Min(Width ?? maxWidth, maxWidth);
-﻿            var completedBarCount = Math.Min(MaxValue, Math.Max(0, Value));
-﻿            var isCompleted = completedBarCount >= MaxValue;
-﻿
-﻿            var bar = !options.Unicode ? AsciiBar : UnicodeBar;
-﻿            var style = isCompleted ? FinishedStyle : CompletedStyle;
-﻿            var barCount = Math.Max(0, (int)(width * (completedBarCount / MaxValue)));
-﻿
-﻿            // Show value?
-﻿            var value = ValueFormatter != null ? ValueFormatter(completedBarCount, Culture ?? CultureInfo.InvariantCulture) : completedBarCount.ToString(Culture ?? CultureInfo.InvariantCulture);
-﻿            if (ShowValue)
-﻿            {
-﻿                barCount = barCount - value.Length - 1;
-﻿                barCount = Math.Max(0, barCount);
-﻿            }
-﻿
-﻿            yield return new Segment(new string(bar, barCount), style);
-﻿
-﻿            if (ShowValue)
-﻿            {
-﻿                yield return barCount == 0
-﻿                    ? new Segment(value, style)
-﻿                    : new Segment(" " + value, style);
-﻿            }
-﻿
-﻿            // More space available?
-﻿            if (barCount < width)
-﻿            {
-﻿                var diff = width - barCount;
-﻿                if (ShowValue)
-﻿                {
-﻿                    diff = diff - value.Length - 1;
-﻿                    if (diff <= 0)
-﻿                    {
-﻿                        yield break;
-﻿                    }
-﻿                }
-﻿
-﻿                var legacy = options.ColorSystem == ColorSystem.NoColors || options.ColorSystem == ColorSystem.Legacy;
-﻿                var remainingToken = ShowRemaining && !legacy ? bar : ' ';
-﻿                yield return new Segment(new string(remainingToken, diff), RemainingStyle);
-﻿            }
-﻿        }
-﻿    }
-﻿}
+    #region Fields
+    protected int itemIndex = -1;
+    protected char VerticalUnicodeBar { get; set; } = '━';
+    protected char AsciiBar { get; set; } = '-';
+    protected static char HorizontalUnicodeBar { get; set; } = '█';
+    protected readonly ConcurrentDictionary<int, BarChartItem> data = new();
+
+    protected Spectre.Console.Grid _grid = new();
+    protected Spectre.Console.Grid? _containerGrid = new();
+    protected List<IBarControl> _bars = new();
+    protected List<IRenderable> _labels = new();
+    protected List<IRenderable> _values = new();
+    #endregion
+
+}
