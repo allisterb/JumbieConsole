@@ -17,6 +17,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
         UI.Paint += OnPaint;
         OnFocus += Control_OnFocus;
         OnLostFocus += Control_OnLostFocus;
+        Invalidate();
     }
 
     protected virtual void Control_OnLostFocus() {}

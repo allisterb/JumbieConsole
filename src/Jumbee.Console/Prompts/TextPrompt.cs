@@ -15,7 +15,9 @@ public class TextPrompt : Prompt
     {
         this._prompt = prompt;
         this._showCursor = showCursor;
-        this.blinkCursor = blinkCursor;        
+        this.blinkCursor = blinkCursor;
+        RenderPrompt();
+        Invalidate();
     }
     #endregion
 
@@ -89,15 +91,25 @@ public class TextPrompt : Prompt
 
     #region Methods       
     protected override void Render()
-    {        
+    {
+        if (newInput)
+        {
+            RenderPrompt();
+            ansiConsole.Write(input);
+            _cursorScreenX = ansiConsole.CursorX;
+            _cursorScreenY = ansiConsole.CursorY;            
+            newInput = false;
+        }
+    }
+
+    protected void RenderPrompt()
+    {
         ansiConsole.Clear(true);
         ansiConsole.Markup(_prompt);
         inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
-        ansiConsole.Write(input);
         _cursorScreenX = ansiConsole.CursorX;
         _cursorScreenY = ansiConsole.CursorY;
     }
-
     protected void DrawCursor()
     {
         if (!_showCursor) return;
@@ -132,7 +144,7 @@ public class TextPrompt : Prompt
     }
 
     protected override void Paint()
-    {
+    {        
         Render();
         DrawCursor();
     }
@@ -168,7 +180,7 @@ public class TextPrompt : Prompt
                 if (_caretPosition > 0)
                 {
                     input = input.Remove(--_caretPosition, 1);
-                    Invalidate();
+                    newInput = true;    
                     inputEvent.Handled = true;
                 }
                 break;
@@ -176,7 +188,8 @@ public class TextPrompt : Prompt
                 if (_caretPosition < input.Length)
                 {
                     input = input.Remove(_caretPosition--, 1);
-                    Invalidate();
+                    newInput = true;
+
                     inputEvent.Handled = true;
                 }
                 break;
@@ -188,11 +201,12 @@ public class TextPrompt : Prompt
                 if (!char.IsControl(inputEvent.Key.KeyChar))
                 {
                     input = input.Insert(_caretPosition++, inputEvent.Key.KeyChar.ToString());
-                    Invalidate();
+                    newInput = true;
                     inputEvent.Handled = true;
                 }
                 break;
-        }   
+        }
+        Invalidate();
     }
 
     protected override void Control_OnFocus()
@@ -221,6 +235,7 @@ public class TextPrompt : Prompt
     private bool blinkCursor;
     private bool blinkState;
     private string input = string.Empty;
+    private bool newInput;
     private int _caretPosition = 0;
     private Position inputStart = default;
     private int _cursorScreenX = 0;

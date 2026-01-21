@@ -35,7 +35,7 @@ public class Program
         table.Border(TableBorder.DoubleEdge);
         */
         // 2. Bar Chart
-        var barChart = new BarChart(ChartOrientation.Vertical,
+        var barChart = new BarChart(ChartOrientation.Horizontal,
             ("Planning", 12, Yellow),
             ("Coding", 54, Green),
             ("Testing", 33, Red)
@@ -73,7 +73,7 @@ public class Program
         spinner.Start();
 
         // The TextPrompt control
-        var prompt = new TextPrompt("[yellow]What is your name?[/]", blinkCursor: true);
+        var prompt = new TextPrompt("[yellow]What is your name?[/]", blinkCursor: false);
         prompt.Committed += (sender, name) =>
         {
             spinner.Text = $"Hello, [blue]{name}[/]!";

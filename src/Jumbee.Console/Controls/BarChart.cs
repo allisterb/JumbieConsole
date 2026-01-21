@@ -25,8 +25,7 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             index = Interlocked.Increment(ref itemIndex);
             while (!data.TryAdd(index, new BarChartItem(this, index, item.label, item.value, item.color))) ;
         }
-        CreateChartElements();
-        Invalidate();
+        CreateChartElements();        
     }
 
     public BarChart(params (string label, double value, Color color)[] items) : this(ChartOrientation.Horizontal, items) {}
@@ -46,8 +45,7 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             if (field != value)
             {
                 field = value;
-                CreateChartElements();
-                Invalidate();
+                CreateChartElements();                
             }
         }
     }
@@ -64,7 +62,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             {
                 field = value;
                 CreateChartLabel();
-                Invalidate();
             }
         }
     }
@@ -81,7 +78,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             {
                 field = value;
                 CreateChartLabel();
-                Invalidate();
             }
         }
     }
@@ -96,7 +92,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             {
                 _showValues = value;
                 CreateChartElements();
-                Invalidate();
             }
         }
     }
@@ -142,7 +137,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             {
                 LabelAlignment = Justify.Center;
                 CreateChartLabel(); // Update label alignment
-                Invalidate();
             }
         }
     }
@@ -335,6 +329,7 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             _containerGrid.AddRow(new Markup(Label).Justify(LabelAlignment.HasValue ? (Spectre.Console.Justify)LabelAlignment.Value : Spectre.Console.Justify.Center));
             _containerGrid.AddRow(_grid);
         }
+        Invalidate();
     }
 
     protected void CreateChartElements()
@@ -429,6 +424,7 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             }
         }
         CreateChartLabel();
+        Invalidate();
     }
 
     protected override IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
@@ -442,7 +438,7 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
 
     #region Fields
     protected int itemIndex = -1;
-    protected char VerticalUnicodeBar { get; set; } = '━';
+    protected char VerticalUnicodeBar { get; set; } = '█';
     protected char AsciiBar { get; set; } = '-';
     protected static char HorizontalUnicodeBar { get; set; } = '█';
     protected readonly ConcurrentDictionary<int, BarChartItem> data = new();
