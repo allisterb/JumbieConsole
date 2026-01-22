@@ -18,21 +18,18 @@ using Spectre.Console.Rendering;
 public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
 {
     #region Constructors
-    public AnsiConsoleBuffer(IConsole console)
+    public AnsiConsoleBuffer(ConsoleBuffer console)
     {
         _console = console; 
-        _cursor = new ConsoleGUICursor(this);
-        _input = new ConsoleGUIInput(console);
-        _exclusivityMode = new ConsoleGUIExclusivityMode();
-        _pipeline = new RenderPipeline();        
-        var output = new ConsoleGUIOutput(console);
-
-        _profile = new Profile(output, Encoding.UTF8);        
+        _cursor = new AnsiConsoleBufferCursor(this);
+        _input = new AnsiConsoleBufferInput(console);
+        _exclusivityMode = new AnsiConsoleBufferExclusivityMode();
+        _pipeline = new RenderPipeline();               
+        _profile = new Profile(new AnsiConsoleBufferOutput(console), Encoding.UTF8);        
         _profile.Capabilities.Ansi = AnsiConsole.Profile.Capabilities.Ansi;
         _profile.Capabilities.ColorSystem = AnsiConsole.Profile.Capabilities.ColorSystem;
         _profile.Capabilities.Interactive = AnsiConsole.Profile.Capabilities.Interactive;
-        _profile.Capabilities.Unicode = AnsiConsole.Profile.Capabilities.Unicode;
-        
+        _profile.Capabilities.Unicode = AnsiConsole.Profile.Capabilities.Unicode;        
         _cursorX = 0;
         _cursorY = 0;
     }
@@ -134,23 +131,22 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
     #endregion
 
     #region Fields
-    private readonly IConsole _console;
-    private readonly ConsoleGUICursor _cursor;
-    private readonly ConsoleGUIInput _input;
-    private readonly ConsoleGUIExclusivityMode _exclusivityMode;
+    internal readonly ConsoleBuffer _console;
+    internal readonly AnsiConsoleBufferCursor _cursor;
+    private readonly AnsiConsoleBufferInput _input;
+    private readonly AnsiConsoleBufferExclusivityMode _exclusivityMode;
     private readonly RenderPipeline _pipeline;
     private readonly Profile _profile;
-
     private int _cursorX;
     private int _cursorY;
     #endregion
 }
 
-internal class ConsoleGUIOutput : IAnsiConsoleOutput
+internal class AnsiConsoleBufferOutput : IAnsiConsoleOutput
 {
     private readonly IConsole _console;
     
-    public ConsoleGUIOutput(IConsole console) => _console = console;
+    public AnsiConsoleBufferOutput(IConsole console) => _console = console;
 
     public TextWriter Writer => throw new NotSupportedException(); 
     public bool IsTerminal => true;
@@ -160,13 +156,43 @@ internal class ConsoleGUIOutput : IAnsiConsoleOutput
     public void SetEncoding(Encoding encoding) { }
 }
 
-internal class ConsoleGUICursor : IAnsiConsoleCursor
+internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
 {
     private readonly AnsiConsoleBuffer _parent;
 
-    public ConsoleGUICursor(AnsiConsoleBuffer parent) => _parent = parent;
+    public AnsiConsoleBufferCursor(AnsiConsoleBuffer parent) => _parent = parent;
 
-    public void Show(bool show) { } // StandardConsole manages this partially, but we might not have control via IConsole interface easily without casting. StandardConsole hides it by default.
+    public void Show(bool show)
+    {
+        var x = _parent.CursorX;
+        var y = _parent.CursorY;
+        var cell = _parent._console[x, y];
+        if (show)
+        {
+            if (cell.Content == null || cell.Content == '\0' || cell.Content == ' ')
+            {
+                _parent._console.Write(x, y, _cursorEmptyCell);
+
+            }
+            else
+            {
+                _parent._console.Write(x, y, cell.WithBackground(_cursorBackgroundColor));
+            }
+        }
+        else
+        {
+
+            if (cell.Content == null || cell.Content == '\0' || cell.Content == ' ')
+            {
+                _parent._console.Write(x, y, __cursorEmptyCell);
+
+            }
+            else
+            {
+                _parent._console.Write(x, y, cell);
+            }
+        }
+    }
 
     public void SetPosition(int column, int line)
     {
@@ -191,38 +217,27 @@ internal class ConsoleGUICursor : IAnsiConsoleCursor
                 break;
         }
     }
+
+    private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
+    private static readonly Cell __cursorEmptyCell = new Cell(' ');
+    private static readonly Cell _cursorEmptyCell = __cursorEmptyCell.WithBackground(_cursorBackgroundColor);
 }
 
-internal class ConsoleGUIInput : IAnsiConsoleInput
+internal class AnsiConsoleBufferInput : IAnsiConsoleInput
 {
     private readonly IConsole _console;
 
-    public ConsoleGUIInput(IConsole console) => _console = console;
+    public AnsiConsoleBufferInput(IConsole console) => _console = console;
 
-    public bool IsKeyAvailable() => _console.KeyAvailable;
+    public bool IsKeyAvailable() => throw new NotSupportedException();
 
-    public ConsoleKeyInfo? ReadKey(bool intercept) => _console.ReadKey();
+    public ConsoleKeyInfo? ReadKey(bool intercept) => throw new NotSupportedException();
     
-    public Task<ConsoleKeyInfo?> ReadKeyAsync(bool intercept, CancellationToken cancellationToken)
-    {
-        // Simple polling simulation for async
-        return Task.Run(async () =>
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                if (_console.KeyAvailable)
-                {
-                    return (ConsoleKeyInfo?)_console.ReadKey();
-                }
-                await Task.Delay(10, cancellationToken);
-            }
-            return null;
-        }, cancellationToken);
-    }
+    public Task<ConsoleKeyInfo?> ReadKeyAsync(bool intercept, CancellationToken cancellationToken) => throw new NotSupportedException();
 }
 
-internal class ConsoleGUIExclusivityMode : IExclusivityMode
+internal class AnsiConsoleBufferExclusivityMode : IExclusivityMode
 {
-    public T Run<T>(Func<T> func) => func();
-    public Task<T> RunAsync<T>(Func<Task<T>> func) => func();
+    public T Run<T>(Func<T> func) => throw new NotSupportedException();
+    public Task<T> RunAsync<T>(Func<Task<T>> func) => throw new NotSupportedException();
 }

@@ -11,13 +11,11 @@ using Spectre.Console;
 public class TextPrompt : Prompt
 {
     #region Constructors
-    public TextPrompt(string prompt, bool showCursor = true, bool blinkCursor = true) : base()
+    public TextPrompt(string prompt, bool showCursor = true, bool blinkCursor = false) : base()
     {
         this._prompt = prompt;
         this._showCursor = showCursor;
-        this.blinkCursor = blinkCursor;
-        RenderPrompt();
-        Invalidate();
+        this._blinkCursor = blinkCursor;        
     }
     #endregion
 
@@ -49,11 +47,11 @@ public class TextPrompt : Prompt
     }
     public bool BlinkCursor 
     { 
-        get => blinkCursor;
+        get => _blinkCursor;
 
         set
         {
-            blinkCursor = value;
+            _blinkCursor = value;
             Invalidate();  
         }
     }
@@ -64,7 +62,7 @@ public class TextPrompt : Prompt
         set
         {
             _caretPosition = value;
-            DrawCursor();
+            RenderCursor();
         }
     }
 
@@ -74,7 +72,7 @@ public class TextPrompt : Prompt
         set
         {
             _cursorScreenX = ClampWidth(value);
-            DrawCursor();
+            RenderCursor();
         }
     }
 
@@ -84,7 +82,7 @@ public class TextPrompt : Prompt
         set
         {
             _cursorScreenY = ClampHeight(value);
-            DrawCursor();
+            RenderCursor();
         }
     }
     #endregion
@@ -100,6 +98,7 @@ public class TextPrompt : Prompt
             _cursorScreenY = ansiConsole.CursorY;            
             newInput = false;
         }
+        RenderCursor();
     }
 
     protected void RenderPrompt()
@@ -110,48 +109,33 @@ public class TextPrompt : Prompt
         _cursorScreenX = ansiConsole.CursorX;
         _cursorScreenY = ansiConsole.CursorY;
     }
-    protected void DrawCursor()
-    {
-        if (!_showCursor) return;
-        if (_showCursor && _cursorScreenX < Size.Width && _cursorScreenY < Size.Height)
-        {
-            var cell = consoleBuffer[_cursorScreenX, _cursorScreenY];
-            blinkState = !blinkState;
-            if (cell.Content == null || cell.Content == '\0')
-            {
-                if (blinkCursor && blinkState)
-                {
-                    consoleBuffer.Write(_cursorScreenX, _cursorScreenY, _cursorEmptyCellBlink);
-                }
-                else
-                {
-                    consoleBuffer.Write(_cursorScreenX, _cursorScreenY, _cursorEmptyCell);
-                }
 
+    protected void RenderCursor()
+    {
+        if (IsValidCursorPosition)
+        {
+            if (_showCursor)
+            {
+                if (_blinkCursor)
+                {                  
+                    ansiConsole.Cursor.Show(blinkState = !blinkState);
+                }
+                else 
+                {
+                    ansiConsole.Cursor.Show();
+                }
             }
             else
             {
-                if (blinkCursor && blinkState)
-                {
-                    consoleBuffer.Write(_cursorScreenX, _cursorScreenY, cell);
-                }
-                else
-                {
-                    consoleBuffer.Write(_cursorScreenX, _cursorScreenY, cell.WithBackground(_cursorBackgroundColor)); 
-                }
+                ansiConsole.Cursor.Hide();
             }
         }
     }
 
-    protected override void Paint()
-    {        
-        Render();
-        DrawCursor();
-    }
-
+   
     protected override void Validate()
     {
-        if (!blinkCursor) base.Validate();
+        if (!_blinkCursor) base.Validate();
     }
   
     public override void OnInput(InputEvent inputEvent)
@@ -220,6 +204,8 @@ public class TextPrompt : Prompt
         BlinkCursor = false;    
     }
 
+    protected bool IsValidCursorPosition => _cursorScreenX < Size.Width && _cursorScreenY < Size.Height;
+
     private void AttemptCommit()
     {                      
 
@@ -232,7 +218,7 @@ public class TextPrompt : Prompt
     #region Fields
     private string _prompt;
     private bool _showCursor;
-    private bool blinkCursor;
+    private bool _blinkCursor;    
     private bool blinkState;
     private string input = string.Empty;
     private bool newInput;
@@ -240,9 +226,7 @@ public class TextPrompt : Prompt
     private Position inputStart = default;
     private int _cursorScreenX = 0;
     private int _cursorScreenY = 0;
-    private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
-    private static readonly Cell _cursorEmptyCell = new Cell(' ').WithBackground(_cursorBackgroundColor);
-    private static readonly Cell _cursorEmptyCellBlink = new Cell(' ');
+
     #endregion    
 }
 

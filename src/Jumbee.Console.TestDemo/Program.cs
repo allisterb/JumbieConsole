@@ -17,8 +17,8 @@ using System.Diagnostics;
 public class Program
 {
     static void Main(string[] args) => GridTest(args);
-    
-    
+
+
     static void GridTest(string[] args)
     {
         // --- Spectre.Console Controls ---
@@ -44,11 +44,11 @@ public class Program
             BarWidth = 50,
             Label = "[green bold]Activity[/]",
             CenterLabel = true
-        };       
+        };
         // 3. Tree
         var treeControl = new Jumbee.Console.Tree("Root", guide: Jumbee.Console.TreeGuide.Ascii);
         treeControl.AddNode("[yellow]Foo[/]").AddChildren("[blue]Bar[/]", "Baz", "Qux");
-        
+
         // Example of adding a subtree (since AddNode takes IRenderable)
         var subTree = new Jumbee.Console.Tree("Subtree");
         subTree.AddNode("Leaf 1");
@@ -73,7 +73,7 @@ public class Program
         spinner.Start();
 
         // The TextPrompt control
-        var prompt = new TextPrompt("[yellow]What is your name?[/]", blinkCursor: false);
+        var prompt = new TextPrompt("[yellow]What is your name?[/]") { Width = 20};
         prompt.Committed += (sender, name) =>
         {
             spinner.Text = $"Hello, [blue]{name}[/]!";
