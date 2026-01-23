@@ -112,9 +112,16 @@ public static class UI
     /// <param name="action">The action to execute.</param>
     internal static void Invoke(Action action)
     {
-        lock (_lock)
+        if (_lock.IsHeldByCurrentThread)
         {
             action();
+        }
+        else
+        {
+            lock (_lock)
+            {
+                action();
+            }
         }
     }
     #endregion
