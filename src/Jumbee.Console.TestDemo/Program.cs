@@ -119,7 +119,8 @@ public class Program
     {
         var p = new TextPrompt(">", blinkCursor: true)
            .WithRoundedBorder(Purple)
-           .WithTitle("Foo"); 
+           .WithTitle("Foo")
+           .WithHeight(20); 
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20, Height=10 };
         tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions");
         p.Focus();
