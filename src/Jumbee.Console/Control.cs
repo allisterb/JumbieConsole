@@ -49,7 +49,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
         set
         {
             UI.Invoke(() => 
-            {
+            {                
                 field = value;            
                 Resize(new Size(value, Height));
             });
@@ -158,12 +158,14 @@ public abstract class Control : CControl, IFocusable, IDisposable
         int maxWidth = Math.Clamp(MaxSize.Width, 0 ,1000);
         int maxHeight = Math.Clamp(MaxSize.Height, 0, 1000);
 
+        int minWidth = Math.Clamp(MinSize.Width, 0 ,1000);
+        int minHeight = Math.Clamp(MinSize.Height, 0, 1000);
         // Use Width and Height as preferred if set (non-zero), otherwise default to MaxSize.Width and MaxSize.Height set by parents
-        var preferredWidth = Width > 0 ? Math.Clamp(Width, 0, 1000) : maxWidth;
-        var preferredHeight = Height > 0 ? Math.Clamp(Height, 0, 1000) : maxHeight;
+        var preferredWidth = Width > 0 ? Width : maxWidth;
+        var preferredHeight = Height > 0 ? Height : maxHeight;
         
-        var width = Math.Min(preferredWidth, maxWidth);
-        var height = Math.Min(preferredHeight, maxHeight);
+        var width = Math.Clamp(preferredWidth, minWidth, maxWidth);
+        var height = Math.Clamp(preferredHeight, minHeight, maxHeight);
         return (width, height);
     }
 

@@ -16,8 +16,7 @@ using System.Diagnostics;
 
 public class Program
 {
-    static void Main(string[] args) => GridTest(args);
-
+    static void Main(string[] args) => DockPanelTest(args);
 
     static void GridTest(string[] args)
     {
@@ -120,13 +119,13 @@ public class Program
     {
         var p = new TextPrompt(">", blinkCursor: true)
            .WithRoundedBorder(Purple)
-           .WithTitle("Foo")   ;
-        var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20 };
+           .WithTitle("Foo"); 
+        var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20, Height=10 };
         tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions");
         p.Focus();
-        //var d = new DockPanel(DockedControlPlacement.Right, tree, p);
-        var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
-        var t = UI.Start(g);
+        var d = new DockPanel(DockedControlPlacement.Top, tree, p);
+        //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
+        var t = UI.Start(d);
         t.Wait();
     }
 
