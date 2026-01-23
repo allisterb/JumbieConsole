@@ -112,7 +112,7 @@ public class TextPrompt : Prompt
 
     protected void RenderCursor()
     {
-        if (IsValidCursorPosition)
+        if (IsValidCursorPosition && IsFocused)
         {
             if (_showCursor)
             {
@@ -191,17 +191,6 @@ public class TextPrompt : Prompt
                 break;
         }
         Invalidate();
-    }
-
-    protected override void Control_OnFocus()
-    {
-        BlinkCursor = true;
-
-    }
-
-    protected override void Control_OnLostFocus()
-    {
-        BlinkCursor = false;    
     }
 
     protected bool IsValidCursorPosition => _cursorScreenX < Size.Width && _cursorScreenY < Size.Height;

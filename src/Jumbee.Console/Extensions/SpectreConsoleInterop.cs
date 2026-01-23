@@ -3,6 +3,7 @@ namespace Spectre.Console.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 internal static class ListExtensions
 {
@@ -159,6 +160,21 @@ internal static class EnumerableExtensions
     {
         return first.Zip(second, (a, b) => (a, b))
             .Zip(third, (a, b) => (a.a, a.b, b));
+    }
+}
+
+internal static class StyleExtensions
+{
+    public static ConsoleGUI.Data.Color? ToConsoleGUIColor(this Color color)
+    {
+        if (color == Color.Default)
+        {
+            return null;
+        }
+        else
+        {
+            return new ConsoleGUI.Data.Color(color.R, color.G, color.B);
+        }
     }
 }
 
