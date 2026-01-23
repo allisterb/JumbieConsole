@@ -16,7 +16,7 @@ using System.Diagnostics;
 
 public class Program
 {
-    static void Main(string[] args) => DockPanelTest(args);
+    static void Main(string[] args) => GridTest(args);
 
     static void GridTest(string[] args)
     {
@@ -110,9 +110,9 @@ public class Program
         {
             treeControl.AddNode("lll");
         }, null, 0, 1000);
-
         
         t.Wait();
+        Console.WriteLine("Average draw time: {0} Average paint time: {1}.", UI.AverageDrawTime, UI.AveragePaintTime);
     }
     
     static void DockPanelTest(string[] args)
@@ -128,6 +128,8 @@ public class Program
         //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
         var t = UI.Start(d);
         t.Wait();
+        Console.WriteLine("Average draw time: {0} Average paint time: {1}.", UI.AverageDrawTime, UI.AveragePaintTime);
+        
     }
 
     static void AnsiControlSequenceBuilderTest(string[] args)

@@ -1,15 +1,15 @@
 namespace Jumbee.Console;
 
+using ConsoleGUI;
+using ConsoleGUI.Api;
+using ConsoleGUI.Input;
+using ConsoleGUI.Space;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;   
-
-using ConsoleGUI;
-using ConsoleGUI.Api;
-using ConsoleGUI.Space;
-using ConsoleGUI.Input;
 
 /// <summary>
 /// Manages the overall UI and provides a paint event for controls to subscribe to.
@@ -95,15 +95,14 @@ public static class UI
     {
         if (_lock.TryEnter())
         {
-            // Resize and redraw UI on console if console size changed
-            bool resized = ConsoleManager.AdjustBufferSize();
-            
-            // Resizing will automatically redraw, so just redraw if resize not needed.
-            if (!resized) ConsoleManager.Redraw();
-
+            // Draw UI on screen            
+            ConsoleManager.Draw();
             _lock.Exit();
+
             // Invoke control paint events
-            _Paint?.Invoke(null, paintEventArgs);            
+            StartPaintTimer();
+            _Paint?.Invoke(null, paintEventArgs);
+            StopPaintTimer();
         }        
     }   
     /// <summary>
@@ -124,10 +123,39 @@ public static class UI
             }
         }
     }
+    
+    public static void StartPaintTimer() => paintTimer.Restart();
+
+    public static void StopPaintTimer()
+    {
+        paintTimer.Stop();
+        paintTimes[paintTimeIndex] = paintTimer.ElapsedMilliseconds;
+        paintTimeIndex = (paintTimeIndex + 1) % paintTimeSamples;
+    }
     #endregion
 
     #region Properties
-    public static ILayout Layout => layout!;    
+    public static ILayout Layout => layout!;
+    
+    public static double AveragePaintTime
+    {
+        get
+        {
+            long total = 0;
+            int count = 0;
+            foreach (var time in paintTimes)
+            {
+                if (time > 0)
+                {
+                    total += time;
+                    count++;
+                }
+            }
+            return count > 0 ? (double)total / count : 0;
+        }
+    }
+
+    public static double AverageDrawTime => ConsoleManager.AverageDrawTime;
     #endregion
 
     #region Fields   
@@ -146,6 +174,10 @@ public static class UI
     {
         { HotKeys.CtrlQ, Stop }
     };
+    private static readonly int paintTimeSamples = 60;
+    private static readonly long[] paintTimes = new long[paintTimeSamples];
+    private static readonly Stopwatch paintTimer = new Stopwatch();
+    private static int paintTimeIndex = 0;
     #endregion
 
     #region Events
