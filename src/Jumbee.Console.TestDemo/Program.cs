@@ -73,7 +73,7 @@ public class Program
         spinner.Start();
 
         // The TextPrompt control
-        var prompt = new TextPrompt("[yellow]What is your name?[/]") { Width = 20};
+        var prompt = new TextPrompt("[yellow]What is your name?[/]", blinkCursor: false) { Width = 20};
         prompt.Committed += (sender, name) =>
         {
             spinner.Text = $"Hello, [blue]{name}[/]!";

@@ -10,6 +10,7 @@ using ConsoleGUI.Api;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
 using Spectre.Console;
+using Spectre.Console.Interop;
 using Spectre.Console.Rendering;
 
 /// <summary>
@@ -78,8 +79,8 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
             else
             {
                 var style = segment.Style;
-                var fg = Color.ToConsoleGUIColor(style.Foreground);
-                var bg = Color.ToConsoleGUIColor(style.Background);
+                var fg = style.Foreground.ToConsoleGUIColor();
+                var bg = style.Background.ToConsoleGUIColor();
                 var decoration = (ConsoleGUI.Data.Decoration)style.Decoration;
                 foreach (char c in segment.Text)
                 {
