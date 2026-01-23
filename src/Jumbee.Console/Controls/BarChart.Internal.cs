@@ -35,7 +35,6 @@ public partial class BarChart
             set
             {
                 field = value;
-                chart?.UpdateItemLabel(Index, value);
             }
         }
 

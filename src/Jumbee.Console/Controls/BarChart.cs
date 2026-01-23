@@ -259,28 +259,12 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
                 int itemValueWidth = ShowValues ? 1 : 0;
                 int effectiveWidth = Width > 0 ? Width : (10 + itemLabelWidth + itemValueWidth);
                 pb.Width = Math.Max(1, effectiveWidth - itemLabelWidth - itemValueWidth);
-            }
-
-            if (ShowValues && i < _values.Count)
-            {
-                var valStr = ValueFormatter != null
-                            ? ValueFormatter(value, Culture ?? CultureInfo.InvariantCulture)
-                            : value.ToString(Culture ?? CultureInfo.InvariantCulture);
-                _values[i] = new Markup(valStr);
-            }
+            }           
 ﻿            Invalidate();
 ﻿        }
 ﻿    }
 ﻿
-﻿    internal void UpdateItemLabel(int id, string label)
-﻿    {
-﻿        int i = GetListIndex(id);
-﻿        if (i >= 0 && i < _labels.Count)
-﻿        {
-﻿            _labels[i] = new Markup(label);
-﻿            Invalidate();
-﻿        }
-﻿    }
+﻿   
 ﻿
 ﻿    internal void UpdateItemColor(int id, Color color)
 ﻿    {
@@ -288,8 +272,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
 ﻿        if (i >= 0)
 ﻿        {
 ﻿            if (i < _bars.Count) _bars[i].Color = color;
-﻿            if (i < _labels.Count) _labels[i] = new Markup(data[i].Label, new Spectre.Console.Style(foreground: color));
-﻿            if (ShowValues && i < _values.Count) _values[i] = new Markup(data[i].Label, new Spectre.Console.Style(foreground: color));
 ﻿            Invalidate();
 ﻿        }
 ﻿    }
@@ -337,9 +319,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
         _grid = new Spectre.Console.Grid();
         _grid.Collapse();
         _bars.Clear();
-        _labels.Clear();
-        _values.Clear();
-
         var sortedData = data.Values.OrderBy(x => x.Index).ToList();
         var maxValue = Math.Max(MaxValue ?? 0d, sortedData.Select(item => item.Value).DefaultIfEmpty(0).Max());
 
@@ -381,7 +360,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
                         ? ValueFormatter(item.Value, Culture ?? CultureInfo.InvariantCulture) 
                         : item.Value.ToString(Culture ?? CultureInfo.InvariantCulture);
                     var mk = new Markup(valStr, new Spectre.Console.Style(foreground: item.Color));
-                    _values.Add(mk);
                     valueRenderables.Add(mk);
                 }
                 _grid.AddRow(valueRenderables.ToArray());
@@ -391,7 +369,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             foreach (var item in sortedData)
             {
                  var mk = new Markup(item.Label, new Spectre.Console.Style(foreground: item.Color));
-                 _labels.Add(mk);
                  labelRenderables.Add(mk);
             }
             _grid.AddRow(labelRenderables.ToArray());
@@ -404,7 +381,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
             foreach (var item in sortedData)
             {
                 var mkLabel = new Markup(item.Label, new Spectre.Console.Style(foreground: item.Color));
-                _labels.Add(mkLabel);
 
                 var bar = new HorizontalBar
                 {
@@ -446,8 +422,6 @@ public partial class BarChart : RenderableControl, Spectre.Console.IHasCulture
     protected Spectre.Console.Grid _grid = new();
     protected Spectre.Console.Grid? _containerGrid = new();
     protected List<IBarControl> _bars = new();
-    protected List<IRenderable> _labels = new();
-    protected List<IRenderable> _values = new();
     #endregion
 
 }
