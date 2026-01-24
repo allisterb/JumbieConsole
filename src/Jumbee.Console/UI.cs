@@ -156,6 +156,67 @@ public static class UI
     }
 
     public static double AverageDrawTime => ConsoleManager.AverageDrawTime;
+
+    public static IDictionary<IFocusable, double> AverageControlPaintTimes
+
+    {
+        get
+        {
+            var d = new Dictionary<IFocusable, double>();   
+            foreach(var c in controlPaintTimes)
+            {
+                long total = 0;
+                int count = 0;
+                foreach (var time in c.Value)
+                {
+                    if (time > 0)
+                    {
+                        total += time;
+                        count++;
+                    }
+                }
+                d[c.Key] = count > 0 ? (double)total / count : 0;
+            }
+            return d;
+        }
+    }
+    #endregion
+
+    #region Events
+    private static EventHandler<PaintEventArgs>? _Paint;
+    public static event EventHandler<PaintEventArgs> Paint
+    {
+        add
+        {            
+            if (value.Target is IFocusable c)
+            {
+                if (!controls.Contains(c))
+                {
+                    controls.Add(c);
+                    var timer= new Stopwatch();
+                    controlPaintTimers[c] = timer;
+                    controlPaintTimes[c] = new long[paintTimeSamples];
+                    EventHandler<PaintEventArgs> eventHandler = ((sender, e) =>
+                    {
+                        controlPaintTimers[c].Restart();
+                        value?.Invoke(sender, e);
+                        controlPaintTimers[c].Stop();
+                        controlPaintTimes[c][paintTimeIndex] = timer.ElapsedMilliseconds;
+                    });
+                    controlPaintEventHandlers[c] = eventHandler;
+                    _Paint = (EventHandler<PaintEventArgs>?)Delegate.Combine(_Paint, eventHandler);
+                }                
+            }           
+        }
+        remove
+        {            
+            if (value.Target is IFocusable c)
+            {
+                _Paint ??= (EventHandler<PaintEventArgs>?)Delegate.Remove(_Paint, controlPaintEventHandlers[c]);
+                controls.Remove(c);
+            }           
+        }
+    }
     #endregion
 
     #region Fields   
@@ -169,7 +230,7 @@ public static class UI
     private static int interval = 100;
     private static bool isRunning;
     private static ILayout? layout;
-    private static List<IFocusable> controls = new List<IFocusable>();    
+    private static List<IFocusable> controls = new List<IFocusable>();
     private static Dictionary<ConsoleKeyInfo, Action> GlobalHotKeys = new Dictionary<ConsoleKeyInfo, Action>
     {
         { HotKeys.CtrlQ, Stop }
@@ -178,32 +239,9 @@ public static class UI
     private static readonly long[] paintTimes = new long[paintTimeSamples];
     private static readonly Stopwatch paintTimer = new Stopwatch();
     private static int paintTimeIndex = 0;
-    #endregion
-
-    #region Events
-    private static EventHandler<PaintEventArgs>? _Paint;
-    public static event EventHandler<PaintEventArgs> Paint
-    {
-        add
-        {
-            _Paint = (EventHandler<PaintEventArgs>?)Delegate.Combine(_Paint, value);
-            if (value.Target is IFocusable c)
-            {
-                if (!controls.Contains(c))
-                {
-                    controls.Add(c);
-                }                
-            }           
-        }
-        remove
-        {
-            _Paint ??= (EventHandler<PaintEventArgs>?)Delegate.Remove(_Paint, value);
-            if (value.Target is IFocusable control)
-            {
-                controls.Remove(control);
-            }           
-        }
-    }
+    private static Dictionary<IFocusable, Stopwatch> controlPaintTimers = new();
+    private static Dictionary<IFocusable, long[]> controlPaintTimes = new();
+    private static Dictionary<IFocusable, EventHandler<PaintEventArgs>> controlPaintEventHandlers = new();
     #endregion
 
     #region Types

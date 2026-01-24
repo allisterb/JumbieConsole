@@ -35,6 +35,8 @@ public static class ControlExtensions
 
     public static T WithSize<T>(this T control, int? width = null, int? height = null) where T : Control
     {
+        if (width is null && height is null) throw new ArgumentNullException("You must specify either a width or height.");
+
         if (width.HasValue)
         {
             control.Width = width.Value;

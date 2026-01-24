@@ -16,7 +16,17 @@ using System.Diagnostics;
 
 public class Program
 {
-    static void Main(string[] args) => GridTest(args);
+    static void Main(string[] args)
+    {
+        GridTest(args);        
+        Console.Clear();
+        Console.WriteLine("Average draw time: {0}ms. Average paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
+        Console.WriteLine("Average control paint times:");
+        foreach(var c in UI.AverageControlPaintTimes)
+        {
+            Console.WriteLine("{0}: {1}ms", c.Key.GetType().Name, c.Value);
+        }
+    }
 
     static void GridTest(string[] args)
     {
@@ -102,7 +112,7 @@ public class Program
             // Update existing items using the bulk-update indexer
             barChart["Planning", "Coding", "Testing"] = [newPlanning, newCoding, newTesting];
 
-        }, null, 0, 100);
+        }, null, 0, 50);
 
         
         
@@ -110,9 +120,8 @@ public class Program
         {
             treeControl.AddNode("lll");
         }, null, 0, 1000);
-        
-        t.Wait();
-        Console.WriteLine("Average draw time: {0} Average paint time: {1}.", UI.AverageDrawTime, UI.AveragePaintTime);
+
+        t.Wait();        
     }
     
     static void DockPanelTest(string[] args)
