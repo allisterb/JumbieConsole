@@ -55,6 +55,8 @@ public abstract class Control : CControl, IFocusable, IDisposable
         }
     }
 
+    public int ActualWidth => Size.Width;
+    
     public virtual int Height
     {
         get => field;
@@ -66,7 +68,9 @@ public abstract class Control : CControl, IFocusable, IDisposable
                 Resize(new Size(Width, value));
             });
         }
-    }   
+    }
+
+    public int ActualHeight => Size.Height;
 
     public ControlFrame? Frame { get; set; }
 

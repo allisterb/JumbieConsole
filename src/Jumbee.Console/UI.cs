@@ -54,16 +54,12 @@ public static class UI
                         // Invoke global input event
                         globalInputListener.OnInput(inputEvent);
                         _lock.Exit();
-                        if (inputEvent.Handled)
-                        {
-                            return;
-                        }
-                        else
+                        if (!inputEvent.Handled)
                         {
                             // Invoke control input events
                             inputEventArgs.InputEvent = inputEvent;
                             layout.OnInput(inputEventArgs);
-                        }
+                        }                        
                     }
                 }
                 else
@@ -180,7 +176,9 @@ public static class UI
         }
     }
 
-    public static IDictionary<IFocusable, long> MaxControlPaintTimes => controlPaintTimes.Select(kv => KeyValuePair.Create(kv.Key, kv.Value.Where(v => v.HasValue).Select(v => v!.Value).Max())).ToDictionary();
+    public static IDictionary<IFocusable, long> MaxControlPaintTimes => controlPaintTimes
+        .Select(kv => KeyValuePair.Create(kv.Key, kv.Value.Where(v => v.HasValue).Select(v => v!.Value).DefaultIfEmpty().Max()))
+        .ToDictionary();
     #endregion
 
     #region Events

@@ -11,8 +11,10 @@ using Spectre.Console.Rendering;
 /// </summary>
 public abstract class RenderableControl : Control, IRenderable
 {
+    public RenderableControl() : base() {}
+    
     #region Methods
-    Measurement IRenderable.Measure(RenderOptions options, int maxWidth) => this.Measure(options, maxWidth);
+    Measurement IRenderable.Measure(RenderOptions options, int maxWidth) => this.Measure(options, Math.Min(maxWidth, ActualWidth));
 
     IEnumerable<Segment> IRenderable.Render(RenderOptions options, int maxWidth) => this.Render(options, maxWidth);
 
