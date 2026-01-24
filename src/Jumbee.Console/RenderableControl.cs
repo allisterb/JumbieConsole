@@ -40,8 +40,7 @@ public abstract class RenderableControl : Control, IRenderable
             // Update buffer size
             consoleBuffer.Size = Size;
 
-            // Trigger Paint/Render to fill the buffer
-            Paint();        
+            Invalidate();        
         });
     }
 

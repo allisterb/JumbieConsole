@@ -26,6 +26,11 @@ public class Program
         {
             Console.WriteLine("{0}: {1}ms", c.Key.GetType().Name, c.Value);
         }
+        Console.WriteLine("Max control paint times:");
+        foreach (var c in UI.MaxControlPaintTimes)
+        {
+            Console.WriteLine("{0}: {1}ms", c.Key.GetType().Name, c.Value);
+        }
     }
 
     static void GridTest(string[] args)

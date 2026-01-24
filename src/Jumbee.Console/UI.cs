@@ -158,7 +158,6 @@ public static class UI
     public static double AverageDrawTime => ConsoleManager.AverageDrawTime;
 
     public static IDictionary<IFocusable, double> AverageControlPaintTimes
-
     {
         get
         {
@@ -169,9 +168,9 @@ public static class UI
                 int count = 0;
                 foreach (var time in c.Value)
                 {
-                    if (time > 0)
+                    if (time.HasValue)
                     {
-                        total += time;
+                        total += time.Value;
                         count++;
                     }
                 }
@@ -180,6 +179,8 @@ public static class UI
             return d;
         }
     }
+
+    public static IDictionary<IFocusable, long> MaxControlPaintTimes => controlPaintTimes.Select(kv => KeyValuePair.Create(kv.Key, kv.Value.Where(v => v.HasValue).Select(v => v!.Value).Max())).ToDictionary();
     #endregion
 
     #region Events
@@ -194,7 +195,7 @@ public static class UI
                 {
                     controls.Add(c);                 
                     controlPaintTimers[c] = new Stopwatch();
-                    controlPaintTimes[c] = new long[paintTimeSamples];                    
+                    controlPaintTimes[c] = new long?[paintTimeSamples];                    
                     _Paint = (EventHandler<PaintEventArgs>?)Delegate.Combine(_Paint, value);
                 }                
             }           
@@ -231,7 +232,7 @@ public static class UI
     private static readonly Stopwatch paintTimer = new Stopwatch();
     internal static int paintTimeIndex = 0;
     internal static Dictionary<IFocusable, Stopwatch> controlPaintTimers = new();
-    internal static Dictionary<IFocusable, long[]> controlPaintTimes = new();
+    internal static Dictionary<IFocusable, long?[]> controlPaintTimes = new();
     private static Dictionary<IFocusable, EventHandler<PaintEventArgs>> controlPaintEventHandlers = new();
     #endregion
 

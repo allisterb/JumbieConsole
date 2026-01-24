@@ -194,6 +194,10 @@ public abstract class Control : CControl, IFocusable, IDisposable
                 Validate();
             }
         }
+        else
+        {
+            UI.controlPaintTimes[this][UI.paintTimeIndex] = null;
+        }
     }
 
     private void OnInput(object? sender, UI.InputEventArgs inputEventArgs)
