@@ -37,7 +37,7 @@ public class Spinner : AnimatedControl
         get => _text;
         set
         {
-            _text = value;
+            _text = Markup.Escape(value);
             spinnerFramesMarkup = spinnerFrames.Map(f => $"[{styleMarkup}]{f}[/]" + (string.IsNullOrEmpty(_text) ? "" : " " + _text));
         }
     }

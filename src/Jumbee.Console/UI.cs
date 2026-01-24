@@ -192,19 +192,10 @@ public static class UI
             {
                 if (!controls.Contains(c))
                 {
-                    controls.Add(c);
-                    var timer= new Stopwatch();
-                    controlPaintTimers[c] = timer;
-                    controlPaintTimes[c] = new long[paintTimeSamples];
-                    EventHandler<PaintEventArgs> eventHandler = ((sender, e) =>
-                    {
-                        controlPaintTimers[c].Restart();
-                        value?.Invoke(sender, e);
-                        controlPaintTimers[c].Stop();
-                        controlPaintTimes[c][paintTimeIndex] = timer.ElapsedMilliseconds;
-                    });
-                    controlPaintEventHandlers[c] = eventHandler;
-                    _Paint = (EventHandler<PaintEventArgs>?)Delegate.Combine(_Paint, eventHandler);
+                    controls.Add(c);                 
+                    controlPaintTimers[c] = new Stopwatch();
+                    controlPaintTimes[c] = new long[paintTimeSamples];                    
+                    _Paint = (EventHandler<PaintEventArgs>?)Delegate.Combine(_Paint, value);
                 }                
             }           
         }
@@ -238,9 +229,9 @@ public static class UI
     private static readonly int paintTimeSamples = 60;
     private static readonly long[] paintTimes = new long[paintTimeSamples];
     private static readonly Stopwatch paintTimer = new Stopwatch();
-    private static int paintTimeIndex = 0;
-    private static Dictionary<IFocusable, Stopwatch> controlPaintTimers = new();
-    private static Dictionary<IFocusable, long[]> controlPaintTimes = new();
+    internal static int paintTimeIndex = 0;
+    internal static Dictionary<IFocusable, Stopwatch> controlPaintTimers = new();
+    internal static Dictionary<IFocusable, long[]> controlPaintTimes = new();
     private static Dictionary<IFocusable, EventHandler<PaintEventArgs>> controlPaintEventHandlers = new();
     #endregion
 

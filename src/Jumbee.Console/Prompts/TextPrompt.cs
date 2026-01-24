@@ -15,7 +15,7 @@ public class TextPrompt : Prompt
     {
         this._prompt = prompt;
         this._showCursor = showCursor;
-        this._blinkCursor = blinkCursor;        
+        this._blinkCursor = blinkCursor;
     }
     #endregion
 
@@ -88,12 +88,18 @@ public class TextPrompt : Prompt
     #endregion
 
     #region Methods       
+    protected override void Initialize()
+    {
+        base.Initialize();
+        RenderPrompt();
+    }
+
     protected override void Render()
     {
         if (newInput)
         {
             RenderPrompt();
-            ansiConsole.Write(input);
+            ansiConsole.Write(Markup.Escape(input));
             _cursorScreenX = ansiConsole.CursorX;
             _cursorScreenY = ansiConsole.CursorY;            
             newInput = false;

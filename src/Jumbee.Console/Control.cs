@@ -1,11 +1,11 @@
 ﻿namespace Jumbee.Console;
 
-using System;
-using System.Threading;
-
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
+using System;
+using System.Threading;
+using static Jumbee.Console.UI;
 
 public abstract class Control : CControl, IFocusable, IDisposable    
 {
@@ -17,7 +17,6 @@ public abstract class Control : CControl, IFocusable, IDisposable
         UI.Paint += OnPaint;
         OnFocus += Control_OnFocus;
         OnLostFocus += Control_OnLostFocus;
-        Invalidate();
     }
 
     protected virtual void Control_OnLostFocus() {}
@@ -132,7 +131,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
             var size = new Size(width, height);                             
             Resize(size);
             consoleBuffer.Size = Size;
-            Paint();        
+            Invalidate();
         });
     }
             
@@ -149,7 +148,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     protected virtual void Validate() => Interlocked.Exchange(ref paintRequests, 0u);
 
     /// <summary>
-    /// Calculates the size of the control based on its own dimensions and the maximum size constraints set by paremt.
+    /// Calculates the size of the control based on its own dimensions and the maximum and minimum size constraints set by its parent.
     /// </summary>
     /// <returns></returns>
     protected (int, int) CalculateSize()
@@ -157,9 +156,9 @@ public abstract class Control : CControl, IFocusable, IDisposable
         // Handle the case when negative or overflow sizes may get passed down by parent containers
         int maxWidth = Math.Clamp(MaxSize.Width, 0 ,1000);
         int maxHeight = Math.Clamp(MaxSize.Height, 0, 1000);
-
         int minWidth = Math.Clamp(MinSize.Width, 0 ,1000);
         int minHeight = Math.Clamp(MinSize.Height, 0, 1000);
+
         // Use Width and Height as preferred if set (non-zero), otherwise default to MaxSize.Width and MaxSize.Height set by parents
         var preferredWidth = Width > 0 ? Width : maxWidth;
         var preferredHeight = Height > 0 ? Height : maxHeight;
@@ -187,7 +186,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
         {
             lock (e.Lock)
             {
+                var timer = UI.controlPaintTimers[this];
+                timer.Restart();
                 Paint();
+                timer.Stop();
+                UI.controlPaintTimes[this][UI.paintTimeIndex] = timer.ElapsedMilliseconds;
                 Validate();
             }
         }
