@@ -23,6 +23,7 @@ public static class UI
     public static Task Start(ILayout layout, int width = 110, int height = 25, int paintInterval = 100, bool isTrueColorTerminal = true)
     {
         if (isRunning) return task;
+        ProcessMetrics.Start();
         if (!isTrueColorTerminal)
         {
             ConsoleManager.Console = new SimplifiedConsole(); ;
@@ -39,7 +40,7 @@ public static class UI
                 controls.Add(c);
             }               
         }
-        PerformanceMetrics.Start();
+     
         timer = new Timer(OnTick, null, interval, interval);
         var globalInputListener = new GlobalInputListener();
         task = Task.Run(() =>
@@ -83,7 +84,7 @@ public static class UI
         timer = null;
         controls.Clear();
         cts.Cancel();   
-        PerformanceMetrics.Stop();
+        ProcessMetrics.Stop();
     }
     
     /// <summary>
@@ -212,7 +213,7 @@ public static class UI
     #endregion
 
     #region Fields   
-    public static readonly PerformanceMetrics PerformanceMetrics = new PerformanceMetrics(60);
+    public static readonly ProcessMetrics ProcessMetrics = new ProcessMetrics(300);
     private static readonly Lock _lock = new Lock();
     private static PaintEventArgs paintEventArgs = new PaintEventArgs(_lock);
     private static InputEventArgs inputEventArgs = new InputEventArgs(_lock);
