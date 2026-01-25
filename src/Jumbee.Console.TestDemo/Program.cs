@@ -1,6 +1,8 @@
 namespace Jumbee.Console.TestDemo;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -18,7 +20,8 @@ public class Program
 {
     static async Task Main(string[] args)
     {
-        GridTest(args);        
+        // GridTest(args);
+        ListBoxTest(args);
         Console.Clear();
         Console.WriteLine("Average draw time: {0}ms. Average paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
         Console.WriteLine("Average control paint times:");
@@ -35,8 +38,8 @@ public class Program
         Console.WriteLine($"Average CPU Usage: {UI.ProcessMetrics.AverageCpuUsage:F2}%");
         Console.WriteLine($"Average Memory Usage: {UI.ProcessMetrics.AverageMemoryUsage / 1024 / 1024:F2} MB");
         Console.WriteLine($"Total Allocated: {UI.ProcessMetrics.TotalAllocatedBytes / 1024 / 1024:F2} MB");
-        Console.WriteLine($"Average GC Fragmentation: {UI.ProcessMetrics.AverageGcFragmentation / 1024 / 1024:F2} MB");
-        Console.WriteLine($"Average ThreadPool Threads: {UI.ProcessMetrics.AverageThreadPoolThreads:F2}");
+        Console.WriteLine($"GC Fragmentation: {UI.ProcessMetrics.GcFragmentation}");
+        Console.WriteLine($"Average ThreadPool Threads: {UI.ProcessMetrics.ThreadPoolThreads:F2}");
         Console.WriteLine($"Total Lock Contentions: {UI.ProcessMetrics.TotalLockContentions}");
     }
 
@@ -134,6 +137,61 @@ public class Program
         }, null, 0, 1000);
 
         t.Wait();        
+    }
+    
+    static void ListBoxTest(string[] args)
+    {
+        var listBox = new ListBox().WithSize(10, 5).WithRoundedBorder(Purple);
+        listBox.AddItem("[red]Item 1[/]");
+        listBox.AddItem("[green]Item 2[/]");
+        listBox.AddItem("[blue]Item 3[/]");
+
+        var prompt = new TextPrompt("[yellow]Type a command (add/remove/clear/exit):[/]", blinkCursor: true) { Width = 40 };
+        prompt.Committed += (sender, text) =>
+        {
+            if (text.StartsWith("add "))
+            {
+                var content = text.Substring(4);
+                listBox.AddItem(content);
+            }
+            else if (text == "remove")
+            {
+                var items = listBox.Items.ToList();
+                if (items.Count > 0)
+                {
+                    listBox.RemoveItem(items.Last());
+                }
+            }
+            else if (text == "clear")
+            {
+                listBox.Clear();
+            }
+            else if (text == "exit")
+            {
+                Environment.Exit(0);
+            }
+        };
+
+        var grid = new Jumbee.Console.Grid([50], [50, 50], [
+            [listBox.WithFrame(title: "List Box"), prompt.WithFrame(title: "Controls")]
+        ]);
+        
+        prompt.IsFocused = true;
+
+        var t = UI.Start(grid);
+        
+        // Add some dynamic items automatically
+        var random = new Random();
+        var timer = new Timer(_ =>
+        {
+            var r = random.Next(0, 100);
+            if (r < 30)
+            {
+                listBox.AddItem($"Auto Item {DateTime.Now.Second}");
+            }
+        }, null, 0, 1000);
+
+        t.Wait();
     }
     
     static void DockPanelTest(string[] args)

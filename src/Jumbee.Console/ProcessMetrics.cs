@@ -50,6 +50,14 @@ public class ProcessMetrics : IDisposable
         _fragmentationReadings = new long[historySize];
         _threadPoolReadings = new long[historySize];
         _lockContentionReadings = new long[historySize];
+       
+    }
+
+    /// <summary>
+    /// Starts recording performance metrics.
+    /// </summary>
+    internal void Start()
+    {
         _listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == "System.Runtime")
@@ -57,8 +65,8 @@ public class ProcessMetrics : IDisposable
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-
-        _listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, state) =>
+       
+        _listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) =>
         {
             if (instrument.Name == "dotnet.process.cpu.time")
             {
@@ -69,11 +77,7 @@ public class ProcessMetrics : IDisposable
                     if (_cpuCount < _historySize) _cpuCount++;
                 }
             }
-        });
-
-        _listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) =>
-        {
-            if (instrument.Name == "dotnet.process.memory.working_set")
+            else if (instrument.Name == "dotnet.process.memory.working_set")
             {
                 lock (_memoryReadings)
                 {
@@ -118,15 +122,7 @@ public class ProcessMetrics : IDisposable
                     if (_lockContentionCount < _historySize) _lockContentionCount++;
                 }
             }
-        });       
-    }
-
-    /// <summary>
-    /// Starts recording performance metrics.
-    /// </summary>
-    internal void Start()
-    {
-        
+        });
 
         _listener.Start();
         _listener.RecordObservableInstruments();
@@ -188,13 +184,15 @@ public class ProcessMetrics : IDisposable
     /// <summary>
     /// Gets the average GC heap fragmentation in bytes.
     /// </summary>
-    public double AverageGcFragmentation
+    public double GcFragmentation
     {
         get
         {
             lock (_fragmentationReadings)
             {
-                return _fragmentationCount > 0 ? _fragmentationReadings.Take(_fragmentationCount).Average() : 0;
+                if (_fragmentationCount == 0) return 0;
+                int lastIndex = (_fragmentationIndex - 1 + _historySize) % _historySize;
+                return _fragmentationReadings[lastIndex];
             }
         }
     }
@@ -202,13 +200,15 @@ public class ProcessMetrics : IDisposable
     /// <summary>
     /// Gets the average number of ThreadPool threads.
     /// </summary>
-    public double AverageThreadPoolThreads
+    public double ThreadPoolThreads
     {
         get
         {
             lock (_threadPoolReadings)
             {
-                return _threadPoolCount > 0 ? _threadPoolReadings.Take(_threadPoolCount).Average() : 0;
+                if (_threadPoolCount == 0) return 0;
+                int lastIndex = (_threadPoolIndex - 1 + _historySize) % _historySize;
+                return _threadPoolReadings[lastIndex];
             }
         }
     }
