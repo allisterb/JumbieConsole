@@ -141,18 +141,30 @@ public class Program
     
     static void ListBoxTest(string[] args)
     {
-        var listBox = new ListBox().WithSize(10, 5).WithRoundedBorder(Purple);
-        listBox.AddItem("[red]Item 1[/]");
-        listBox.AddItem("[green]Item 2[/]");
-        listBox.AddItem("[blue]Item 3[/]");
+        var listBox = new ListBox
+        {
+            SelectedForegroundColor = Color.White,
+            SelectedBackgroundColor = Color.DarkMagenta
+        };
+        listBox.AddItem("[red]Item 1 (Markup)[/]");
+        listBox.AddItem("Item 2 (Green FG)", Color.Green);
+        listBox.AddItem("Item 3 (Blue BG)", background: Color.Blue);
+        listBox.AddItem("Item 4 (Yellow on Navy)", Color.Yellow, Color.Navy);
 
-        var prompt = new TextPrompt("[yellow]Type a command (add/remove/clear/exit):[/]", blinkCursor: true) { Width = 40 };
+        var dynamicItem = listBox.AddItem("I will change color...", Color.White);
+
+        var prompt = new TextPrompt("[yellow]Type a command (add/remove/clear/color/exit):[/]", blinkCursor: true) { Width = 40 };
         prompt.Committed += (sender, text) =>
         {
             if (text.StartsWith("add "))
             {
                 var content = text.Substring(4);
                 listBox.AddItem(content);
+            }
+            else if (text == "color")
+            {
+                dynamicItem.ForegroundColor = Color.FromSpectreColor(Spectre.Console.Color.FromInt32(new Random().Next(0, 255)));
+                dynamicItem.Text = $"My color is now: {dynamicItem.ForegroundColor?.ToString() ?? "Default"}";
             }
             else if (text == "remove")
             {
@@ -173,10 +185,10 @@ public class Program
         };
 
         var grid = new Jumbee.Console.Grid([50], [50, 50], [
-            [listBox.WithFrame(title: "List Box"), prompt.WithFrame(title: "Controls")]
+            [listBox, prompt.WithFrame(title: "Controls")]
         ]);
         
-        prompt.IsFocused = true;
+        listBox.IsFocused = true;
 
         var t = UI.Start(grid);
         

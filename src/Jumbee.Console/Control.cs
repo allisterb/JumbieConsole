@@ -97,6 +97,8 @@ public abstract class Control : CControl, IFocusable, IDisposable
 
     public virtual bool HandlesInput { get; } = false;
 
+    public virtual void OnInput(InputEvent inputEvent) { }
+
     public void OnInput(UI.InputEventArgs inputEventArgs)
     {
         if (HandlesInput)
@@ -107,6 +109,8 @@ public abstract class Control : CControl, IFocusable, IDisposable
             }
         }
     }
+
+
     #endregion
 
     #region Methods

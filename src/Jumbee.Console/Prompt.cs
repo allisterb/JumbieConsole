@@ -9,6 +9,6 @@ namespace Jumbee.Console
 {
     public abstract class Prompt : Control, IInputListener
     {
-        public abstract void OnInput(InputEvent inputEvent);
+       
     }
 }

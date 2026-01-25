@@ -104,6 +104,8 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
     }
 
     public bool HandlesInput => true;
+
+    public virtual void OnInput(InputEvent inputEvent) {}
     #endregion
 
     #region Events

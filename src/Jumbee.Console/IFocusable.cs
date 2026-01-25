@@ -24,8 +24,6 @@ public interface IFocusable : IControl, IInputListener
     bool HandlesInput { get; }
 
     void OnInput(UI.InputEventArgs inputEventArgs);
-
-    void IInputListener.OnInput(InputEvent inputEvent) {}
-
+    
     IFocusable? FocusedControl => Focusable && IsFocused ? FocusableControl : null;
 }
