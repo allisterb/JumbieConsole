@@ -39,6 +39,7 @@ public static class UI
                 controls.Add(c);
             }               
         }
+        PerformanceMetrics.Start();
         timer = new Timer(OnTick, null, interval, interval);
         var globalInputListener = new GlobalInputListener();
         task = Task.Run(() =>
@@ -82,6 +83,7 @@ public static class UI
         timer = null;
         controls.Clear();
         cts.Cancel();   
+        PerformanceMetrics.Stop();
     }
     
     /// <summary>
@@ -210,6 +212,7 @@ public static class UI
     #endregion
 
     #region Fields   
+    public static readonly PerformanceMetrics PerformanceMetrics = new PerformanceMetrics(60);
     private static readonly Lock _lock = new Lock();
     private static PaintEventArgs paintEventArgs = new PaintEventArgs(_lock);
     private static InputEventArgs inputEventArgs = new InputEventArgs(_lock);

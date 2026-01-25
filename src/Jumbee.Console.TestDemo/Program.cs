@@ -3,7 +3,9 @@ namespace Jumbee.Console.TestDemo;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using System.Linq;
 using ConsoleGUI;
 using ConsoleGUI.Input;
 
@@ -12,12 +14,57 @@ using Vezel.Cathode.Text.Control;
 
 using Jumbee.Console;
 using static Jumbee.Console.Style;
-using System.Diagnostics;
+
 
 public class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
+
+
+        // Setup MeterListener
+        double[] cpuReadings = new double[60];
+        long[] memoryReadings = new long[60];
+        int cpuIndex = 0;
+        int memoryIndex = 0;
+        int cpuCount = 0;
+        int memoryCount = 0;
+        
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, listener) =>
+        {
+            if (instrument.Meter.Name == "System.Runtime")
+            {
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, state) =>
+        {
+            if (instrument.Name == "cpu-usage")
+            {
+                cpuReadings[cpuIndex] = measurement;
+                cpuIndex = (cpuIndex + 1) % 60;
+                if (cpuCount < 60) cpuCount++;
+            }
+        });
+        
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) =>
+        {
+             if (instrument.Name == "working-set")
+             {
+                 memoryReadings[memoryIndex] = measurement;
+                 memoryIndex = (memoryIndex + 1) % 60;
+                 if (memoryCount < 60) memoryCount++;
+             }
+        });
+
+        listener.Start();
+
+
+        listener.RecordObservableInstruments();
+        
+
         GridTest(args);        
         Console.Clear();
         Console.WriteLine("Average draw time: {0}ms. Average paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
@@ -31,6 +78,16 @@ public class Program
         {
             Console.WriteLine("{0}: {1}ms", c.Key.GetType().Name, c.Value);
         }
+
+        listener.RecordObservableInstruments();
+
+        double avgCpu = cpuCount > 0 ? cpuReadings.Take(cpuCount).Average() : 0;
+        double avgMemory = memoryCount > 0 ? memoryReadings.Take(memoryCount).Average() : 0;
+
+        Console.WriteLine($"Average CPU Usage: {avgCpu:F2}%");
+        Console.WriteLine($"Average Memory Usage: {avgMemory / 1024 / 1024:F2} MB");
+
+
     }
 
     static void GridTest(string[] args)
