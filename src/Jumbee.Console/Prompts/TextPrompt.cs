@@ -24,6 +24,8 @@ public class TextPrompt : Prompt
     #endregion
 
     #region Properties
+    public override bool HandlesInput => true;
+
     public string Prompt
     {
         get => _prompt;
@@ -34,7 +36,7 @@ public class TextPrompt : Prompt
         }
 
     }
-
+    
     public bool ShowCursor 
     { 
         get => _showCursor; 
