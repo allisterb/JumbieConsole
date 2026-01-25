@@ -13,20 +13,21 @@ using Spectre.Console.Interop;
 
 using CircularTreeException = Spectre.Console.Interop.CircularTreeException;
 
-public enum  TreeGuide
+public enum TreeGuide
 {
     Ascii,
     Line,
     BoldLine,
     DoubleLine
 }
+
 /// <summary>
 /// Displays hierarchical data in a tree layout.
 /// </summary>
 /// <remarks>
 /// Based on <see cref="Spectre.Console.Tree"/> but modified to support mutable tree nodes, concurrent updates, and node selection via user input.
 /// </remarks>
-public class Tree : RenderableControl
+public partial class Tree : RenderableControl
 {
     #region Constructors
     /// <summary>
@@ -50,11 +51,7 @@ public class Tree : RenderableControl
     public Tree(string root, TreeGuide? guide = null, Style ? guideStyle = null, bool expanded = true) : 
         this(new Markup(root), guide, guideStyle, expanded) {}
     #endregion
-
-    #region Indexers
-    public TreeNode? this[uint index] => _root[index];
-    #endregion
-
+    
     #region Properties
     public TreeNode Root => _root;
 
@@ -99,6 +96,10 @@ public class Tree : RenderableControl
 
     internal ICollection<TreeNode> Nodes => _root.Children;
 
+    #endregion
+
+    #region Indexers
+    public TreeNode? this[uint index] => _root[index];
     #endregion
 
     #region Methods
