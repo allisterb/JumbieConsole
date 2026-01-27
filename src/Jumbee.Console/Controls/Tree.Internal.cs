@@ -22,12 +22,13 @@ public partial class Tree
         /// Initializes a new <see cref="TreeNode"/> instance.
         /// </summary>
         /// <param name="renderable">The tree node label.</param>
-        internal TreeNode(Tree tree, uint id, IRenderable label, TreeNode? parent = null)
+        internal TreeNode(Tree tree, uint index, IRenderable label, TreeNode? parent = null, string? text = null)
         {
             Tree = tree;
-            Id = id;
+            Index = index;
             Label = label;
             Parent = parent;
+            Text = text;
         }
         #endregion
 
@@ -36,7 +37,9 @@ public partial class Tree
 
         public TreeNode? Parent { get; protected set; }
 
-        public uint Id { get; }
+        public uint Index { get; }
+
+        public string? Text { get; internal set; }
 
         public IRenderable Label
         {
@@ -60,6 +63,22 @@ public partial class Tree
 
         public bool IsRemoved { get; internal set; } = false;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the node is selected.
+        /// </summary>
+        public bool Selected
+        {
+            get => _selected;
+            set
+            {
+                if (_selected != value)
+                {
+                    _selected = value;
+                    UpdateTree();
+                }
+            }
+        }
+
         internal IRenderable Renderable => Label;
 
         internal ICollection<TreeNode> Nodes => _children.Values;
@@ -70,21 +89,21 @@ public partial class Tree
         #endregion
         
         #region Methods
-        public TreeNode AddChild(IRenderable label)
+        public TreeNode AddChild(IRenderable label, string? text = null)
         {
             TreeNode c;
             bool complete = false;
             do
             {
-                c = new TreeNode(this.Tree, Interlocked.Increment(ref childIndex), label, this);
-                complete = this._children.TryAdd(c.Id, c);
+                c = new TreeNode(this.Tree, Interlocked.Increment(ref childIndex), label, this, text);
+                complete = this._children.TryAdd(c.Index, c);
             }
             while (!complete);
             UpdateTree();
             return c;
         }
 
-        public TreeNode AddChild(string label) => AddChild(new Markup(label));
+        public TreeNode AddChild(string label) => AddChild(new Markup(label), label);
 
         public void AddChildren(params IRenderable[] children)
         {
@@ -126,6 +145,7 @@ public partial class Tree
         #region Fields
         private ConcurrentDictionary<uint, TreeNode> _children = new();
         private uint childIndex = 0;
+        private bool _selected;
         #endregion
     }
 }

@@ -5,6 +5,9 @@ using Spectre.Console.Rendering;
 
 public partial class ListBox
 {
+    /// <summary>
+    /// An item in a ListBox.
+    /// </summary>
     public class ListBoxItem
     {
         #region Constructors

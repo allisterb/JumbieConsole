@@ -11,7 +11,7 @@ using Spectre.Console.Rendering;
 using ConsoleGUI.Input;
 
 /// <summary>
-/// A list box control that displays a list of items and allows user input navigation and selection.
+/// Displays a flat list of items and allows user input navigation and selection.
 /// </summary>
 public partial class ListBox : RenderableControl
 {
@@ -33,7 +33,6 @@ public partial class ListBox : RenderableControl
     #region Properties
     public ICollection<ListBoxItem> Items => _items.Values;
 
-    private Color? _selectedForegroundColor;
     public Color? SelectedForegroundColor
     {
         get => _selectedForegroundColor;
@@ -44,7 +43,7 @@ public partial class ListBox : RenderableControl
         }
     }
 
-    private Color? _selectedBackgroundColor;
+   
     public Color? SelectedBackgroundColor
     {
         get => _selectedBackgroundColor;
@@ -104,24 +103,28 @@ public partial class ListBox : RenderableControl
 
     public ListBoxItem AddItem(IRenderable item)
     {
+        ListBoxItem _item;
+        bool complete = false;
         do
-        {
-            int index = Interlocked.Increment(ref _itemIndex);
-            var _item = new ListBoxItem(this, index, item);
-            if (_items.TryAdd(index, _item)) return _item;
+        {            
+            _item = new ListBoxItem(this, Interlocked.Increment(ref _itemIndex), item);            
+            complete = _items.TryAdd(_item.Index, _item);
         }
-        while (true);        
+        while (!complete);        
+        return _item;
     }
   
     public ListBoxItem AddItem(string text, Color? foreground = null, Color? background = null)
     {
+        ListBoxItem _item;
+        bool complete = false;
         do
-        {
-            int index = Interlocked.Increment(ref _itemIndex);
-            var _item = new ListBoxItem(this, index, text, foreground, background);
-            if (_items.TryAdd(index, _item)) return _item;
+        {            
+            _item = new ListBoxItem(this, Interlocked.Increment(ref _itemIndex), text, foreground, background);
+            complete = _items.TryAdd(_item.Index, _item);      
         }
-        while (true);
+        while (!complete);
+        return _item;
     }
 
     public bool RemoveItem(ListBoxItem item)
@@ -201,7 +204,9 @@ public partial class ListBox : RenderableControl
 
     #region Fields
     private readonly ConcurrentDictionary<int, ListBoxItem> _items = new();
-    private int _itemIndex = -1;
+    private int _itemIndex = 0;
     private int _selectionIndex = 0;
+    private Color? _selectedBackgroundColor;
+    private Color? _selectedForegroundColor;
     #endregion
 }

@@ -20,8 +20,8 @@ public class Program
 {
     static async Task Main(string[] args)
     {
-        // GridTest(args);
-        ListBoxTest(args);
+        GridTest(args);
+        // ListBoxTest(args);
         Console.Clear();
         Console.WriteLine("Average draw time: {0}ms. Average paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
         Console.WriteLine("Average control paint times:");
@@ -70,7 +70,11 @@ public class Program
             CenterLabel = true
         };
         // 3. Tree
-        var treeControl = new Jumbee.Console.Tree("Root", guide: Jumbee.Console.TreeGuide.Ascii);
+        var treeControl = new Jumbee.Console.Tree("Root", guide: Jumbee.Console.TreeGuide.Ascii)
+        {
+            SelectedForegroundColor = Color.White,
+            SelectedBackgroundColor = Color.Blue
+        };
         treeControl.AddNode("[yellow]Foo[/]").AddChildren("[blue]Bar[/]", "Baz", "Qux");
 
         // Example of adding a subtree (since AddNode takes IRenderable)
@@ -111,7 +115,7 @@ public class Program
             [spinner.WithFrame(borderStyle: BorderStyle.Rounded, fgColor: Red, title: "Spinna benz"), prompt],
             [treeControl, barChart]
         ]);
-        p.IsFocused = true;
+        treeControl.IsFocused = true;
         // Start the user interface
         var t = UI.Start(grid, 130, 40);
         //UI.Start(internalGrid, width:250, height: 60, isTrueColorTerminal: true);
@@ -128,13 +132,6 @@ public class Program
             barChart["Planning", "Coding", "Testing"] = [newPlanning, newCoding, newTesting];
 
         }, null, 0, 50);
-
-        
-        
-        var treeTimer = new Timer(_ =>
-        {
-            treeControl.AddNode("lll");
-        }, null, 0, 1000);
 
         t.Wait();        
     }

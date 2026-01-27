@@ -10,6 +10,7 @@ using System.Threading;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using Spectre.Console.Interop;
+using ConsoleGUI.Input;
 
 using CircularTreeException = Spectre.Console.Interop.CircularTreeException;
 
@@ -22,7 +23,7 @@ public enum TreeGuide
 }
 
 /// <summary>
-/// Displays hierarchical data in a tree layout.
+/// Displays a hierarchical list of items in a tree layout.
 /// </summary>
 /// <remarks>
 /// Based on <see cref="Spectre.Console.Tree"/> but modified to support mutable tree nodes, concurrent updates, and node selection via user input.
@@ -49,7 +50,10 @@ public partial class Tree : RenderableControl
     /// </summary>
     /// <param name="root">The tree root label as a string.</param>
     public Tree(string root, TreeGuide? guide = null, Style ? guideStyle = null, bool expanded = true) : 
-        this(new Markup(root), guide, guideStyle, expanded) {}
+        this(new Markup(root), guide, guideStyle, expanded) 
+    {
+        _root.Text = root;
+    }
     #endregion
     
     #region Properties
@@ -96,6 +100,30 @@ public partial class Tree : RenderableControl
 
     internal ICollection<TreeNode> Nodes => _root.Children;
 
+    private Color? _selectedForegroundColor;
+    public Color? SelectedForegroundColor
+    {
+        get => _selectedForegroundColor;
+        set
+        {
+            _selectedForegroundColor = value;
+            Invalidate();
+        }
+    }
+
+    private Color? _selectedBackgroundColor;
+    public Color? SelectedBackgroundColor
+    {
+        get => _selectedBackgroundColor;
+        set
+        {
+            _selectedBackgroundColor = value;
+            Invalidate();
+        }
+    }
+
+    public override bool HandlesInput => true;
+
     #endregion
 
     #region Indexers
@@ -119,7 +147,58 @@ public partial class Tree : RenderableControl
         return this;    
     }
 
-    public bool RemoveNode(TreeNode node) => _root.RemoveChild(node.Id);   
+    public bool RemoveNode(TreeNode node) => _root.RemoveChild(node.Index);   
+
+    public override void OnInput(InputEvent inputEvent)
+    {
+        if (inputEvent.Key.Key == ConsoleKey.DownArrow)
+        {
+            NavigateTree(1);
+            inputEvent.Handled = true;
+        }
+        else if (inputEvent.Key.Key == ConsoleKey.UpArrow)
+        {
+            NavigateTree(-1);
+            inputEvent.Handled = true;
+        }
+    }
+
+    private void NavigateTree(int direction)
+    {
+        var nodes = Flatten(_root).ToList();
+        if (nodes.Count == 0) return;
+
+        var current = nodes.FirstOrDefault(n => n.Selected);
+        int nextIndex;
+
+        if (current == null)
+        {
+            nextIndex = 0;
+        }
+        else
+        {
+            var currentIndex = nodes.IndexOf(current);
+            nextIndex = (currentIndex + direction + nodes.Count) % nodes.Count;
+            current.Selected = false;
+        }
+
+        nodes[nextIndex].Selected = true;
+    }
+
+    private IEnumerable<TreeNode> Flatten(TreeNode node)
+    {
+        yield return node;
+        if (node.Expanded)
+        {
+            foreach (var child in node.Nodes.OrderBy(n => n.Index))
+            {
+                foreach (var descendant in Flatten(child))
+                {
+                    yield return descendant;
+                }
+            }
+        }
+    }
 
     internal void UpdateNodes() => this.Invalidate();
 
@@ -163,7 +242,15 @@ public partial class Tree : RenderableControl
             }
 
             var prefix = levels.Skip(1).ToList();
-            var renderableLines = Segment.SplitLines(current.Renderable.Render(options, maxWidth - Segment.CellCount(prefix)));
+            
+            IRenderable renderable = current.Renderable;
+            if (current.Selected && !string.IsNullOrEmpty(current.Text) && (_selectedForegroundColor.HasValue || _selectedBackgroundColor.HasValue))
+            {
+                 var style = new Spectre.Console.Style(_selectedForegroundColor, _selectedBackgroundColor);
+                 renderable = new Markup(current.Text, style);
+            }
+
+            var renderableLines = Segment.SplitLines(renderable.Render(options, maxWidth - Segment.CellCount(prefix)));
 
             foreach (var (_, isFirstLine, _, line) in renderableLines.Enumerate())
             {
@@ -187,7 +274,7 @@ public partial class Tree : RenderableControl
                 levels.AddOrReplaceLast(GetGuide(options, isLastChild ? TreeGuidePart.Space : TreeGuidePart.Continue));
                 levels.Add(GetGuide(options, current.Nodes.Count == 1 ? TreeGuidePart.End : TreeGuidePart.Fork));
 
-                stack.Push(new Queue<TreeNode>(current.Nodes));
+                stack.Push(new Queue<TreeNode>(current.Nodes.OrderBy(n => n.Index)));
             }
         }
 
