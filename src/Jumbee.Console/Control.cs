@@ -1,15 +1,18 @@
 ﻿namespace Jumbee.Console;
 
+using System;
+using System.Threading;
+
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
-using System;
-using System.Threading;
-using static Jumbee.Console.UI;
 
+/// <summary>
+/// Base class for all Jumbee.Console controls.
+/// </summary>
 public abstract class Control : CControl, IFocusable, IDisposable    
 {
-    #region Constructor
+    #region Constructors
     public Control() : base()
     {
         consoleBuffer = new ConsoleBuffer();
@@ -18,10 +21,6 @@ public abstract class Control : CControl, IFocusable, IDisposable
         OnFocus += Control_OnFocus;
         OnLostFocus += Control_OnLostFocus;
     }
-
-    protected virtual void Control_OnLostFocus() {}
-
-    protected virtual void Control_OnFocus() {}
     #endregion
 
     #region Indexers    
@@ -105,7 +104,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
         {
             lock(inputEventArgs.Lock)
             {
-                (this as IFocusable).OnInput(inputEventArgs.InputEvent);
+                this.OnInput(inputEventArgs.InputEvent!);
             }
         }
     }
@@ -123,11 +122,14 @@ public abstract class Control : CControl, IFocusable, IDisposable
 
     public void UnFocus() => IsFocused = false;
 
+    protected virtual void Control_OnLostFocus() {}
+
+    protected virtual void Control_OnFocus() {}
+
     /// <summary>
     /// This method renders the control's content to the console buffer.
     /// </summary>
-    /// <remarks>Note that this does not actually draw the control on the console screen. The <see cref="ConsoleGUI.Common.Control.Redraw"/> method indicates to
-    /// parent containers that the control has been updated and needs to be redrawn on the console screen.
+    /// <remarks>Note that this does not actually draw the control on the console screen. 
     /// </remarks>
     protected abstract void Render();
 
@@ -143,6 +145,9 @@ public abstract class Control : CControl, IFocusable, IDisposable
         });
     }
             
+    /// <summary>
+    /// Invoked in the control's OnPaint event handler.
+    /// </summary>
     protected virtual void Paint() => Render();
 
     /// <summary>
@@ -151,7 +156,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     protected virtual void Invalidate() => Interlocked.Increment(ref paintRequests);
 
     /// <summary>
-    /// Indicates that any pending paint requests have been handled.
+    /// Indicates that any pending paint requests have been handled and the control does not need re-painting.
     /// </summary>
     protected virtual void Validate() => Interlocked.Exchange(ref paintRequests, 0u);
 
@@ -168,8 +173,8 @@ public abstract class Control : CControl, IFocusable, IDisposable
         int minHeight = Math.Clamp(MinSize.Height, 0, 1000);
 
         // Use Width and Height as preferred if set (non-zero), otherwise default to MaxSize.Width and MaxSize.Height set by parents
-        var preferredWidth = Width > 0 ? Width : maxWidth;
-        var preferredHeight = Height > 0 ? Height : maxHeight;
+        var preferredWidth = Width > 0 ? Width : Size.Width > 0 ? Size.Width : maxWidth;
+        var preferredHeight = Height > 0 ? Height : Size.Height > 0 ? Size.Height : maxHeight;
         
         var width = Math.Clamp(preferredWidth, minWidth, maxWidth);
         var height = Math.Clamp(preferredHeight, minHeight, maxHeight);
@@ -180,14 +185,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
 
     public int ClampHeight(int height) => Math.Clamp(height, 0, Size.Height);
     /// <summary>
-    /// Handles the paint event triggered by the UI timer.
+    /// Handles the paint event triggered by the UI timer. If one or more paint requests are pending, it runs the painting process and resets the paint request count.
     /// </summary>
     /// <remarks>
     /// This method tries to implement thread-safe painting by always running inside a lock on the provided synchronization object.
-    /// If one or more paint requests are pending, it runs the painting process and resets the paint request count.
     /// </remarks>
-    /// <param name="sender">The source of the event. This parameter can be <see langword="null"/>.</param>
-    /// <param name="e">An instance of <see cref="PaintEventArgs"/> containing event data, including a synchronization lock.</param>
     private void OnPaint(object? sender, UI.PaintEventArgs e)
     {
         if (paintRequests > 0)
@@ -197,9 +199,9 @@ public abstract class Control : CControl, IFocusable, IDisposable
                 var timer = UI.controlPaintTimers[this];
                 timer.Restart();
                 Paint();
-                timer.Stop();
-                UI.controlPaintTimes[this][UI.paintTimeIndex] = timer.ElapsedMilliseconds;
                 Validate();
+                timer.Stop();
+                UI.controlPaintTimes[this][UI.paintTimeIndex] = timer.ElapsedMilliseconds;               
             }
         }
         else
@@ -208,11 +210,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
         }
     }
 
-    private void OnInput(object? sender, UI.InputEventArgs inputEventArgs)
+    private void OnInput(object? sender, UI.InputEventArgs e)
     {
-        lock (inputEventArgs.Lock)
+        lock (e.Lock)
         {
-            (this as IInputListener).OnInput(inputEventArgs.InputEvent);
+            (this as IInputListener).OnInput(e.InputEvent);
         }
     }
     #endregion

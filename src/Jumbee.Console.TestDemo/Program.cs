@@ -153,7 +153,7 @@ public class Program
 
         var dynamicItem = listBox.AddItem("I will change color...", Color.White);
 
-        var prompt = new TextPrompt("[yellow]Type a command (add/remove/clear/color/exit):[/]", blinkCursor: true) { Width = 40 };
+        var prompt = new TextPrompt("[yellow]Type a command (add/remove/clear/color/exit):[/]", blinkCursor: true) { Width = 80 };
         prompt.Committed += (sender, text) =>
         {
             if (text.StartsWith("add "))
@@ -184,8 +184,8 @@ public class Program
             }
         };
 
-        var grid = new Jumbee.Console.Grid([50], [50, 50], [
-            [listBox, prompt.WithFrame(title: "Controls")]
+        var grid = new Jumbee.Console.Grid([20], [50, 50], [
+            [listBox.WithRoundedBorder(Purple).WithHeight(3).WithWidth(5), prompt.WithFrame(title: "Controls")]
         ]);
         
         listBox.IsFocused = true;

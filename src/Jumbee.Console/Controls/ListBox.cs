@@ -6,35 +6,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-using ConsoleGUI.Input;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using ConsoleGUI.Input;
 
 /// <summary>
-/// A list box control that displays a list of items.
+/// A list box control that displays a list of items and allows user input navigation and selection.
 /// </summary>
 public partial class ListBox : RenderableControl
 {
     #region Constructors
-    public ListBox()
+    public ListBox() {}
+
+    public ListBox(params IRenderable[] items) 
     {
+        AddItems(items);
     }
 
-    public ListBox(IEnumerable<IRenderable> items)
+    public ListBox(params string[] items )
     {
-        foreach (var item in items)
-        {
-            AddItem(item);
-        }
+        AddItems(items);
     }
 
-    public ListBox(IEnumerable<string> items)
-    {
-        foreach (var item in items)
-        {
-            AddItem(item);
-        }
-    }
     #endregion
 
     #region Properties
@@ -65,39 +58,70 @@ public partial class ListBox : RenderableControl
     public override bool HandlesInput => true;
     #endregion
 
-    #region Methods
-    public ListBoxItem AddItem(IRenderable content)
+    #region Methods        
+    public void AddItems(params IEnumerable<IRenderable> items)
     {
-        int index = Interlocked.Increment(ref _itemIndex);
-        var item = new ListBoxItem(this, index, content);
-        _items.TryAdd(index, item);
+        foreach (var item in items)
+        {            
+            var complete = false;
+            while (!complete)
+            {
+                int index = Interlocked.Increment(ref _itemIndex);                
+                complete = _items.TryAdd(index, new ListBoxItem(this, index, item));
+            }                   
+        }
         Invalidate();
-        return item;
     }
 
-    public ListBoxItem AddItem(string content, Color? foreground = null, Color? background = null)
-    {
-        int index = Interlocked.Increment(ref _itemIndex);
-        var item = new ListBoxItem(this, index, content, foreground, background);
-        _items.TryAdd(index, item);
-        Invalidate();
-        return item;
-    }
-
-    public void AddItems(IEnumerable<IRenderable> items)
+    public void AddItems(params IEnumerable<string> items)
     {
         foreach (var item in items)
         {
-            AddItem(item);
+            var complete = false;
+            while (!complete)
+            {
+                int index = Interlocked.Increment(ref _itemIndex);
+                complete = _items.TryAdd(index, new ListBoxItem(this, index, item));
+            }
+
         }
+        Invalidate();
     }
 
-    public void AddItems(IEnumerable<string> items)
+    public void AddItems(params (string text, Color? fgColor, Color? bgColor)[] items)
     {
         foreach (var item in items)
         {
-            AddItem(item);
+            var complete = false;
+            while (!complete)
+            {
+                int index = Interlocked.Increment(ref _itemIndex);
+                complete = _items.TryAdd(index, new ListBoxItem(this, index, item.text, item.fgColor, item.bgColor));
+            }
         }
+        Invalidate();
+    }
+
+    public ListBoxItem AddItem(IRenderable item)
+    {
+        do
+        {
+            int index = Interlocked.Increment(ref _itemIndex);
+            var _item = new ListBoxItem(this, index, item);
+            if (_items.TryAdd(index, _item)) return _item;
+        }
+        while (true);        
+    }
+  
+    public ListBoxItem AddItem(string text, Color? foreground = null, Color? background = null)
+    {
+        do
+        {
+            int index = Interlocked.Increment(ref _itemIndex);
+            var _item = new ListBoxItem(this, index, text, foreground, background);
+            if (_items.TryAdd(index, _item)) return _item;
+        }
+        while (true);
     }
 
     public bool RemoveItem(ListBoxItem item)
@@ -149,24 +173,24 @@ public partial class ListBox : RenderableControl
 
     protected override IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
     {
-        var items = _items.Values.OrderBy(i => i.Index).ToList();
+        var items = _items.Values.OrderBy(i => i.Index).ToArray();
         
         // Ensure selection index is valid
-        if (_selectionIndex >= items.Count) _selectionIndex = Math.Max(0, items.Count - 1);
-        if (_selectionIndex < 0 && items.Count > 0) _selectionIndex = 0;
+        if (_selectionIndex >= items.Length) _selectionIndex = Math.Max(0, items.Length - 1);
+        if (_selectionIndex < 0 && items.Length > 0) _selectionIndex = 0;
 
-        var renderables = new List<IRenderable>();
+        var renderables = new IRenderable[items.Length];
 
-        for (int i = 0; i < items.Count; i++)
+        for (int i = 0; i < items.Length; i++)
         {
             var item = items[i];
             if (i == _selectionIndex && item.Text != null && (_selectedForegroundColor.HasValue || _selectedBackgroundColor.HasValue))
             {
-                renderables.Add(new Markup(item.Text, new Spectre.Console.Style(_selectedForegroundColor, _selectedBackgroundColor)));
+                renderables[i] = new Markup(item.Text, new Spectre.Console.Style(_selectedForegroundColor, _selectedBackgroundColor));
             }
             else
             {
-                renderables.Add(item.Content);
+                renderables[i] = item.Content;
             }
         }
 

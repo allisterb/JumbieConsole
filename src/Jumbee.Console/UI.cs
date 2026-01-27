@@ -24,6 +24,7 @@ public static class UI
     {
         if (isRunning) return task;
         ProcessMetrics.Start();
+        
         if (!isTrueColorTerminal)
         {
             ConsoleManager.Console = new SimplifiedConsole(); ;
@@ -32,7 +33,6 @@ public static class UI
         ConsoleManager.Resize(new Size(width, height));
         ConsoleManager.Content = layout.CControl;
         UI.layout = layout;
-        interval = paintInterval;
         foreach(var c in layout.Controls.Select(lc => lc.FocusableControl))
         {
             if (!controls.Contains(c))
@@ -40,9 +40,12 @@ public static class UI
                 controls.Add(c);
             }               
         }
-     
+        interval = paintInterval;
+
+        // Start UI draw thread
         timer = new Timer(OnTick, null, interval, interval);
-        var globalInputListener = new GlobalInputListener();
+        
+        // Start user input thread
         task = Task.Run(() =>
         {
             // Main input loop
@@ -205,7 +208,7 @@ public static class UI
         {            
             if (value.Target is IFocusable c)
             {
-                _Paint ??= (EventHandler<PaintEventArgs>?)Delegate.Remove(_Paint, controlPaintEventHandlers[c]);
+                _Paint ??= (EventHandler<PaintEventArgs>?)Delegate.Remove(_Paint, value);
                 controls.Remove(c);
             }           
         }
@@ -215,8 +218,8 @@ public static class UI
     #region Fields   
     public static readonly ProcessMetrics ProcessMetrics = new ProcessMetrics(300);
     private static readonly Lock _lock = new Lock();
-    private static PaintEventArgs paintEventArgs = new PaintEventArgs(_lock);
-    private static InputEventArgs inputEventArgs = new InputEventArgs(_lock);
+    private static readonly PaintEventArgs paintEventArgs = new PaintEventArgs(_lock);
+    private static readonly InputEventArgs inputEventArgs = new InputEventArgs(_lock);
     private static Timer? timer;
     private static Task task = Task.CompletedTask;
     private static CancellationTokenSource cts = new CancellationTokenSource();
@@ -224,8 +227,9 @@ public static class UI
     private static int interval = 100;
     private static bool isRunning;
     private static ILayout? layout;
-    private static List<IFocusable> controls = new List<IFocusable>();
-    private static Dictionary<ConsoleKeyInfo, Action> GlobalHotKeys = new Dictionary<ConsoleKeyInfo, Action>
+    private static readonly List<IFocusable> controls = new List<IFocusable>();
+    private static readonly GlobalInputListener globalInputListener = new GlobalInputListener();
+    private static readonly Dictionary<ConsoleKeyInfo, Action> GlobalHotKeys = new Dictionary<ConsoleKeyInfo, Action>
     {
         { HotKeys.CtrlQ, Stop }
     };
@@ -233,9 +237,8 @@ public static class UI
     private static readonly long[] paintTimes = new long[paintTimeSamples];
     private static readonly Stopwatch paintTimer = new Stopwatch();
     internal static int paintTimeIndex = 0;
-    internal static Dictionary<IFocusable, Stopwatch> controlPaintTimers = new();
-    internal static Dictionary<IFocusable, long?[]> controlPaintTimes = new();
-    private static Dictionary<IFocusable, EventHandler<PaintEventArgs>> controlPaintEventHandlers = new();
+    internal static readonly Dictionary<IFocusable, Stopwatch> controlPaintTimers = new();
+    internal static readonly Dictionary<IFocusable, long?[]> controlPaintTimes = new();
     #endregion
 
     #region Types
