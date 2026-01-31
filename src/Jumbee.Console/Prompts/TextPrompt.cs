@@ -1,9 +1,7 @@
 namespace Jumbee.Console;
 
 using System;
-using System.Linq;
-using System.Threading;
-using ConsoleGUI.Data;
+
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
 using Spectre.Console;
@@ -68,22 +66,22 @@ public class TextPrompt : Prompt
         }
     }
 
-    public int CursorScreenX
+    public int CursorX
     {
-        get => _cursorScreenX;
+        get => ansiConsole.CursorX;
         set
         {
-            _cursorScreenX = ClampWidth(value);
+            ansiConsole.MoveCursor(value - ansiConsole.CursorX, 0);
             RenderCursor();
         }
     }
 
-    public int CursorScreenY
+    public int CursorY
     {
-        get => _cursorScreenY;
+        get => ansiConsole.CursorY;
         set
         {
-            _cursorScreenY = ClampHeight(value);
+            ansiConsole.MoveCursor(0, value - ansiConsole.CursorY);
             RenderCursor();
         }
     }
@@ -101,9 +99,7 @@ public class TextPrompt : Prompt
         if (newInput)
         {
             RenderPrompt();
-            ansiConsole.Write(Markup.Escape(input));
-            _cursorScreenX = ansiConsole.CursorX;
-            _cursorScreenY = ansiConsole.CursorY;            
+            ansiConsole.Write(Markup.Escape(input));          
             newInput = false;
         }
         RenderCursor();
@@ -114,8 +110,6 @@ public class TextPrompt : Prompt
         ansiConsole.Clear(true);
         ansiConsole.Markup(_prompt);
         inputStart = new Position(ansiConsole.CursorX, ansiConsole.CursorY);
-        _cursorScreenX = ansiConsole.CursorX;
-        _cursorScreenY = ansiConsole.CursorY;
     }
 
     protected void RenderCursor()
@@ -139,7 +133,6 @@ public class TextPrompt : Prompt
             }
         }
     }
-
    
     protected override void Validate()
     {
@@ -152,12 +145,12 @@ public class TextPrompt : Prompt
         {
             case ConsoleKey.LeftArrow:
                 _caretPosition = Math.Max(0, _caretPosition - 1);
-                --CursorScreenX;
+                --CursorX;
                 inputEvent.Handled = true; 
                 break;
             case ConsoleKey.RightArrow:
                 _caretPosition = Math.Min(input.Length, _caretPosition + 1);
-                ++CursorScreenX;
+                ++CursorX;
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.Home:
@@ -201,15 +194,13 @@ public class TextPrompt : Prompt
         Invalidate();
     }
 
-    protected bool IsValidCursorPosition => _cursorScreenX < Size.Width && _cursorScreenY < Size.Height;
+    protected bool IsValidCursorPosition => CursorX < Size.Width && CursorY < Size.Height;
 
     private void AttemptCommit()
     {                      
 
         Committed?.Invoke(this, input);
-    }
-
-    
+    }    
     #endregion
 
     #region Fields
@@ -221,9 +212,6 @@ public class TextPrompt : Prompt
     private bool newInput;
     private int _caretPosition = 0;
     private Position inputStart = default;
-    private int _cursorScreenX = 0;
-    private int _cursorScreenY = 0;
-
     #endregion    
 }
 
