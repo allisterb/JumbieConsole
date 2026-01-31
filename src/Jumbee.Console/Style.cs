@@ -29,7 +29,9 @@ public readonly struct Style
     #endregion
     
     #region Indexers
-    public string this[string text] => $"[{this.ToMarkup()}]{EscapeMarkup(text)}[/]";
+    //public string this[string text] => $"[{this.ToMarkup()}]{EscapeMarkup(text)}[/]";
+
+    public Spectre.Console.Markup this[string text] => new Spectre.Console.Markup($"[{this.ToMarkup()}]{EscapeMarkup(text)}[/]");
     #endregion
 
     #region Methods

@@ -4,8 +4,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
 
 using Spectre.Console;
 using Spectre.Console.Rendering;
@@ -48,11 +46,11 @@ public partial class Tree : RenderableControl
     /// <summary>
     /// Initializes a new instance of the <see cref="Tree"/> class.
     /// </summary>
-    /// <param name="root">The tree root label as a string.</param>
-    public Tree(string root, TreeGuide? guide = null, Style ? guideStyle = null, bool expanded = true) : 
-        this(new Markup(root), guide, guideStyle, expanded) 
+    /// <param name="rootText">The tree root label as a string.</param>
+    public Tree(string rootText, TreeGuide? guide = null, Style ? guideStyle = null, bool expanded = true) : 
+        this(new Markup(rootText), guide, guideStyle, expanded) 
     {
-        _root.Text = root;
+        _root.Text = rootText;
     }
     #endregion
     
@@ -100,7 +98,7 @@ public partial class Tree : RenderableControl
 
     internal ICollection<TreeNode> Nodes => _root.Children;
 
-    private Color? _selectedForegroundColor;
+
     public Color? SelectedForegroundColor
     {
         get => _selectedForegroundColor;
@@ -111,7 +109,6 @@ public partial class Tree : RenderableControl
         }
     }
 
-    private Color? _selectedBackgroundColor;
     public Color? SelectedBackgroundColor
     {
         get => _selectedBackgroundColor;
@@ -133,7 +130,7 @@ public partial class Tree : RenderableControl
     #region Methods
     public TreeNode AddNode(IRenderable label) => _root.AddChild(label);
             
-    public TreeNode AddNode(string label) => AddNode(new Markup(label));
+    public TreeNode AddNode(string label) => _root.AddChild(label);
 
     public Tree AddNodes(params IRenderable[] labels)
     {
@@ -162,45 +159,8 @@ public partial class Tree : RenderableControl
             inputEvent.Handled = true;
         }
     }
-
-    private void NavigateTree(int direction)
-    {
-        var nodes = Flatten(_root).ToList();
-        if (nodes.Count == 0) return;
-
-        var current = nodes.FirstOrDefault(n => n.Selected);
-        int nextIndex;
-
-        if (current == null)
-        {
-            nextIndex = 0;
-        }
-        else
-        {
-            var currentIndex = nodes.IndexOf(current);
-            nextIndex = (currentIndex + direction + nodes.Count) % nodes.Count;
-            current.Selected = false;
-        }
-
-        nodes[nextIndex].Selected = true;
-    }
-
-    private IEnumerable<TreeNode> Flatten(TreeNode node)
-    {
-        yield return node;
-        if (node.Expanded)
-        {
-            foreach (var child in node.Nodes.OrderBy(n => n.Index))
-            {
-                foreach (var descendant in Flatten(child))
-                {
-                    yield return descendant;
-                }
-            }
-        }
-    }
-
-    internal void UpdateNodes() => this.Invalidate();
+    
+    internal void Update() => this.Invalidate();
 
     protected override IEnumerable<Segment> Render(RenderOptions options, int maxWidth)
     {
@@ -295,6 +255,43 @@ public partial class Tree : RenderableControl
         var guide = scguide.GetSafeTreeGuide(safe: !options.Unicode);
         return new Segment(guide.GetPart(part), Style);
     }
+
+    private void NavigateTree(int direction)
+    {
+        var nodes = Flatten(_root).ToList();
+        if (nodes.Count == 0) return;
+
+        var current = nodes.FirstOrDefault(n => n.Selected);
+        int nextIndex;
+
+        if (current == null)
+        {
+            nextIndex = 0;
+        }
+        else
+        {
+            var currentIndex = nodes.IndexOf(current);
+            nextIndex = (currentIndex + direction + nodes.Count) % nodes.Count;
+            current.Selected = false;
+        }
+
+        nodes[nextIndex].Selected = true;
+    }
+
+    private IEnumerable<TreeNode> Flatten(TreeNode node)
+    {
+        yield return node;
+        if (node.Expanded)
+        {
+            foreach (var child in node.Nodes.OrderBy(n => n.Index))
+            {
+                foreach (var descendant in Flatten(child))
+                {
+                    yield return descendant;
+                }
+            }
+        }
+    }
     #endregion
 
     #region Fields
@@ -304,5 +301,7 @@ public partial class Tree : RenderableControl
     protected TreeGuide _guide;
     protected Spectre.Console.TreeGuide scguide; 
     protected bool _expanded;
+    private Color? _selectedForegroundColor;
+    private Color? _selectedBackgroundColor;
     #endregion
 }

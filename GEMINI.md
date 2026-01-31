@@ -9,8 +9,9 @@ Gemini's primary goal is to act like a senior engineer: understand the request, 
 *   **Strictly Read-Only:** You can inspect files, navigate code repositories, evaluate project structure, search the web, and examine documentation.
 *   **Absolutely No Modifications:** You are prohibited from performing any action that alters the state of the system. This includes:
     *   Editing, creating, or deleting files.
-    *   Running shell commands that make changes (e.g., `git commit`, `npm install`, `mkdir`).
+    *   Running shell commands that make changes (e.g., `git commit`, `npm install`, `mkdir`).     
     *   Altering system configurations or installing packages.
+*   You may run the `dotnet build` and `dotnet run` shell commands to build projects and run code without user confirmation since this does not make changes to the source code.
 *   **No commits or other modifications to source control** The user will handle running all git commands.
   
 ## Steps
@@ -31,16 +32,16 @@ NOTE: If in plan mode, do not implement the plan. You are only allowed to plan. 
 
 # About this project
 The project Jumbee.Console at @src/Jumbee.Console is a .NET library for building advanced console user interfaces. It is intended to be a combination of the layout and windowing features from the retained-mode ConsoleGUI library at 
-@ext/C-sharp-console-gui-framework/ConsoleGUI/ and the text styling and formatting and widget features and controls from the immediate-mode Spectre.Console library at @ext/spectre.console/src/Spectre.Console. 
+@ext/C-sharp-console-gui-framework/ConsoleGUI/ and the text styling and formatting and rendering and widget features and controls from the immediate-mode Spectre.Console library at @ext/spectre.console/src/Spectre.Console. 
 
 The initial plan created a bridge between the two libraries by implementing `IAnsiConsole` from Spectre.Console in the `AnsiConsoleBuffer` class at @src/Jumbee.Console/AnsiConsoleBuffer.cs to store Spectre.Console control output instead of writing it to the console immediately, 
 and a `SpectreControl` class for wrapping Spectre.Console controls as ConsoleGUI `IControl` to be used with ConsoleGUI control and layout classes.
 
-`SpectreConsole` inherits from the base `Jumbee.Console.Control` class that provides the base functionality for all Jumbee.Console controls that display output and recieve user input.
+`SpectreConsole` now inherits from the base `Jumbee.Console.Control` class that provides the base functionality for all Jumbee.Console controls that display output and recieve user input.
 Support for updating and animating controls was added by using a single background thread started by the UI class running a timer that redraws the UI and fires Paint events at regular intervals that controls use to update
 their state. Concurrent drawing conflicts are mitigated by using a single lock object that is acquired by each control derived from Control in Paint and OnInput events to synchronize access to their internal state
-so that they can be properly rendered. UI redraws and paint events only occur in the UI class when the lock is not held by any control. Concurrent updates to control state by multiple threads
-are handled using a copy-on-write strategy using the `CloneContent` and `UpdateContent` methods in the `Control` class, and by using the UI.Invoke method to acquire the UI lock when changes that affect
+so that they can safely handle user input and be properly rendered. UI redraws and paint events only occur in the UI class when the lock is not held by any control. Concurrent updates to control state by multiple threads
+are handled using .NET types designed for concurrent access like ConcurrentDictionary to store collections, or by using a copy-on-write strategy using the `CloneContent` and `UpdateContent` methods in the `Control` class, and by using the UI.Invoke method to acquire the UI lock when changes that affect
 the global UI state and layout, like setting a Control's size, are performed.
 
 Control layout is handled using `Jumbee.Console.Layout` derived classes that wrap ConsoleGUI layout classes. Drawing conflicts from concurrent updates in ConsoleGUI layout classes are mitigated using the UI.Invoke method 
@@ -73,7 +74,7 @@ Note the following important considerations when deriving from these classes:
 - Any public properties or methods that change the visual state of a control must call the Invalidate() method to indicate that the control needs to be re-rendered and re-drawn by parent containers. 
 - *Do not acquire the UI lock in publicly visible properties or methods of a control* as this will inevitably lead to deadlocks. Instead, call `Invalidate()` to signal that a control needs to be redrawn in the next Paint event.
 - When modifying control state stored in collections, use .NET types designed for concurrent access like ConcurrentDictionary. For wrapping existing Spectre.Console controls, use a copy-on-write strategy using the `UpdateContent` method which invokes `CloneContent()`, to avoid modifying collections while they might be enumerated during rendering.
-- Since each state change must trigger invalidation, try to batch multiple changes to control state collections into a single property or index setter when possible.
+- Since each state change must trigger invalidation, try to batch multiple changes to control state collections into a single property or index setter with one call to Invalidate() when possible.
 
 ## Project coding instructions:
 - When generating new C# code, please follow the existing coding style.

@@ -70,18 +70,18 @@ public class Program
             CenterLabel = true
         };
         // 3. Tree
-        var treeControl = new Jumbee.Console.Tree("Root", guide: Jumbee.Console.TreeGuide.Ascii)
+        var treeControl = new Tree("Root", guide: TreeGuide.BoldLine)
         {
             SelectedForegroundColor = Color.White,
             SelectedBackgroundColor = Color.Blue
         };
-        treeControl.AddNode("[yellow]Foo[/]").AddChildren("[blue]Bar[/]", "Baz", "Qux");
+        treeControl.AddNode("Foo").AddChildren("Bar", "Baz", "Qux");
 
         // Example of adding a subtree (since AddNode takes IRenderable)
-        var subTree = new Jumbee.Console.Tree("Subtree");
-        subTree.AddNode("Leaf 1");
-        subTree.AddNode("Leaf 2");
-        treeControl.AddNode(subTree);
+        //var subTree = new Tree(rootText: "Subtree");
+        //subTree.AddNode("Leaf 1");
+        //subTree.AddNode("Leaf 2");
+        //treeControl.AddNode(subTree);
 
         // --- Wrap Spectre.Console Controls for ConsoleGUI ---
         //var tableControl = new SpectreControl<Spectre.Console.Table>(table);

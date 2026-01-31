@@ -30,6 +30,8 @@ public partial class Tree
             Parent = parent;
             Text = text;
         }
+
+        internal TreeNode(Tree tree, uint index, string label, TreeNode? parent = null) : this(tree, index, new Markup(label), parent) {}
         #endregion
 
         #region Properties
@@ -138,7 +140,7 @@ public partial class Tree
 
         protected void UpdateTree()
         {
-            if (!IsRemoved) Tree.UpdateNodes();
+            if (!IsRemoved) Tree.Update();
         }
         #endregion
 

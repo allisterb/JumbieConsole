@@ -116,5 +116,5 @@ public static class ControlExtensions
     public static T WithSquareBorder<T>(this T control, Color? borderFgColor = null, Color? borderBgColor = null) where T : Control =>
         control.WithBorder(BorderStyle.Square, borderFgColor, borderBgColor);
 
-    public static string WithStyle(this string s, Style style) => style[s];
+    public static Spectre.Console.Markup WithStyle(this string s, Style style) => style[s];
 }
