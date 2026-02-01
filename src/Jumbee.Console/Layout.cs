@@ -119,7 +119,7 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
 
     public void OnUpdate(DrawingContext drawingContext, Rect rect) => control.OnUpdate(drawingContext, rect);
 
-    public void OnInput(UI.InputEventArgs inputEventArgs) => Array.ForEach(inputListeners, il => il.OnInput(inputEventArgs));
+    public void OnInput(UI.InputEventArgs inputEventArgs) => Array.ForEach(inputListeners, il => il.FocusedControl?.OnInput(inputEventArgs));
        
     protected void UpdateInputListeners()
     {        

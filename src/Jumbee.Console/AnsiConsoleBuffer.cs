@@ -51,21 +51,31 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
     #region Methods
     public void Clear(bool home)
     {
+        bool wasVisible = _cursor.IsVisible;
+        _cursor.Forget();
+        
         _console.Initialize(); 
         if (home)
         {
             _cursorX = 0;
             _cursorY = 0;
         }
+
+        if (wasVisible)
+        {
+            _cursor.Show(true);
+        }
     }
 
     public void Write(IRenderable renderable)
     {
+        bool wasVisible = _cursor.Hide();
+
         var segments = renderable.GetSegments(this);
         foreach (var segment in segments)
         {
             if (segment.IsControlCode)
-            {                
+            {
                 foreach (var c in segment.Text)
                 {
                     var position = new Position(_cursorX, _cursorY);
@@ -74,7 +84,7 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
                         _console.Write(position, new Character(c, isControl: true));
                     }
                     _cursorX++;
-                }                
+                }
             }
             else
             {
@@ -105,6 +115,11 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
                     _cursorX += width;
                 }
             }
+        }
+        
+        if (wasVisible)
+        {
+            _cursor.Show(true);
         }
     }
 
@@ -160,48 +175,102 @@ internal class AnsiConsoleBufferOutput : IAnsiConsoleOutput
 internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
 {
     private readonly AnsiConsoleBuffer _parent;
+    private Position? _savedPosition;
+    private Cell _savedCell;
+    private bool _isVisible;
 
     public AnsiConsoleBufferCursor(AnsiConsoleBuffer parent) => _parent = parent;
 
+    internal bool IsVisible => _isVisible;
+
     public void Show(bool show)
     {
-        var x = _parent.CursorX;
-        var y = _parent.CursorY;
-        var cell = _parent._console[x, y];
         if (show)
         {
-            if (cell.Content == null || cell.Content == '\0' || cell.Content == ' ')
+            if (_isVisible)
             {
-                _parent._console.Write(x, y, _cursorEmptyCell);
-
+                if (_savedPosition.HasValue && 
+                    _savedPosition.Value.X == _parent.CursorX && 
+                    _savedPosition.Value.Y == _parent.CursorY)
+                {
+                    return;
+                }
+                HideCursor();
             }
-            else
-            {
-                _parent._console.Write(x, y, cell.WithBackground(_cursorBackgroundColor));
-            }
+            ShowCursor();
         }
         else
         {
-
-            if (cell.Content == null || cell.Content == '\0' || cell.Content == ' ')
+            if (_isVisible)
             {
-                _parent._console.Write(x, y, __cursorEmptyCell);
-
-            }
-            else
-            {
-                _parent._console.Write(x, y, cell);
+                HideCursor();
             }
         }
+    }
+
+    internal bool Hide()
+    {
+        if (_isVisible)
+        {
+            HideCursor();
+            return true;
+        }
+        return false;
+    }
+
+    internal void Forget()
+    {
+        _isVisible = false;
+        _savedPosition = null;
+        _savedCell = default;
+    }
+
+    private void ShowCursor()
+    {
+        var x = _parent.CursorX;
+        var y = _parent.CursorY;
+        
+        if (x < 0 || y < 0 || x >= _parent._console.Size.Width || y >= _parent._console.Size.Height)
+            return;
+
+        _savedCell = _parent._console[x, y];
+        _savedPosition = new Position(x, y);
+        _isVisible = true;
+
+        if (_savedCell.Content == null || _savedCell.Content == '\0' || _savedCell.Content == ' ')
+        {
+             _parent._console.Write(x, y, _cursorEmptyCell);
+        }
+        else
+        {
+             _parent._console.Write(x, y, _savedCell.WithBackground(_cursorBackgroundColor));
+        }
+    }
+
+    private void HideCursor()
+    {
+        if (_savedPosition.HasValue)
+        {
+            var pos = _savedPosition.Value;
+            if (pos.X >= 0 && pos.Y >= 0 && pos.X < _parent._console.Size.Width && pos.Y < _parent._console.Size.Height)
+            {
+                 _parent._console.Write(pos.X, pos.Y, _savedCell);
+            }
+        }
+        _isVisible = false;
+        _savedPosition = null;
     }
 
     public void SetPosition(int column, int line)
     {
+        var wasVisible = Hide();
         _parent.SetCursorPosition(column, line);
+        if (wasVisible) Show(true);
     }
 
     public void Move(CursorDirection direction, int steps)
     {
+        var wasVisible = Hide();
         switch (direction)
         {
             case CursorDirection.Up:
@@ -217,6 +286,7 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
                 _parent.MoveCursor(steps, 0);
                 break;
         }
+        if (wasVisible) Show(true);
     }
 
     private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);

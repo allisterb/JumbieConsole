@@ -126,11 +126,7 @@ public class TextPrompt : Prompt
                 {
                     ansiConsole.Cursor.Show();
                 }
-            }
-            else
-            {
-                ansiConsole.Cursor.Hide();
-            }
+            }           
         }
     }
    
