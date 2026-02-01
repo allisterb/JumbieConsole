@@ -232,19 +232,24 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
         
         if (x < 0 || y < 0 || x >= _parent._console.Size.Width || y >= _parent._console.Size.Height)
             return;
-
+        if (_savedPosition.HasValue)
+        {
+            _parent._console.Write(_savedPosition.Value.X, _savedPosition.Value.Y, _savedCell);
+        }  
         _savedCell = _parent._console[x, y];
         _savedPosition = new Position(x, y);
-        _isVisible = true;
+        
 
+       
         if (_savedCell.Content == null || _savedCell.Content == '\0' || _savedCell.Content == ' ')
         {
-             _parent._console.Write(x, y, _cursorEmptyCell);
+             _parent._console.Write(x, y, cursorEmptyCell);
         }
         else
         {
              _parent._console.Write(x, y, _savedCell.WithBackground(_cursorBackgroundColor));
         }
+        _isVisible = true;
     }
 
     private void HideCursor()
@@ -254,7 +259,15 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
             var pos = _savedPosition.Value;
             if (pos.X >= 0 && pos.Y >= 0 && pos.X < _parent._console.Size.Width && pos.Y < _parent._console.Size.Height)
             {
-                 _parent._console.Write(pos.X, pos.Y, _savedCell);
+                if (_parent._console[pos].Equals(cursorEmptyCell))
+                {
+                    _parent._console.Write(pos.X, pos.Y, emptyCell);
+                }
+                else
+                {
+                    _parent._console.Write(pos.X, pos.Y, _savedCell);
+                }
+                    
             }
         }
         _isVisible = false;
@@ -290,8 +303,8 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
     }
 
     private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
-    private static readonly Cell __cursorEmptyCell = new Cell(' ');
-    private static readonly Cell _cursorEmptyCell = __cursorEmptyCell.WithBackground(_cursorBackgroundColor);
+    private static readonly Cell emptyCell = new Cell(' ');
+    private static readonly Cell cursorEmptyCell = emptyCell.WithBackground(_cursorBackgroundColor);
 }
 
 internal class AnsiConsoleBufferInput : IAnsiConsoleInput

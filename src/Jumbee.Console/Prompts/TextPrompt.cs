@@ -71,7 +71,8 @@ public class TextPrompt : Prompt
         get => ansiConsole.CursorX;
         set
         {
-            ansiConsole.MoveCursor(value - ansiConsole.CursorX, 0);
+            var dx = value - ansiConsole.CursorX;
+            ansiConsole.Cursor.MoveRight(dx);
             RenderCursor();
         }
     }
@@ -81,7 +82,8 @@ public class TextPrompt : Prompt
         get => ansiConsole.CursorY;
         set
         {
-            ansiConsole.MoveCursor(0, value - ansiConsole.CursorY);
+            var dy = value - ansiConsole.CursorY;
+            ansiConsole.Cursor.MoveRight(dy);
             RenderCursor();
         }
     }
@@ -118,15 +120,12 @@ public class TextPrompt : Prompt
         {
             if (_showCursor)
             {
-                if (_blinkCursor)
-                {                  
-                    ansiConsole.Cursor.Show(blinkState = !blinkState);
-                }
-                else 
-                {
-                    ansiConsole.Cursor.Show();
-                }
-            }           
+                ansiConsole.Cursor.Show(true);
+            }
+            else
+            {                
+                ansiConsole.Cursor.Show(true);                
+            }
         }
     }
    
