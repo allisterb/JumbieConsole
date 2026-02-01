@@ -20,8 +20,8 @@ public class Program
 {
     static async Task Main(string[] args)
     {
-        GridTest(args);
-        // ListBoxTest(args);
+        //GridTest(args);
+        DockPanelTest(args);
         Console.Clear();
         Console.WriteLine("Average draw time: {0}ms. Average paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
         Console.WriteLine("Average control paint times:");
@@ -206,14 +206,14 @@ public class Program
     
     static void DockPanelTest(string[] args)
     {
-        var p = new TextPrompt(">", blinkCursor: true)
+        var p = new TextEditor(TextEditor.Language.CSharp, blinkCursor: true)
            .WithRoundedBorder(Purple)
            .WithTitle("Foo")
            .WithHeight(20); 
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20, Height=10 };
         tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions");
         p.Focus();
-        var d = new DockPanel(DockedControlPlacement.Top, tree, p);
+        var d = new DockPanel(DockedControlPlacement.Left, tree, p);
         //var g = new Grid([10], [100, 100], [p, tree.WithRoundedBorder(Blue)]);
         var t = UI.Start(d);
         t.Wait();
