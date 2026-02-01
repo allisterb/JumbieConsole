@@ -231,23 +231,17 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
         var y = _parent.CursorY;
         
         if (x < 0 || y < 0 || x >= _parent._console.Size.Width || y >= _parent._console.Size.Height)
-            return;
-        if (_savedPosition.HasValue)
-        {
-            _parent._console.Write(_savedPosition.Value.X, _savedPosition.Value.Y, _savedCell);
-        }  
-        _savedCell = _parent._console[x, y];
-        _savedPosition = new Position(x, y);
-        
-
-       
-        if (_savedCell.Content == null || _savedCell.Content == '\0' || _savedCell.Content == ' ')
+            return;          
+        var currentCell = _parent._console[x, y];
+        _savedCell = currentCell;
+        _savedPosition = new Position(x, y);        
+        if (currentCell.Content == null || currentCell.Content == '\0' || currentCell.Content == ' ')
         {
              _parent._console.Write(x, y, cursorEmptyCell);
         }
         else
         {
-             _parent._console.Write(x, y, _savedCell.WithBackground(_cursorBackgroundColor));
+             _parent._console.Write(x, y, currentCell.WithBackground(_cursorBackgroundColor));
         }
         _isVisible = true;
     }

@@ -139,13 +139,21 @@ public class TextPrompt : Prompt
         switch (inputEvent.Key.Key)
         {
             case ConsoleKey.LeftArrow:
+                var c = _caretPosition;
                 _caretPosition = Math.Max(0, _caretPosition - 1);
-                --CursorX;
+                if (c != _caretPosition)
+                {
+                    --CursorX;
+                }
                 inputEvent.Handled = true; 
                 break;
             case ConsoleKey.RightArrow:
+                c = _caretPosition;
                 _caretPosition = Math.Min(input.Length, _caretPosition + 1);
-                ++CursorX;
+                if (c != _caretPosition)
+                {
+                    ++CursorX;
+                }
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.Home:
