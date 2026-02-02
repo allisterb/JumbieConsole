@@ -81,7 +81,8 @@ public class TextEditor : Control
     protected override void Render()
     {
         if (newInput)
-        {            
+        {
+            ansiConsole.Clear(true);
             write(input);
             newInput = false;
         }

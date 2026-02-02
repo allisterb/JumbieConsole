@@ -102,7 +102,7 @@ public class ConsoleBuffer : IConsole
     #endregion
 
     #region Fields
-    private static readonly Cell emptyCell = new Cell(Character.Empty);
+    private static readonly Cell emptyCell = new Cell(' ');
     private Cell[][] buffer = [];
     #endregion
 }

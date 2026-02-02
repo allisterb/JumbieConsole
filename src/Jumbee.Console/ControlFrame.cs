@@ -328,15 +328,13 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
     {
         get => _top;
         set
-        {            
-            UI.Invoke(() => 
+        {
+            UI.Invoke(() =>
             {
-                using (Freeze())
-                {
-                    var totalOffset = GetTotalOffset();
-                    ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
-                    _top = value;
-                }
+                var totalOffset = GetTotalOffset();
+                ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - value));                
+                _top = value;
+               
             });
         }
     }
@@ -590,8 +588,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
                             ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top));
                         }
                 }
-            }
-            Control?.Invalidate();
+            }            
         });        
     }
 
