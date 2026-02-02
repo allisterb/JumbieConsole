@@ -77,12 +77,7 @@ public class TextEditor : Control
     }
     #endregion
 
-    #region Methods       
-    protected override void Initialize()
-    {
-        base.Initialize();
-    }
-
+    #region Methods           
     protected override void Render()
     {
         if (newInput)
@@ -99,11 +94,11 @@ public class TextEditor : Control
         {
             if (_showCursor)
             {
-                ansiConsole.Cursor.Show(true);
+                ansiConsole.Cursor.Show();
             }
             else
             {
-                ansiConsole.Cursor.Show(true);
+                ansiConsole.Cursor.Hide();
             }
         }
     }

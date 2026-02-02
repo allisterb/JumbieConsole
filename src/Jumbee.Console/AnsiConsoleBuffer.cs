@@ -103,7 +103,7 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
 
                     if (c == '\r') continue;
 
-                    var width = c.ToString().GetCellWidth();
+                    var width = c.GetCellWidth();                    
                     if (width <= 0) continue; // Skip zero-width chars
 
                     var position = new Position(_cursorX, _cursorY);

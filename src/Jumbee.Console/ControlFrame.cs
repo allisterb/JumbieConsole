@@ -331,9 +331,12 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         {            
             UI.Invoke(() => 
             {
-                // Let's just set and let Initialize clamp or trigger logic.
-                _top = value;
-                Initialize();
+                using (Freeze())
+                {
+                    var totalOffset = GetTotalOffset();
+                    ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
+                    _top = value;
+                }
             });
         }
     }
@@ -501,177 +504,96 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         return new Cell(character);
     }
 
-        protected override void Initialize()
-
-        {       
-
-            UI.Invoke(() => 
-
+    protected override void Initialize()
+    {       
+        UI.Invoke(() => 
+        {
+            using (Freeze())
             {
+                var totalOffset = GetTotalOffset();
 
-                using (Freeze())
+                // Available space for control (excluding scrollbar for now)
+                // We reserve 1 column for scrollbar at the right of control
+                var controlLimitsMin = MinSize.AsRect().Remove(totalOffset).Size;
+                var controlLimitsMax = MaxSize.AsRect().Remove(totalOffset).Size;
+                       
+                // Allow infinite height for scrolling, but constrain width to make space for scrollbar
+                // If MaxSize.Width is infinite, we don't constrain width (except by MinSize/Control)
+                // But we generally want to fit in MaxSize.                        
+                var limitWidth = Math.Max(0, controlLimitsMax.Width - 1);
 
+                ControlContext?.SetLimits(
+                    new Size(Math.Max(0, controlLimitsMin.Width - 1), Math.Max(0, controlLimitsMin.Height)), 
+                    new Size(limitWidth, int.MaxValue)
+                );
+
+                // Clamp Top
+                var viewportHeight = Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom);
+
+                // Note: Size.Height is current size. During Resize sequence, this might be stale?
+                // VerticalScrollPanel uses Size.Height (which is current).
+                // But here we are about to Resize.
+                // If we are about to Resize to MaxSize (if control is large), then viewport will be larger.
+                // Let's rely on Redraw loop?
+                // Actually, we should probably use 'controlLimitsMax.Height' as the viewport constraint if we are expanding?
+                // But MaxSize might be infinite.
+                // Let's stick to simple clamping against current control size vs current viewport estimate?
+                // Or just allow Top to be set, and Resize will clip?
+                if (ControlContext != null)
                 {
+                    var controlHeight = ControlContext.Size.Height;
+                    
+                    // If we expand to MaxSize, the viewport height will be at most MaxSize - Offsets.
+                    var maxViewportHeight = Math.Max(0, MaxSize.Height - totalOffset.Top - totalOffset.Bottom);
 
-                    var totalOffset = GetTotalOffset();
-
-    
-
-                    // Available space for control (excluding scrollbar for now)
-
-                    // We reserve 1 column for scrollbar at the right of control
-
-                    var controlLimitsMin = MinSize.AsRect().Remove(totalOffset).Size;
-
-                    var controlLimitsMax = MaxSize.AsRect().Remove(totalOffset).Size;
-
-                        
-
-                    // Allow infinite height for scrolling, but constrain width to make space for scrollbar
-
-                    // If MaxSize.Width is infinite, we don't constrain width (except by MinSize/Control)
-
-                    // But we generally want to fit in MaxSize.
-
-                        
-
-                    var limitWidth = Math.Max(0, controlLimitsMax.Width - 1);
-
-                    ControlContext?.SetLimits(
-
-                        new Size(Math.Max(0, controlLimitsMin.Width - 1), Math.Max(0, controlLimitsMin.Height)), 
-
-                        new Size(limitWidth, int.MaxValue));
-
-    
-
-                    // Clamp Top
-
-                    var viewportHeight = Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom); 
-
-                    // Note: Size.Height is current size. During Resize sequence, this might be stale?
-
-                    // VerticalScrollPanel uses Size.Height (which is current).
-
-                    // But here we are about to Resize.
-
-                    // If we are about to Resize to MaxSize (if control is large), then viewport will be larger.
-
-                    // Let's rely on Redraw loop?
-
-                    // Actually, we should probably use 'controlLimitsMax.Height' as the viewport constraint if we are expanding?
-
-                    // But MaxSize might be infinite.
-
-                    // Let's stick to simple clamping against current control size vs current viewport estimate?
-
-                    // Or just allow Top to be set, and Resize will clip?
-
-                        
-
-                    if (ControlContext != null)
-
-                    {
-
-                        var controlHeight = ControlContext.Size.Height;
-
-                        // If we expand to MaxSize, the viewport height will be at most MaxSize - Offsets.
-
-                        var maxViewportHeight = Math.Max(0, MaxSize.Height - totalOffset.Top - totalOffset.Bottom);
-
-                        // If MaxSize is infinite, maxViewportHeight is infinite?
-
-                        if (MaxSize.Height == int.MaxValue) maxViewportHeight = int.MaxValue;
-
+                    // If MaxSize is infinite, maxViewportHeight is infinite?
+                    if (MaxSize.Height == int.MaxValue) maxViewportHeight = int.MaxValue;
                             
-
-                        // Actual viewport height used for clamping depends on what size we WILL be.
-
-                        // But we don't know yet.
-
-                        // However, 'Top' only matters if we are scrolling.
-
-                        // We scroll if ControlHeight > ViewportHeight.
-
+                    // Actual viewport height used for clamping depends on what size we WILL be.
+                    // But we don't know yet.
+                    // However, 'Top' only matters if we are scrolling.
+                    // We scroll if ControlHeight > ViewportHeight.
                             
+                    _top = Math.Max(0, Math.Min(_top, controlHeight - 1)); // Ensure at least within control? 
 
-                        _top = Math.Max(0, Math.Min(_top, controlHeight - 1)); // Ensure at least within control? 
-
-                        // Better: _top = Math.Max(0, Math.Min(_top, controlHeight - (currentViewportHeight)));
-
-                        // But we don't know currentViewportHeight easily before Resize.
-
-                    }
-
-                        
-
-                    ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
-
-    
-
-                    var controlSize = ControlContext?.Size ?? Size.Empty;
-
-                        
-
-                    // Calculate desired size including margins, borders, and scrollbar (1 extra width)
-
-                    var desiredControlSize = controlSize.Expand(1, 0); // +1 Width for scrollbar
-
-                    var sizeRect = desiredControlSize.AsRect().Add(totalOffset);
-
-    
-
-                    Resize(Size.Clip(MinSize, sizeRect.Size, MaxSize));
-
-                        
-
-                    // Re-clamp Top after resize? 
-
-                    // If we resized, Size.Height is now updated (if Resize is immediate? No, Resize schedules/updates Size property).
-
-                    // Actually 'Control.Resize' updates 'Size' immediately in ConsoleGUI?
-
-                    // Checking ConsoleGUI source (mental): Resize usually updates Size.
-
-                        
-
-                    // Post-Resize Clamping:
-
-                    if (ControlContext != null)
-
-                    {
-
-                            viewportHeight = Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom);
-
-                            if (ControlContext.Size.Height > viewportHeight)
-
-                            {
-
-                                _top = Math.Min(ControlContext.Size.Height - viewportHeight, Math.Max(0, _top));
-
-                                // Update offset again with clamped Top?
-
-                                ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
-
-                            }
-
-                            else
-
-                            {
-
-                                _top = 0;
-
-                                ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top));
-
-                            }
-
-                    }
-
+                    // Better: _top = Math.Max(0, Math.Min(_top, controlHeight - (currentViewportHeight)));
+                    // But we don't know currentViewportHeight easily before Resize.
                 }
+                        
+                ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));    
+                var controlSize = ControlContext?.Size ?? Size.Empty;
 
-            });
-
-        }
+                        
+                // Calculate desired size including margins, borders, and scrollbar (1 extra width)
+                var desiredControlSize = controlSize.Expand(1, 0); // +1 Width for scrollbar
+                var sizeRect = desiredControlSize.AsRect().Add(totalOffset);    
+                Resize(Size.Clip(MinSize, sizeRect.Size, MaxSize));
+                        
+                // Re-clamp Top after resize? 
+                // If we resized, Size.Height is now updated (if Resize is immediate? No, Resize schedules/updates Size property).
+                // Actually 'Control.Resize' updates 'Size' immediately in ConsoleGUI?
+                // Checking ConsoleGUI source (mental): Resize usually updates Size.
+                        
+                // Post-Resize Clamping:
+                if (ControlContext != null)
+                {
+                        viewportHeight = Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom);
+                        if (ControlContext.Size.Height > viewportHeight)
+                        {
+                            _top = Math.Min(ControlContext.Size.Height - viewportHeight, Math.Max(0, _top));
+                            // Update offset again with clamped Top?
+                            ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
+                        }
+                        else
+                        {
+                            _top = 0;
+                            ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top));
+                        }
+                }
+            }
+            Control?.Invalidate();
+        });        
+    }
 
     private void BindControl()
     {
@@ -688,17 +610,11 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
 
     void IDrawingContextListener.OnUpdate(DrawingContext drawingContext, Rect rect)
     {
-        Update(rect);
+        UI.Invoke(() => Update(rect));
     }
 
     void IInputListener.OnInput(InputEvent inputEvent)
-    {
-        if (Control is IInputListener listener)
-        {
-            listener.OnInput(inputEvent);
-            if (inputEvent.Handled) return;
-        }   
-
+    {       
         if (inputEvent.Key.Key == ScrollUpKey)
         {
             Top -= 1;
@@ -709,6 +625,11 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             Top += 1;
             inputEvent.Handled = true;
         }
+        if (!inputEvent.Handled && Control is IInputListener listener)
+        {
+            listener.OnInput(inputEvent);            
+        }
+
     }
     #endregion
 

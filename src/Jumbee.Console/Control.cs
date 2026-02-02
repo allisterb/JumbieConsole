@@ -143,7 +143,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
             consoleBuffer.Size = Size;
             Invalidate();
         });
-    }
+    }                 
             
     /// <summary>
     /// Invoked in the control's OnPaint event handler.

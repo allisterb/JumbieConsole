@@ -206,10 +206,9 @@ public class Program
     
     static void DockPanelTest(string[] args)
     {
-        var p = new TextEditor(TextEditor.Language.CSharp, blinkCursor: true)
+        var p = new TextEditor(TextEditor.Language.CSharp)
            .WithRoundedBorder(Purple)
-           .WithTitle("Foo")
-           .WithHeight(20); 
+           .WithTitle("Editor");
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20, Height=10 };
         tree.AddNodes("Y".WithStyle(Red | Dim), "Z".WithStyle(Blue | Underline)).WithTitle("Functions");
         p.Focus();
