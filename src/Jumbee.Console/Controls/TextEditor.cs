@@ -7,7 +7,6 @@ using ConsoleGUI.Space;
 using Spectre.Console;
 using NTokenizers.Extensions.Spectre.Console;
 
-
 public class TextEditor : Control
 {
     #region Constructors
@@ -77,7 +76,7 @@ public class TextEditor : Control
     }
     #endregion
 
-    #region Methods           
+    #region Methods                   
     protected override void Render()
     {
         if (newInput)
@@ -107,6 +106,16 @@ public class TextEditor : Control
     protected override void Validate()
     {
         if (!_blinkCursor) base.Validate();
+    }
+
+    protected override void Control_OnInitialization()
+    {
+        if (!string.IsNullOrEmpty(input))
+        {
+            ansiConsole.Clear(true);
+            write(input);
+            Validate();
+        }        
     }
 
     public override void OnInput(InputEvent inputEvent)

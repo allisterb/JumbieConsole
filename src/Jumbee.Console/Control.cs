@@ -18,9 +18,12 @@ public abstract class Control : CControl, IFocusable, IDisposable
         consoleBuffer = new ConsoleBuffer();
         ansiConsole = new AnsiConsoleBuffer(consoleBuffer);
         UI.Paint += OnPaint;
+        OnInitialization += Control_OnInitialization;
         OnFocus += Control_OnFocus;
         OnLostFocus += Control_OnLostFocus;
     }
+
+   
     #endregion
 
     #region Indexers    
@@ -122,6 +125,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
 
     public void UnFocus() => IsFocused = false;
 
+    /// <summary>
+    /// Fired when a control's Initialize method is called. This method is always called inside UI.Invoke.
+    /// </summary>
+    protected virtual void Control_OnInitialization() {}
+
     protected virtual void Control_OnLostFocus() {}
 
     protected virtual void Control_OnFocus() {}
@@ -134,15 +142,16 @@ public abstract class Control : CControl, IFocusable, IDisposable
     protected abstract void Render();
 
     protected override void Initialize()
-    {       
-        UI.Invoke(() => 
+    {
+        UI.Invoke((() => 
         {
             var (width, height) = CalculateSize();
-            var size = new Size(width, height);                             
+            var size = new Size(width, height);
             Resize(size);
             consoleBuffer.Size = Size;
             Invalidate();
-        });
+            OnInitialization?.Invoke();    
+        }));
     }                 
             
     /// <summary>
@@ -220,6 +229,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     #endregion
 
     #region Events
+    public event InitializationHandler OnInitialization;
     public event FocusableEventHandler? OnFocus;
     public event FocusableEventHandler? OnLostFocus;
     #endregion
@@ -229,5 +239,9 @@ public abstract class Control : CControl, IFocusable, IDisposable
     protected internal uint paintRequests;
     protected readonly ConsoleBuffer consoleBuffer;
     protected readonly AnsiConsoleBuffer ansiConsole;
+    #endregion
+
+    #region Types
+    public delegate void InitializationHandler();
     #endregion
 }
