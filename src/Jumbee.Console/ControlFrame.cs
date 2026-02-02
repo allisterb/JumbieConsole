@@ -2,7 +2,6 @@ namespace Jumbee.Console;
 
 using System;
 
-using ConsoleGUI;
 using ConsoleGUI.Common;
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
@@ -273,12 +272,9 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         get => _foreground;
         set
         {
-            UI.Invoke(() => 
-            {
-                if (Equals(_foreground, value)) return;
-                _foreground = value;
-                Redraw();
-            });
+            if (Equals(_foreground, value)) return;
+            _foreground = value;
+            _Redraw();
         }
     }
 
@@ -287,12 +283,9 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         get => _background;
         set
         {
-            UI.Invoke(() => 
-            {
-                if (Equals(_background, value)) return;
-                _background = value;
-                Redraw();
-            });
+            if (Equals(_background, value)) return;
+            _background = value;
+            _Redraw();
         }
     }
 
@@ -301,12 +294,9 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         get => _borderFgColor;
         set
         {
-            UI.Invoke(() => 
-            {
-                if (Equals(_borderFgColor, value)) return;
-                _borderFgColor = value;
-                Redraw();
-            });
+            if (Equals(_borderFgColor, value)) return;
+            _borderFgColor = value;
+            _Redraw();
         }
     }
 
@@ -315,12 +305,9 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         get => _borderBgColor;
         set
         {
-            UI.Invoke(() => 
-            {
-                if (Equals(_borderBgColor, value)) return;
-                _borderBgColor = value;
-                Redraw();
-            });
+            if (Equals(_borderBgColor, value)) return;
+            _borderBgColor = value;
+            _Redraw();
         }
     }
    
@@ -331,10 +318,9 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         {
             UI.Invoke(() =>
             {
-                var totalOffset = GetTotalOffset();
-                ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - value));                
                 _top = value;
-               
+                var totalOffset = GetTotalOffset();
+                ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
             });
         }
     }
@@ -344,12 +330,9 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         get => _scrollBarForeground;
         set
         {
-            UI.Invoke(() => 
-            {
-                if (_scrollBarForeground.Equals(value)) return;
-                _scrollBarForeground = value;
-                Redraw(); // Just redraw scrollbar? Or full? Full is easier.
-            });
+            if (_scrollBarForeground.Equals(value)) return;
+            _scrollBarForeground = value;
+            _Redraw(); // Just redraw scrollbar? Or full? Full is easier.
         }
     }
   
@@ -358,12 +341,9 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         get => _scrollBarBackground;
         set
         {
-            UI.Invoke(() => 
-            {
-                if (_scrollBarBackground.Equals(value)) return;
-                _scrollBarBackground = value;
-                Redraw();
-            });
+            if (_scrollBarBackground.Equals(value)) return;
+            _scrollBarBackground = value;
+            _Redraw();
         }
     }
 
@@ -399,16 +379,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
     
     public ConsoleKey ScrollDownKey { get; set; } = ConsoleKey.DownArrow;
 
-    public ConsoleGUI.Space.Size ViewportSize
-    {
-        get
-        {
-            var totalOffset = GetTotalOffset();
-            return new ConsoleGUI.Space.Size(
-                Math.Max(0, Size.Width - totalOffset.Left - totalOffset.Right),
-                Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom));
-        }
-    }
+   
 
     public bool Focusable { get; set; } = true;
 
@@ -454,54 +425,37 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             _controlContext = value;
             Initialize();
         }
-    }      
+    }
     #endregion
 
-    #region Methods
-    private Offset GetTotalOffset()
+    #region Methods    
+    void IDrawingContextListener.OnRedraw(DrawingContext drawingContext)
     {
-        var borderOffset = BorderPlacement.AsOffset();
-
-        if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
-            borderOffset = new Offset(borderOffset.Left, borderOffset.Top + 2, borderOffset.Right, borderOffset.Bottom);
-
-        return new Offset(
-            borderOffset.Left + Margin.Left,
-            borderOffset.Top + Margin.Top,
-            borderOffset.Right + Margin.Right,
-            borderOffset.Bottom + Margin.Bottom);
+        Initialize();
     }
 
-    private static SpectreBoxBorder GetSpectreBoxBorder(BorderStyle style)
+    void IDrawingContextListener.OnUpdate(DrawingContext drawingContext, Rect rect)
     {
-        return style switch
+        UI.Invoke(() => Update(rect));
+    }
+
+    void IInputListener.OnInput(InputEvent inputEvent)
+    {
+        if (inputEvent.Key.Key == ScrollUpKey)
         {
-            BorderStyle.Ascii => SpectreBoxBorder.Ascii,
-            BorderStyle.Double => SpectreBoxBorder.Double,
-            BorderStyle.Heavy => SpectreBoxBorder.Heavy,
-            BorderStyle.Rounded => SpectreBoxBorder.Rounded,
-            BorderStyle.Square => SpectreBoxBorder.Square,
-            BorderStyle.None => SpectreBoxBorder.None,
-            _ => throw new ArgumentOutOfRangeException(nameof(style), style, null)
-        };
+            Top -= 1;
+            inputEvent.Handled = true;
+        }
+        else if (inputEvent.Key.Key == ScrollDownKey)
+        {
+            Top += 1;
+            inputEvent.Handled = true;
+        }
+        if (!inputEvent.Handled && Control.HandlesInput)
+        {
+            Control.OnInput(inputEvent);
+        }
     }
-
-    private Cell GetBorderCell(BoxBorderPart part)
-    {
-        var str = _boxBorder.GetPart(part);
-        var ch = string.IsNullOrEmpty(str) ? ' ' : str[0];
-        
-        var character = new Character(ch);
-        
-        var fg = _borderFgColor ?? _foreground;
-        if (fg.HasValue) character = character.WithForeground(fg.Value);
-        
-        var bg = _borderBgColor ?? _background;
-        if (bg.HasValue) character = character.WithBackground(bg.Value);
-        
-        return new Cell(character);
-    }
-
     protected override void Initialize()
     {       
         UI.Invoke(() => 
@@ -592,42 +546,66 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         });        
     }
 
+    private Offset GetTotalOffset()
+    {
+        var borderOffset = BorderPlacement.AsOffset();
+
+        if (!string.IsNullOrEmpty(Title) && BorderPlacement.HasBorder(BorderPlacement.Top))
+            borderOffset = new Offset(borderOffset.Left, borderOffset.Top + 2, borderOffset.Right, borderOffset.Bottom);
+
+        return new Offset(
+            borderOffset.Left + Margin.Left,
+            borderOffset.Top + Margin.Top,
+            borderOffset.Right + Margin.Right,
+            borderOffset.Bottom + Margin.Bottom);
+    }
+
+    private Size GetViewportSize()
+    {
+        var totalOffset = GetTotalOffset();
+        return new Size(
+            Math.Max(0, Size.Width - totalOffset.Left - totalOffset.Right),
+            Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom));
+    }
+
+    private static SpectreBoxBorder GetSpectreBoxBorder(BorderStyle style)
+    {
+        return style switch
+        {
+            BorderStyle.Ascii => SpectreBoxBorder.Ascii,
+            BorderStyle.Double => SpectreBoxBorder.Double,
+            BorderStyle.Heavy => SpectreBoxBorder.Heavy,
+            BorderStyle.Rounded => SpectreBoxBorder.Rounded,
+            BorderStyle.Square => SpectreBoxBorder.Square,
+            BorderStyle.None => SpectreBoxBorder.None,
+            _ => throw new ArgumentOutOfRangeException(nameof(style), style, null)
+        };
+    }
+
+    private Cell GetBorderCell(BoxBorderPart part)
+    {
+        var str = _boxBorder.GetPart(part);
+        var ch = string.IsNullOrEmpty(str) ? ' ' : str[0];
+
+        var character = new Character(ch);
+
+        var fg = _borderFgColor ?? _foreground;
+        if (fg.HasValue) character = character.WithForeground(fg.Value);
+
+        var bg = _borderBgColor ?? _background;
+        if (bg.HasValue) character = character.WithBackground(bg.Value);
+
+        return new Cell(character);
+    }
+    private void _Redraw() => UI.Invoke(Redraw);
+
     private void BindControl()
     {
         if (Control != null)
             ControlContext = new DrawingContext(this, Control);
         else
             ControlContext = DrawingContext.Dummy;
-    }
-
-    void IDrawingContextListener.OnRedraw(DrawingContext drawingContext)
-    {
-        Initialize();
-    }
-
-    void IDrawingContextListener.OnUpdate(DrawingContext drawingContext, Rect rect)
-    {
-        UI.Invoke(() => Update(rect));
-    }
-
-    void IInputListener.OnInput(InputEvent inputEvent)
-    {       
-        if (inputEvent.Key.Key == ScrollUpKey)
-        {
-            Top -= 1;
-            inputEvent.Handled = true;
-        }
-        else if (inputEvent.Key.Key == ScrollDownKey)
-        {
-            Top += 1;
-            inputEvent.Handled = true;
-        }
-        if (!inputEvent.Handled && Control is IInputListener listener)
-        {
-            listener.OnInput(inputEvent);            
-        }
-
-    }
+    }    
     #endregion
 
     #region Events

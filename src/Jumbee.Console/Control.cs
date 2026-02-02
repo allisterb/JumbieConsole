@@ -214,7 +214,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     {
         lock (e.Lock)
         {
-            (this as IInputListener).OnInput(e.InputEvent);
+            OnInput(e.InputEvent!);
         }
     }
     #endregion
