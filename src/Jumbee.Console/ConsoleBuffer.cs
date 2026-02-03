@@ -56,7 +56,12 @@ public class ConsoleBuffer : IConsole
     /// Sets the console buffer cell character.
     /// </summary>
     public void Write(in int X, in int Y, in Cell cell) => buffer[Y][X] = cell;
-        
+
+    /// <summary>
+    /// Sets the console buffer cell character.
+    /// </summary>
+    public void Write(Position position, in Cell cell) => buffer[position.Y][position.X] = cell;
+
     /// <summary>
     /// Will be handled by IInputListeners.
     /// </summary>

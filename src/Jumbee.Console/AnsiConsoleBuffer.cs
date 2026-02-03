@@ -126,13 +126,25 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
     public void Dispose()
     {
     }
+
+    public int CursorDistance
+    {
+        get => _cursorY * _console.Size.Width + _cursorX;
+        set => SetCursorPosition(_console.GetPosition(value));
+    }
     
     internal void SetCursorPosition(int x, int y)
     {
         _cursorX = x;
         _cursorY = y;
     }
-    
+
+    internal void SetCursorPosition(Position position)
+    {
+        _cursorX = position.X;
+        _cursorY = position.Y;
+    }
+
     internal void MoveCursor(int dx, int dy)
     {
         _cursorX += dx;
@@ -158,44 +170,31 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
     #endregion
 }
 
-internal class AnsiConsoleBufferOutput : IAnsiConsoleOutput
-{
-    private readonly IConsole _console;
-    
-    public AnsiConsoleBufferOutput(IConsole console) => _console = console;
-
-    public TextWriter Writer => throw new NotSupportedException(); 
-    public bool IsTerminal => true;
-    public int Width => _console.Size.Width;
-    public int Height => _console.Size.Height;
-
-    public void SetEncoding(Encoding encoding) { }
-}
-
 internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
 {
-    private readonly AnsiConsoleBuffer _parent;
-    private Position? _savedPosition;
-    private Cell _savedCell;
-    private bool _isVisible;
-
+    #region Constructors
     public AnsiConsoleBufferCursor(AnsiConsoleBuffer parent) => _parent = parent;
+    #endregion
 
+    #region Properties
     internal bool IsVisible => _isVisible;
+    #endregion
 
+    #region Methods
     public void Show(bool show)
     {
         if (show)
         {
             if (_isVisible)
             {
-                if (_savedPosition.HasValue && 
-                    _savedPosition.Value.X == _parent.CursorX && 
-                    _savedPosition.Value.Y == _parent.CursorY)
+                if (_savedPosition.HasValue && _savedPosition.Value.X == _parent.CursorX && _savedPosition.Value.Y == _parent.CursorY)
                 {
                     return;
                 }
-                HideCursor();
+                else
+                {
+                    HideCursor();
+                }
             }
             ShowCursor();
         }
@@ -255,11 +254,11 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
             {
                 if (_parent._console[pos].Equals(cursorEmptyCell))
                 {
-                    _parent._console.Write(pos.X, pos.Y, emptyCell);
+                    _parent._console.Write(pos, emptyCell);
                 }
                 else
                 {
-                    _parent._console.Write(pos.X, pos.Y, _savedCell);
+                    _parent._console.Write(pos, _savedCell);
                 }
                     
             }
@@ -295,10 +294,32 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
         }
         if (wasVisible) Show(true);
     }
+    #endregion
+
+    #region Fields
+    private readonly AnsiConsoleBuffer _parent;
+    private Position? _savedPosition;
+    private Cell _savedCell;
+    private bool _isVisible;
 
     private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
     private static readonly Cell emptyCell = new Cell(' ');
     private static readonly Cell cursorEmptyCell = emptyCell.WithBackground(_cursorBackgroundColor);
+    #endregion
+}
+
+internal class AnsiConsoleBufferOutput : IAnsiConsoleOutput
+{
+    private readonly IConsole _console;
+
+    public AnsiConsoleBufferOutput(IConsole console) => _console = console;
+
+    public TextWriter Writer => throw new NotSupportedException();
+    public bool IsTerminal => true;
+    public int Width => _console.Size.Width;
+    public int Height => _console.Size.Height;
+
+    public void SetEncoding(Encoding encoding) { }
 }
 
 internal class AnsiConsoleBufferInput : IAnsiConsoleInput
