@@ -48,8 +48,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
     public override Cell this[Position position]
     {
         get
-        {
-            
+        {            
             // 1. Calculate Offsets & Viewport
             // We replicate Initialize logic to ensure consistency
             var totalOffset = GetTotalOffset();
@@ -319,8 +318,18 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             UI.Invoke(() =>
             {
                 _top = value;
-                var totalOffset = GetTotalOffset();
-                ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
+                var totalOffset = GetTotalOffset();                
+                var viewportHeight = Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom);
+                if (ControlContext?.Size.Height > viewportHeight)
+                {
+                    _top = Math.Min(ControlContext.Size.Height - viewportHeight, Math.Max(0, _top));
+                    ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
+                }
+                else
+                {
+                    _top = 0;
+                    ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top));
+                }
             });
         }
     }
