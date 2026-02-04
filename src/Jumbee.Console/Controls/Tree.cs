@@ -146,7 +146,7 @@ public partial class Tree : RenderableControl
 
     public bool RemoveNode(TreeNode node) => _root.RemoveChild(node.Index);   
 
-    public override void OnInput(InputEvent inputEvent)
+    protected override void OnInput(InputEvent inputEvent)
     {
         if (inputEvent.Key.Key == ConsoleKey.DownArrow)
         {

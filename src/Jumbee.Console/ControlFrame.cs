@@ -384,12 +384,10 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         }
     }
 
-    public ConsoleKey ScrollUpKey { get; set; } = ConsoleKey.UpArrow;
+    public ConsoleKey ScrollUpKey { get; set; } = UI.HotKeys.CtrlUp.Key;
     
-    public ConsoleKey ScrollDownKey { get; set; } = ConsoleKey.DownArrow;
-
+    public ConsoleKey ScrollDownKey { get; set; } = UI.HotKeys.CtrlDown.Key;
    
-
     public bool Focusable { get; set; } = true;
 
     public bool IsFocused
@@ -417,11 +415,26 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
 
     public void OnInput(UI.InputEventArgs inputEventArgs)
     {
-        (this as IFocusable).OnInput(inputEventArgs.InputEvent);
-        if (!inputEventArgs.InputEvent?.Handled ?? true)
+        var inputEvent = inputEventArgs.InputEvent!;
+        this.OnInput(inputEvent);
+        if (!inputEvent.Handled)
         {
             Control.OnInput(inputEventArgs);
         }
+    }
+           
+    public void OnInput(InputEvent inputEvent)
+    {
+        if (inputEvent.Key.Key == ScrollUpKey)
+        {
+            Top -= 1;
+            inputEvent.Handled = true;
+        }
+        else if (inputEvent.Key.Key == ScrollDownKey)
+        {
+            Top += 1;
+            inputEvent.Handled = true;
+        }        
     }
 
     private DrawingContext ControlContext
@@ -448,23 +461,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         UI.Invoke(() => Update(rect));
     }
 
-    void IInputListener.OnInput(InputEvent inputEvent)
-    {
-        if (inputEvent.Key.Key == ScrollUpKey)
-        {
-            Top -= 1;
-            inputEvent.Handled = true;
-        }
-        else if (inputEvent.Key.Key == ScrollDownKey)
-        {
-            Top += 1;
-            inputEvent.Handled = true;
-        }
-        if (!inputEvent.Handled && Control.HandlesInput)
-        {
-            Control.OnInput(inputEvent);
-        }
-    }
+   
     protected override void Initialize()
     {       
         UI.Invoke(() => 

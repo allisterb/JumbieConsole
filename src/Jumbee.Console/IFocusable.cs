@@ -5,7 +5,7 @@ using ConsoleGUI.Input;
 
 public delegate void FocusableEventHandler(); 
 
-public interface IFocusable : IControl, IInputListener
+public interface IFocusable : IControl
 {
     bool Focusable { get; set; }
     

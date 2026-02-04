@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Jumbee.Console
 {
-    public abstract class Prompt : Control, IInputListener
+    public abstract class Prompt : Control
     {
        
     }

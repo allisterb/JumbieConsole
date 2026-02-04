@@ -4,11 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+
 using ConsoleGUI;
 using ConsoleGUI.Common;
 using ConsoleGUI.Data;
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
+using Spectre.Console.Interop;
 
 public enum LayoutKeyboardNavigation
 {
@@ -29,8 +31,6 @@ public interface ILayout : IFocusable, IDrawingContextListener
     IFocusable this[int row, int column] { get; }
 
     IEnumerable<IFocusable> Controls { get; }
-
-    IFocusable[] InputListeners { get; }
 
     Dictionary <ConsoleKeyInfo, LayoutKeyboardNavigation> NavigationKeys { get; }
 }   
@@ -53,8 +53,6 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
 
     public abstract int Columns { get; }    
         
-    public IFocusable[] InputListeners => inputListeners;
-
     public Dictionary<ConsoleKeyInfo, LayoutKeyboardNavigation> NavigationKeys { get; } = new Dictionary<ConsoleKeyInfo, LayoutKeyboardNavigation>();
    
     public Cell this[Position position] => control[position];   
@@ -119,19 +117,10 @@ public abstract class Layout<T> : ILayout where T:CControl, IDrawingContextListe
 
     public void OnUpdate(DrawingContext drawingContext, Rect rect) => control.OnUpdate(drawingContext, rect);
 
-    public void OnInput(UI.InputEventArgs inputEventArgs) => Array.ForEach(inputListeners, il => il.FocusedControl?.OnInput(inputEventArgs));
-       
-    protected void UpdateInputListeners()
-    {        
-        inputListeners = 
-            Controls            
-            .Where(c => c is not null) // Must handle case where controls might not be fully initialized when called from constructor             
-            .ToArray();
-    }
+    public void OnInput(UI.InputEventArgs inputEventArgs) => Controls.ForEach(f => f.FocusedControl?.OnInput(inputEventArgs));           
     #endregion
 
     #region Fields
     public readonly T control;
-    protected IFocusable[] inputListeners = Array.Empty<IFocusable>();
     #endregion
 }

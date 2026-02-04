@@ -287,7 +287,8 @@ public static class UI
 
         public static ConsoleKeyInfo CtrlQ = Ctrl(ConsoleKey.Q);
         public static ConsoleKeyInfo CtrlN = Ctrl(ConsoleKey.N);
-
+        public static ConsoleKeyInfo CtrlUp = Alt(ConsoleKey.UpArrow);
+        public static ConsoleKeyInfo CtrlDown = Alt(ConsoleKey.DownArrow);
         public static ConsoleKeyInfo CtrlAltUp = Ctrl(Alt(ConsoleKey.UpArrow).Key);
     }
     #endregion

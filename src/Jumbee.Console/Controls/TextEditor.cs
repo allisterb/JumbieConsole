@@ -111,7 +111,7 @@ public class TextEditor : Control
         }        
     }
 
-    public override void OnInput(InputEvent inputEvent)
+    protected override void OnInput(InputEvent inputEvent)
     {
         switch (inputEvent.Key.Key)
         {

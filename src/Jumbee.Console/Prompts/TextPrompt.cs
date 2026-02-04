@@ -134,7 +134,7 @@ public class TextPrompt : Prompt
         if (!_blinkCursor) base.Validate();
     }
   
-    public override void OnInput(InputEvent inputEvent)
+    protected override void OnInput(InputEvent inputEvent)
     {        
         switch (inputEvent.Key.Key)
         {

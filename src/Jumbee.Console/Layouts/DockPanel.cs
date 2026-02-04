@@ -34,8 +34,7 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
         set
         {
             field = value;
-            control.DockedControl = value.FocusableControl;
-            UpdateInputListeners();
+            control.DockedControl = value.FocusableControl;           
         }
     }
 
@@ -45,8 +44,7 @@ public class DockPanel : Layout<ConsoleGUI.Controls.DockPanel>
         set
         {
             field = value;
-            control.FillingControl = value.FocusableControl;
-            UpdateInputListeners();
+            control.FillingControl = value.FocusableControl;            
         }
     }
 

@@ -52,8 +52,7 @@ public class AnsiConsoleBuffer : IAnsiConsole, IDisposable
     public void Clear(bool home)
     {
         bool wasVisible = _cursor.IsVisible;
-        _cursor.Forget();
-        
+        _cursor.Forget();        
         _console.Initialize(); 
         if (home)
         {

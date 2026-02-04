@@ -42,7 +42,6 @@ public partial class ListBox : RenderableControl
             Invalidate();
         }
     }
-
    
     public Color? SelectedBackgroundColor
     {
@@ -150,7 +149,7 @@ public partial class ListBox : RenderableControl
 
     public void Update() => Invalidate();
 
-    public override void OnInput(InputEvent inputEvent)
+    protected override void OnInput(InputEvent inputEvent)
     {
         if (inputEvent.Key.Key == ConsoleKey.UpArrow)
         {

@@ -18,8 +18,7 @@ public class TabPanel : Layout<TabPanelDockPanel>
         foreach (var (tabname, tabcontrol) in controls)
         {
             this.control.AddTab(tabname, tabcontrol.FocusableControl, activeTabBgColor, inactiveTabBgColor);
-        }
-        UpdateInputListeners();
+        }        
     }
             
     public override int Rows { get; } = 1;

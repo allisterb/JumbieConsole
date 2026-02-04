@@ -40,16 +40,14 @@ public class Grid : Layout<ConsoleGUI.Controls.Grid>
             {
                 control.AddChild(c, r, controls[r][c].FocusableControl);
             }
-        }
-        UpdateInputListeners();
+        }       
     }
     #endregion
 
     #region Methods
     public void SetChild(int row, int column, IFocusable child)
     {
-        control.AddChild(column, row, child.FocusableControl);
-        UpdateInputListeners();
+        control.AddChild(column, row, child.FocusableControl);        
     }
         
     public override int Rows => control.Rows.Length;

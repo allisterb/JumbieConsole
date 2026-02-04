@@ -98,9 +98,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
     public IFocusable FocusableControl => this.Frame is not null ? this.Frame : this;
 
     public virtual bool HandlesInput { get; } = false;
-
-    public virtual void OnInput(InputEvent inputEvent) { }
-
+    
     public void OnInput(UI.InputEventArgs inputEventArgs)
     {
         if (HandlesInput)
@@ -112,7 +110,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
         }
     }
 
-
+    protected virtual void OnInput(InputEvent inputEvent) {}
     #endregion
 
     #region Methods
@@ -217,15 +215,7 @@ public abstract class Control : CControl, IFocusable, IDisposable
         {
             UI.controlPaintTimes[this][UI.paintTimeIndex] = null;
         }
-    }
-
-    private void OnInput(object? sender, UI.InputEventArgs e)
-    {
-        lock (e.Lock)
-        {
-            OnInput(e.InputEvent!);
-        }
-    }
+    }    
     #endregion
 
     #region Events
