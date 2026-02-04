@@ -139,6 +139,14 @@ public class TextEditor : Control
                 MoveCaretVertically(1);
                 inputEvent.Handled = true;
                 break;
+            case ConsoleKey.PageUp:
+                MoveCaretVertically(-(Frame?.ViewportSize.Height ?? 10));
+                inputEvent.Handled = true;
+                break;
+            case ConsoleKey.PageDown:
+                MoveCaretVertically(Frame?.ViewportSize.Height ?? 10);
+                inputEvent.Handled = true;
+                break;
             case ConsoleKey.Home:
                 MoveCaretHome();
                 UpdateDesiredColumn();
@@ -216,9 +224,7 @@ public class TextEditor : Control
     private void MoveCaretVertically(int direction)
     {
         var (currentX, currentY) = CalculateCursorPosition(_caretPosition);
-        var targetY = currentY + direction;
-        
-        if (targetY < 0) return;
+        var targetY = Math.Max(0, currentY + direction);
         
         _caretPosition = GetCaretIndex(targetY, _desiredColumn);
     }
