@@ -23,7 +23,7 @@ public class Program
         //GridTest(args);
         DockPanelTest(args);
         Console.Clear();
-        Console.WriteLine("Average draw time: {0}ms. Average paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
+        Console.WriteLine("Average UI draw time: {0}ms. Average UI paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
         Console.WriteLine("Average control paint times:");
         foreach(var c in UI.AverageControlPaintTimes)
         {

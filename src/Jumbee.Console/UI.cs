@@ -279,17 +279,32 @@ public static class UI
 
     public static class HotKeys
     {
-        public static ConsoleKeyInfo Ctrl(ConsoleKey key) =>
-            new ConsoleKeyInfo((char) (Char.ToLower((char) key) - 96), key, false, false, true);
+        public static ConsoleKeyInfo Ctrl(ConsoleKey key)
+        {
+            // For letter keys, a control character is generated. For other keys, the character is '\0'.
+            char keyChar = (key >= ConsoleKey.A && key <= ConsoleKey.Z)
+                ? (char)(Char.ToLower((char)key) - 96)
+                : '\0';
+            return new ConsoleKeyInfo(keyChar, key, false, false, true);
+        }
 
-        public static ConsoleKeyInfo Alt(ConsoleKey key) =>
-            new ConsoleKeyInfo(Char.ToLower((char)key), key, false, true, false);
+        public static ConsoleKeyInfo Alt(ConsoleKey key)
+        {
+            // For letter keys, a lowercase character is generated. For other keys, the character is '\0'.
+            char keyChar = (key >= ConsoleKey.A && key <= ConsoleKey.Z)
+                ? Char.ToLower((char)key)
+                : '\0';
+            return new ConsoleKeyInfo(keyChar, key, false, true, false);
+        }
+
+        public static ConsoleKeyInfo CtrlAlt(ConsoleKey key) =>
+            new('\0', key, false, true, true);
 
         public static ConsoleKeyInfo CtrlQ = Ctrl(ConsoleKey.Q);
         public static ConsoleKeyInfo CtrlN = Ctrl(ConsoleKey.N);
-        public static ConsoleKeyInfo CtrlUp = Alt(ConsoleKey.UpArrow);
-        public static ConsoleKeyInfo CtrlDown = Alt(ConsoleKey.DownArrow);
-        public static ConsoleKeyInfo CtrlAltUp = Ctrl(Alt(ConsoleKey.UpArrow).Key);
+        public static ConsoleKeyInfo AltUp = Alt(ConsoleKey.UpArrow);
+        public static ConsoleKeyInfo AltDown = Alt(ConsoleKey.DownArrow);
+        public static ConsoleKeyInfo CtrlAltUp = CtrlAlt(ConsoleKey.UpArrow);
     }
     #endregion
 }

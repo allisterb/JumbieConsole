@@ -384,9 +384,9 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         }
     }
 
-    public ConsoleKey ScrollUpKey { get; set; } = UI.HotKeys.CtrlUp.Key;
+    public ConsoleKeyInfo ScrollUpKey { get; set; } = UI.HotKeys.AltUp;
     
-    public ConsoleKey ScrollDownKey { get; set; } = UI.HotKeys.CtrlDown.Key;
+    public ConsoleKeyInfo ScrollDownKey { get; set; } = UI.HotKeys.AltDown;
    
     public bool Focusable { get; set; } = true;
 
@@ -425,12 +425,12 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
            
     public void OnInput(InputEvent inputEvent)
     {
-        if (inputEvent.Key.Key == ScrollUpKey)
+        if (inputEvent.Key == ScrollUpKey)
         {
             Top -= 1;
             inputEvent.Handled = true;
         }
-        else if (inputEvent.Key.Key == ScrollDownKey)
+        else if (inputEvent.Key == ScrollDownKey)
         {
             Top += 1;
             inputEvent.Handled = true;
