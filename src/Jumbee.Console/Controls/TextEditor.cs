@@ -183,7 +183,28 @@ public class TextEditor : Control
                 }
                 break;
         }
+        EnsureCursorVisible();
         Invalidate();
+    }
+
+    private void EnsureCursorVisible()
+    {
+        if (Frame != null)
+        {
+            var (x, y) = CalculateCursorPosition(_caretPosition);
+            
+            int top = Frame.Top;
+            int viewportHeight = Frame.ViewportSize.Height;
+            
+            if (y < top)
+            {
+                Frame.Top = y;
+            }
+            else if (y >= top + viewportHeight)
+            {
+                Frame.Top = y - viewportHeight + 1;
+            }
+        }
     }
 
     private void UpdateDesiredColumn()

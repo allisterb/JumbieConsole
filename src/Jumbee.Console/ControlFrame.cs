@@ -413,30 +413,6 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
 
     public bool HandlesInput => true;
 
-    public void OnInput(UI.InputEventArgs inputEventArgs)
-    {
-        var inputEvent = inputEventArgs.InputEvent!;
-        this.OnInput(inputEvent);
-        if (!inputEvent.Handled)
-        {
-            Control.OnInput(inputEventArgs);
-        }
-    }
-           
-    public void OnInput(InputEvent inputEvent)
-    {
-        if (inputEvent.Key == ScrollUpKey)
-        {
-            Top -= 1;
-            inputEvent.Handled = true;
-        }
-        else if (inputEvent.Key == ScrollDownKey)
-        {
-            Top += 1;
-            inputEvent.Handled = true;
-        }        
-    }
-
     private DrawingContext ControlContext
     {
         get => _controlContext;
@@ -448,6 +424,8 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             Initialize();
         }
     }
+
+    public Size ViewportSize => GetViewportSize();
     #endregion
 
     #region Methods    
@@ -460,7 +438,33 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
     {
         UI.Invoke(() => Update(rect));
     }
-   
+
+    public void OnInput(UI.InputEventArgs inputEventArgs)
+    {
+        var inputEvent = inputEventArgs.InputEvent!;
+        this.OnInput(inputEvent);
+        if (!inputEvent.Handled)
+        {
+            Control.OnInput(inputEventArgs);
+        }
+    }
+
+    public void OnInput(InputEvent inputEvent)
+    {
+        if (inputEvent.Key == ScrollUpKey)
+        {
+            Top -= 1;
+            inputEvent.Handled = true;
+        }
+        else if (inputEvent.Key == ScrollDownKey)
+        {
+            Top += 1;
+            inputEvent.Handled = true;
+        }
+    }
+
+    public void Scroll(int n) => Top += n;
+    
     protected override void Initialize()
     {       
         UI.Invoke(() => 
@@ -565,6 +569,8 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             borderOffset.Right + Margin.Right,
             borderOffset.Bottom + Margin.Bottom);
     }
+
+   
 
     private void UpdateBorderOffsetField() => borderOffset = GetBorderOffset();
 
