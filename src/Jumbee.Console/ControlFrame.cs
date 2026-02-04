@@ -51,7 +51,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         {            
             // 1. Calculate Offsets & Viewport
             // We replicate Initialize logic to ensure consistency
-            var totalOffset = GetTotalOffset();
+            var totalOffset = borderOffset;
 
             var controlLeft = totalOffset.Left;
             var controlTop = totalOffset.Top;
@@ -218,7 +218,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             {
                 if (_borderStyle == value) return;
                 _borderStyle = value;
-                _boxBorder = GetSpectreBoxBorder(_borderStyle);
+                _boxBorder = GetSpectreBoxBorder(_borderStyle);               
                 Initialize();
             });
         }
@@ -246,7 +246,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             UI.Invoke(() => 
             {
                 if (_borderPlacement == value) return;
-                _borderPlacement = value;
+                _borderPlacement = value;              
                 Initialize();
             });
         }
@@ -318,17 +318,17 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             UI.Invoke(() =>
             {
                 _top = value;
-                var totalOffset = GetTotalOffset();                
-                var viewportHeight = Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom);
+                //var totalOffset = GetTotalOffset();                
+                var viewportHeight = Math.Max(0, Size.Height - borderOffset.Top - borderOffset.Bottom);
                 if (ControlContext?.Size.Height > viewportHeight)
                 {
                     _top = Math.Min(ControlContext.Size.Height - viewportHeight, Math.Max(0, _top));
-                    ControlContext.SetOffset(new Vector(totalOffset.Left, totalOffset.Top - _top));
+                    ControlContext.SetOffset(new Vector(borderOffset.Left, borderOffset.Top - _top));
                 }
                 else
                 {
                     _top = 0;
-                    ControlContext?.SetOffset(new Vector(totalOffset.Left, totalOffset.Top));
+                    ControlContext?.SetOffset(new Vector(borderOffset.Left, borderOffset.Top));
                 }
             });
         }
@@ -460,15 +460,15 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
     {
         UI.Invoke(() => Update(rect));
     }
-
    
     protected override void Initialize()
     {       
         UI.Invoke(() => 
         {
+            UpdateBorderOffsetField();
             using (Freeze())
             {
-                var totalOffset = GetTotalOffset();
+                var totalOffset = borderOffset;
 
                 // Available space for control (excluding scrollbar for now)
                 // We reserve 1 column for scrollbar at the right of control
@@ -552,7 +552,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         });        
     }
 
-    private Offset GetTotalOffset()
+    private Offset GetBorderOffset()
     {
         var borderOffset = BorderPlacement.AsOffset();
 
@@ -566,13 +566,16 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
             borderOffset.Bottom + Margin.Bottom);
     }
 
+    private void UpdateBorderOffsetField() => borderOffset = GetBorderOffset();
+
     private Size GetViewportSize()
     {
-        var totalOffset = GetTotalOffset();
+        var totalOffset = borderOffset;
         return new Size(
             Math.Max(0, Size.Width - totalOffset.Left - totalOffset.Right),
             Math.Max(0, Size.Height - totalOffset.Top - totalOffset.Bottom));
     }
+
 
     private static SpectreBoxBorder GetSpectreBoxBorder(BorderStyle style)
     {
@@ -625,6 +628,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
     private BorderStyle _borderStyle;
     private Control _control;
     private BorderPlacement _borderPlacement = BorderPlacement.All;
+    private Offset borderOffset;
     private Offset _margin;
     private Color? _foreground;
     private Color? _background;
@@ -633,6 +637,7 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
     private DrawingContext _controlContext = DrawingContext.Dummy;
     private string? _title;
     private int _top;
+    
     private Character _scrollBarForeground = new Character('#', foreground: new Color(100, 100, 255));
     private Character _scrollBarBackground = new Character('|', foreground: new Color(100, 100, 100));
     private Character _scrollBarUpArrow = new Character('▲'); 
