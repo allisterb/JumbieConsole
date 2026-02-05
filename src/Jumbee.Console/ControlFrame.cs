@@ -317,18 +317,21 @@ public sealed class ControlFrame : CControl, IFocusable, IDrawingContextListener
         {
             UI.Invoke(() =>
             {
-                _top = value;
-                //var totalOffset = GetTotalOffset();                
-                var viewportHeight = Math.Max(0, Size.Height - borderOffset.Top - borderOffset.Bottom);
-                if (ControlContext?.Size.Height > viewportHeight)
+                using (Freeze())
                 {
-                    _top = Math.Min(ControlContext.Size.Height - viewportHeight, Math.Max(0, _top));
-                    ControlContext.SetOffset(new Vector(borderOffset.Left, borderOffset.Top - _top));
-                }
-                else
-                {
-                    _top = 0;
-                    ControlContext?.SetOffset(new Vector(borderOffset.Left, borderOffset.Top));
+                    _top = value;
+
+                    var viewportHeight = Math.Max(0, Size.Height - borderOffset.Top - borderOffset.Bottom);
+                    if (ControlContext?.Size.Height > viewportHeight)
+                    {
+                        _top = Math.Min(ControlContext.Size.Height - viewportHeight, Math.Max(0, _top));
+                        ControlContext.SetOffset(new Vector(borderOffset.Left, borderOffset.Top - _top));
+                    }
+                    else
+                    {
+                        _top = 0;
+                        ControlContext?.SetOffset(new Vector(borderOffset.Left, borderOffset.Top));
+                    }
                 }
             });
         }

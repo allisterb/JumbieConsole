@@ -7,6 +7,9 @@ using ConsoleGUI.Space;
 using Spectre.Console;
 using NTokenizers.Extensions.Spectre.Console;
 
+/// <summary>
+/// A text editor control with syntax highlighting for supported languages.
+/// </summary>
 public class TextEditor : Control
 {
     #region Constructors
@@ -338,11 +341,11 @@ public class TextEditor : Control
     {
         None,
         Markdown,
-        CSharp,
-        Sql,
         Json,
         Html,
         Css,
+        CSharp,
+        Sql,
         TypeScript,
         Xml,
         Yaml
