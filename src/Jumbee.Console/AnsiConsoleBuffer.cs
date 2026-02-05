@@ -80,9 +80,23 @@ public class AnsiConsoleBuffer : IAnsiConsole, IAnsiConsoleInput, IAnsiConsoleOu
                     var position = new Position(_cursorX, _cursorY);
                     if (IsValidPosition(position))
                     {
-                        _console.Write(position, new Character(c, isControl: true));
+                        if (c == '\r')
+                        {
+                            _cursorX = 0;
+                            continue;
+                        }
+                        else if (c == '\n')
+                        {
+                            _cursorX = 0;
+                            _cursorY++;
+                            continue;
+                        }
+                        else
+                        {
+                            //_console.Write(position, new Character(c, isControl: true));
+                        }
                     }
-                    _cursorX++;
+                    
                 }
             }
             else
@@ -100,7 +114,11 @@ public class AnsiConsoleBuffer : IAnsiConsole, IAnsiConsoleInput, IAnsiConsoleOu
                         continue;
                     }
 
-                    if (c == '\r') continue;
+                    if (c == '\r')
+                    {
+                        _cursorX = 0;
+                        continue;
+                    }
 
                     var width = c.GetCellWidth();
                     if (width <= 0) continue; // Skip zero-width chars

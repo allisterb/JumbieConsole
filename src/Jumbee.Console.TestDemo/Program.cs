@@ -20,10 +20,10 @@ public class Program
 {
     static async Task Main(string[] args)
     {
-        //GridTest(args);
+        GridTest(args);
         //GridTest(args);
         //SpectreControlTests.LiveDisplayTests();
-        DockPanelTest(args);
+        //DockPanelTest(args);
         Console.Clear();
         Console.WriteLine("Average UI draw time: {0}ms. Average UI paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
         Console.WriteLine("Average control paint times:");
@@ -74,7 +74,7 @@ public class Program
         var table3 = new Spectre.Console.Table()
                 .AddColumn(new Spectre.Console.TableColumn("Line"));
         var disp = new SpectreLiveDisplay(table3);
-        disp.LiveDisplay.Overflow = Spectre.Console.VerticalOverflow.Ellipsis;
+        disp.Display.Overflow = Spectre.Console.VerticalOverflow.Ellipsis;
         
         // 3. Tree
         var treeControl = new Tree("Root", guide: TreeGuide.BoldLine)
@@ -120,7 +120,7 @@ public class Program
             .WithTitle("Write here");
         var grid = new Jumbee.Console.Grid([15, 15], [40, 80], [
             [spinner.WithFrame(borderStyle: BorderStyle.Rounded, fgColor: Red, title: "Spinna benz"), prompt],
-            [treeControl, disp]
+            [disp, barChart]
         ]);
         //treeControl.IsFocused = true;
         // Start the user interface
