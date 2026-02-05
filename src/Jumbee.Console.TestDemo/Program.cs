@@ -21,7 +21,8 @@ public class Program
     static async Task Main(string[] args)
     {
         //GridTest(args);
-        GridTest(args);
+        //GridTest(args);
+        SpectreControlTests.LiveDisplayTests();
         Console.Clear();
         Console.WriteLine("Average UI draw time: {0}ms. Average UI paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
         Console.WriteLine("Average control paint times:");
@@ -71,16 +72,7 @@ public class Program
         };
         var table3 = new Spectre.Console.Table()
                 .AddColumn(new Spectre.Console.TableColumn("Line"));
-        var disp = new SpectreLiveDisplay(table3, (ctx) =>
-        {
-            for (int i = 1; i <= 100; i++)
-            {
-                //ctx.
-                table3.Rows.Add([new Spectre.Console.Markup($"Line {i}")]);
-                ctx.Refresh();
-                Thread.Sleep(50);
-            }
-        });
+        var disp = new SpectreLiveDisplay(table3);
         disp.LiveDisplay.Overflow = Spectre.Console.VerticalOverflow.Ellipsis;
         
         // 3. Tree
@@ -133,6 +125,16 @@ public class Program
         // Start the user interface
         p.Focus();
         var t = UI.Start(grid, 130, 40);
+        disp.Start((ctx) =>
+        {
+            for (int i = 1; i <= 100; i++)
+            {
+                //ctx.
+                table3.Rows.Add([new Spectre.Console.Markup($"Line {i}")]);
+                ctx.Refresh();
+                Thread.Sleep(50);
+            }
+        });
         //UI.Start(internalGrid, width:250, height: 60, isTrueColorTerminal: true);
         // Create a separate timer to update the chartControl content periodically
         var random = new Random();

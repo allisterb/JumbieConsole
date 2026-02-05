@@ -143,7 +143,7 @@ public class AnsiConsoleBuffer : IAnsiConsole, IExclusivityMode, IDisposable
         // Try acquiring the exclusivity semaphore
         if (!_semaphore.Wait(0))
         {
-            throw new Exception();
+            throw new InvalidOperationException("AnsiConsole exclusivity lock is already held.");
         }
 
         try
@@ -161,7 +161,7 @@ public class AnsiConsoleBuffer : IAnsiConsole, IExclusivityMode, IDisposable
         // Try acquiring the exclusivity semaphore
         if (!await _semaphore.WaitAsync(0).ConfigureAwait(false))
         {
-            throw new Exception();
+            throw new InvalidOperationException("AnsiConsole exclusivity lock is already held.");
         }
 
         try
