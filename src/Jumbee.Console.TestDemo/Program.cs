@@ -69,6 +69,20 @@ public class Program
             Label = "[green bold]Activity[/]",
             CenterLabel = true
         };
+        var table3 = new Spectre.Console.Table()
+                .AddColumn(new Spectre.Console.TableColumn("Line"));
+        var disp = new SpectreLiveDisplay(table3, (ctx) =>
+        {
+            for (int i = 1; i <= 100; i++)
+            {
+                //ctx.
+                table3.Rows.Add([new Spectre.Console.Markup($"Line {i}")]);
+                ctx.Refresh();
+                Thread.Sleep(50);
+            }
+        });
+        disp.LiveDisplay.Overflow = Spectre.Console.VerticalOverflow.Ellipsis;
+        
         // 3. Tree
         var treeControl = new Tree("Root", guide: TreeGuide.BoldLine)
         {
@@ -113,7 +127,7 @@ public class Program
             .WithTitle("Write here");
         var grid = new Jumbee.Console.Grid([15, 15], [40, 80], [
             [spinner.WithFrame(borderStyle: BorderStyle.Rounded, fgColor: Red, title: "Spinna benz"), prompt],
-            [treeControl, barChart]
+            [treeControl, disp]
         ]);
         //treeControl.IsFocused = true;
         // Start the user interface
