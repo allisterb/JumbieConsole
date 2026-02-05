@@ -16,17 +16,17 @@ using Spectre.Console.Rendering;
 /// <summary>
 /// An implementation of Spectre.Console.IAnsiConsole that writes to a ConsoleBuffer.
 /// </summary>
-public class AnsiConsoleBuffer : IAnsiConsole, IExclusivityMode, IDisposable
+public class AnsiConsoleBuffer : IAnsiConsole, IAnsiConsoleInput, IAnsiConsoleOutput, IExclusivityMode, IDisposable
 {
     #region Constructors
     public AnsiConsoleBuffer(ConsoleBuffer console)
     {
         _console = console;
         _cursor = new AnsiConsoleBufferCursor(this);
-        _input = new AnsiConsoleBufferInput(_console);
+        _input = this;
         _exclusivityMode = this;
         _pipeline = new RenderPipeline();
-        _profile = new Profile(new AnsiConsoleBufferOutput(console), Encoding.UTF8);
+        _profile = new Profile(this, Encoding.UTF8);
         _profile.Capabilities.Ansi = AnsiConsole.Profile.Capabilities.Ansi;
         _profile.Capabilities.ColorSystem = AnsiConsole.Profile.Capabilities.ColorSystem;
         _profile.Capabilities.Interactive = AnsiConsole.Profile.Capabilities.Interactive;
@@ -49,82 +49,78 @@ public class AnsiConsoleBuffer : IAnsiConsole, IExclusivityMode, IDisposable
 
     #region Methods
     public void Clear(bool home)
-    {
-        Invoke(() =>
+    {        
+        bool wasVisible = _cursor.IsVisible;
+        _cursor.Forget();
+        _console.Initialize();
+        if (home)
         {
-            bool wasVisible = _cursor.IsVisible;
-            _cursor.Forget();
-            _console.Initialize();
-            if (home)
-            {
-                _cursorX = 0;
-                _cursorY = 0;
-            }
+            _cursorX = 0;
+            _cursorY = 0;
+        }
 
-            if (wasVisible)
-            {
-                _cursor.Show(true);
-            }
-        });
+        if (wasVisible)
+        {
+            _cursor.Show(true);
+        }
+        
     }
 
     public void Write(IRenderable renderable)
-    {
-        Invoke(() =>
+    {        
+        bool wasVisible = _cursor.Hide();
+
+        var segments = renderable.GetSegments(this);
+        foreach (var segment in segments)
         {
-            bool wasVisible = _cursor.Hide();
-
-            var segments = renderable.GetSegments(this);
-            foreach (var segment in segments)
+            if (segment.IsControlCode)
             {
-                if (segment.IsControlCode)
+                foreach (var c in segment.Text)
                 {
-                    foreach (var c in segment.Text)
+                    var position = new Position(_cursorX, _cursorY);
+                    if (IsValidPosition(position))
                     {
-                        var position = new Position(_cursorX, _cursorY);
-                        if (IsValidPosition(position))
-                        {
-                            _console.Write(position, new Character(c, isControl: true));
-                        }
-                        _cursorX++;
+                        _console.Write(position, new Character(c, isControl: true));
                     }
-                }
-                else
-                {
-                    var style = segment.Style;
-                    var fg = style.Foreground.ToConsoleGUIColor();
-                    var bg = style.Background.ToConsoleGUIColor();
-                    var decoration = (ConsoleGUI.Data.Decoration)style.Decoration;
-                    foreach (char c in segment.Text)
-                    {
-                        if (c == '\n')
-                        {
-                            _cursorY++;
-                            _cursorX = 0;
-                            continue;
-                        }
-
-                        if (c == '\r') continue;
-
-                        var width = c.GetCellWidth();
-                        if (width <= 0) continue; // Skip zero-width chars
-
-                        var position = new Position(_cursorX, _cursorY);
-                        if (IsValidPosition(position))
-                        {
-                            _console.Write(position, new Character(c, fg, bg, decoration));
-                        }
-
-                        _cursorX += width;
-                    }
+                    _cursorX++;
                 }
             }
-
-            if (wasVisible)
+            else
             {
-                _cursor.Show(true);
+                var style = segment.Style;
+                var fg = style.Foreground.ToConsoleGUIColor();
+                var bg = style.Background.ToConsoleGUIColor();
+                var decoration = (ConsoleGUI.Data.Decoration)style.Decoration;
+                foreach (char c in segment.Text)
+                {
+                    if (c == '\n')
+                    {
+                        _cursorY++;
+                        _cursorX = 0;
+                        continue;
+                    }
+
+                    if (c == '\r') continue;
+
+                    var width = c.GetCellWidth();
+                    if (width <= 0) continue; // Skip zero-width chars
+
+                    var position = new Position(_cursorX, _cursorY);
+                    if (IsValidPosition(position))
+                    {
+                        _console.Write(position, new Character(c, fg, bg, decoration));
+                    }
+
+                    _cursorX += width;
+                }
             }
-        });
+        }
+
+        if (wasVisible)
+        {
+            _cursor.Show(true);
+        }
+        
     }
 
     public void Dispose()
@@ -136,9 +132,53 @@ public class AnsiConsoleBuffer : IAnsiConsole, IExclusivityMode, IDisposable
         get => _cursorY * _console.Size.Width + _cursorX;
         set => SetCursorPosition(_console.GetPosition(value));
     }
+    
+    internal void SetCursorPosition(int x, int y)
+    {        
+        _cursorX = x;
+        _cursorY = y;        
+    }
 
+    internal void SetCursorPosition(Position position)
+    {      
+        _cursorX = position.X;
+        _cursorY = position.Y;
+    }
 
-    public T Run<T>(Func<T> func)
+    internal void MoveCursor(int dx, int dy)
+    {       
+        _cursorX += dx;
+        _cursorY += dy;      
+    }
+
+    private bool IsValidPosition(Position position)
+    {
+        return position.X >= 0 && position.X < _console.Size.Width &&
+               position.Y >= 0 && position.Y < _console.Size.Height;
+    }
+
+    #region IAnsiConsoleInput implementation 
+    bool IAnsiConsoleInput.IsKeyAvailable() => throw new NotSupportedException();
+
+    ConsoleKeyInfo? IAnsiConsoleInput.ReadKey(bool intercept) => throw new NotSupportedException();
+
+    Task<ConsoleKeyInfo?> IAnsiConsoleInput.ReadKeyAsync(bool intercept, CancellationToken cancellationToken) => throw new NotSupportedException();
+    #endregion
+
+    #region IAnsiConsoleOutput implementation
+    TextWriter IAnsiConsoleOutput.Writer => throw new NotSupportedException();
+    
+    bool IAnsiConsoleOutput.IsTerminal => true;
+    
+    int IAnsiConsoleOutput.Width => _console.Size.Width;
+    
+    int IAnsiConsoleOutput. Height => _console.Size.Height;
+    
+    void IAnsiConsoleOutput.SetEncoding(Encoding encoding) {}
+    #endregion
+
+    #region IExclusivityMode implementation
+    T IExclusivityMode.Run<T>(Func<T> func)
     {
         // Try acquiring the exclusivity semaphore
         if (!_semaphore.Wait(0))
@@ -156,7 +196,7 @@ public class AnsiConsoleBuffer : IAnsiConsole, IExclusivityMode, IDisposable
         }
     }
 
-    public async Task<T> RunAsync<T>(Func<Task<T>> func)
+    async Task<T> IExclusivityMode.RunAsync<T>(Func<Task<T>> func)
     {
         // Try acquiring the exclusivity semaphore
         if (!await _semaphore.WaitAsync(0).ConfigureAwait(false))
@@ -173,97 +213,21 @@ public class AnsiConsoleBuffer : IAnsiConsole, IExclusivityMode, IDisposable
             _semaphore.Release(1);
         }
     }
+    #endregion
 
-    internal void SetCursorPosition(int x, int y)
-    {
-        Invoke(() =>
-        {
-            _cursorX = x;
-            _cursorY = y;
-        });
-    }
-
-    internal void SetCursorPosition(Position position)
-    {
-        Invoke(() =>
-        {
-            _cursorX = position.X;
-            _cursorY = position.Y;
-        });
-    }
-
-    internal void MoveCursor(int dx, int dy)
-    {
-        Invoke(() =>
-        {
-            _cursorX += dx;
-            _cursorY += dy;
-        });
-    }
-
-    private bool IsValidPosition(Position position)
-    {
-        return position.X >= 0 && position.X < _console.Size.Width &&
-               position.Y >= 0 && position.Y < _console.Size.Height;
-    }
-
-    internal void Invoke(Action action)
-    {
-        if (_lock.IsHeldByCurrentThread)
-        {
-            action();
-        }
-        else
-        {
-            lock (_lock)
-            {
-                action();
-            }
-        }
-    }
-
-    internal T Invoke<T>(Func<T> func)
-    {
-        if (_lock.IsHeldByCurrentThread)
-        {
-            return func();
-        }
-        else
-        {
-            lock (_lock)
-            {
-                return func();
-            }
-        }
-    }
     #endregion
 
     #region Fields
     internal readonly ConsoleBuffer _console;
     internal readonly AnsiConsoleBufferCursor _cursor;
-    private readonly AnsiConsoleBufferInput _input;
+    private readonly IAnsiConsoleInput _input;
     private readonly IExclusivityMode _exclusivityMode;
     private readonly RenderPipeline _pipeline;
     private readonly Profile _profile;
     private int _cursorX;
     private int _cursorY;
-    private readonly Lock _lock = new Lock();
     private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
     #endregion
-}
-
-internal class AnsiConsoleBufferOutput : IAnsiConsoleOutput
-{
-    private readonly IConsole _console;
-
-    public AnsiConsoleBufferOutput(IConsole console) => _console = console;
-
-    public TextWriter Writer => throw new NotSupportedException();
-    public bool IsTerminal => true;
-    public int Width => _console.Size.Width;
-    public int Height => _console.Size.Height;
-
-    public void SetEncoding(Encoding encoding) { }
 }
 
 internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
@@ -278,45 +242,39 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
 
     #region Methods
     public void Show(bool show)
-    {
-        _parent.Invoke(() =>
+    {        
+        if (show)
         {
-            if (show)
+            if (_isVisible)
             {
-                if (_isVisible)
+                if (_savedPosition.HasValue && _savedPosition.Value.X == _parent.CursorX && _savedPosition.Value.Y == _parent.CursorY)
                 {
-                    if (_savedPosition.HasValue && _savedPosition.Value.X == _parent.CursorX && _savedPosition.Value.Y == _parent.CursorY)
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        HideCursor();
-                    }
+                    return;
                 }
-                ShowCursor();
-            }
-            else
-            {
-                if (_isVisible)
+                else
                 {
                     HideCursor();
                 }
             }
-        });
-    }
-
-    internal bool Hide()
-    {
-        return _parent.Invoke(() =>
+            ShowCursor();
+        }
+        else
         {
             if (_isVisible)
             {
                 HideCursor();
-                return true;
             }
-            return false;
-        });
+        }      
+    }
+
+    internal bool Hide()
+    {       
+        if (_isVisible)
+        {
+            HideCursor();
+            return true;
+        }
+        return false;    
     }
 
     internal void Forget()
@@ -370,38 +328,32 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
     }
 
     public void SetPosition(int column, int line)
-    {
-        _parent.Invoke(() =>
-        {
-            var wasVisible = Hide();
-            _parent.SetCursorPosition(column, line);
-            if (wasVisible) Show(true);
-        });
+    {       
+        var wasVisible = Hide();
+        _parent.SetCursorPosition(column, line);
+        if (wasVisible) Show(true);   
     }
 
     public void Move(CursorDirection direction, int steps)
-    {
-        _parent.Invoke(() =>
+    {   
+        var wasVisible = Hide();
+        switch (direction)
         {
-            var wasVisible = Hide();
-            switch (direction)
-            {
-                case CursorDirection.Up:
-                    _parent.MoveCursor(0, -steps);
-                    break;
-                case CursorDirection.Down:
-                    _parent.MoveCursor(0, steps);
-                    break;
-                case CursorDirection.Left:
-                    _parent.MoveCursor(-steps, 0);
-                    break;
-                case CursorDirection.Right:
-                    _parent.MoveCursor(steps, 0);
-                    break;
-            }
-            if (wasVisible) Show(true);
-        });
-    }
+            case CursorDirection.Up:
+                _parent.MoveCursor(0, -steps);
+                break;
+            case CursorDirection.Down:
+                _parent.MoveCursor(0, steps);
+                break;
+            case CursorDirection.Left:
+                _parent.MoveCursor(-steps, 0);
+                break;
+            case CursorDirection.Right:
+                _parent.MoveCursor(steps, 0);
+                break;
+        }
+        if (wasVisible) Show(true);    
+    }    
     #endregion
 
     #region Fields
@@ -409,22 +361,8 @@ internal class AnsiConsoleBufferCursor : IAnsiConsoleCursor
     private Position? _savedPosition;
     private Cell _savedCell;
     private bool _isVisible;
-
     private static readonly ConsoleGUI.Data.Color _cursorBackgroundColor = new ConsoleGUI.Data.Color(100, 100, 100);
     private static readonly Cell emptyCell = new Cell(' ');
     private static readonly Cell cursorEmptyCell = emptyCell.WithBackground(_cursorBackgroundColor);
     #endregion
-}
-
-internal class AnsiConsoleBufferInput : IAnsiConsoleInput
-{
-    private readonly ConsoleBuffer _console;
-
-    public AnsiConsoleBufferInput(ConsoleBuffer console) => _console = console;
-
-    public bool IsKeyAvailable() => throw new NotSupportedException();
-
-    public ConsoleKeyInfo? ReadKey(bool intercept) => throw new NotSupportedException();
-
-    public Task<ConsoleKeyInfo?> ReadKeyAsync(bool intercept, CancellationToken cancellationToken) => throw new NotSupportedException();
 }
