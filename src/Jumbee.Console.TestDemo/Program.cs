@@ -20,10 +20,10 @@ public class Program
 {
     static async Task Main(string[] args)
     {
-        GridTest(args);
+        //GridTest(args);
         //GridTest(args);
         //SpectreControlTests.LiveDisplayTests();
-        //DockPanelTest(args);
+        DockPanelTest(args);
         Console.Clear();
         Console.WriteLine("Average UI draw time: {0}ms. Average UI paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
         Console.WriteLine("Average control paint times:");
@@ -223,7 +223,7 @@ public class Program
     
     static void DockPanelTest(string[] args)
     {
-        var p = new TextEditor(TextEditor.Language.Markdown)
+        var p = new TextEditor(TextEditor.Language.Markdown, blinkCursor: true)
            .WithRoundedBorder(Purple)
            .WithTitle("Editor");
         var tree = new Tree("tree", TreeGuide.Line, Green | Dim) { Width = 20, Height=10 };

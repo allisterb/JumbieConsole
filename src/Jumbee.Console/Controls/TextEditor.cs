@@ -86,13 +86,18 @@ public class TextEditor : Control
     protected void RenderCursor()
     {
         var pos = CalculateCursorPosition(_caretPosition);
-        ansiConsole.SetCursorPosition(pos.x, pos.y);
-        
+        ansiConsole.SetCursorPosition(pos.x, pos.y);        
         if (IsFocused && _showCursor)
         {
-            ansiConsole.Cursor.Show();
+            if (_blinkCursor)
+            {                
+                ansiConsole.Cursor.Show(blinkState = !blinkState);
+            }
+            else
+            {
+                ansiConsole.Cursor.Show();
+            }
         }
-
         else
         {
             ansiConsole.Cursor.Hide();
