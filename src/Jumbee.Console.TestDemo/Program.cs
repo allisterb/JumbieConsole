@@ -23,7 +23,8 @@ public class Program
         //GridTest(args);
         //GridTest(args);
         //SpectreControlTests.LiveDisplayTests();
-        DockPanelTest(args);
+        //DockPanelTest(args);
+        SpectreControlTests.ProgressTests();
         Console.Clear();
         Console.WriteLine("Average UI draw time: {0}ms. Average UI paint time: {1}ms.", UI.AverageDrawTime, UI.AveragePaintTime);
         Console.WriteLine("Average control paint times:");
