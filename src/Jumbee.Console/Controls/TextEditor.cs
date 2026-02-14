@@ -17,7 +17,7 @@ public class TextEditor : Control
     {
         this._language = language;
         this._showCursor = showCursor;
-        this._blinkCursor = blinkCursor;
+        this._blinkCursor = false;
         this.write = GetLanguageWriter(language);
     }
     #endregion
@@ -318,7 +318,7 @@ public class TextEditor : Control
         Language.None => ansiConsole.Write,
         Language.CSharp => ansiConsole.WriteCSharp,
         Language.Sql => ansiConsole.WriteSql,
-        Language.Markdown => ansiConsole.WriteMarkdown,
+        Language.Markdown => ansiConsole.WriteMarkdownInline,
         Language.Json => ansiConsole.WriteJson,
         Language.Html => ansiConsole.WriteHtml,
         Language.Css => ansiConsole.WriteCss,
@@ -356,5 +356,6 @@ public class TextEditor : Control
         Yaml
     }
 
+   
     #endregion
 }
