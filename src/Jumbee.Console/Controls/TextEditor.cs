@@ -17,7 +17,7 @@ public class TextEditor : Control
     {
         this._language = language;
         this._showCursor = showCursor;
-        this._blinkCursor = false;
+        this._blinkCursor = blinkCursor;
         this.write = GetLanguageWriter(language);
     }
     #endregion

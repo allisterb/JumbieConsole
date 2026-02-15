@@ -50,7 +50,7 @@ internal class SpectreControlTests
 
     public static void ProgressTests()
     {
-        var progress = new SpectreProgress();
+        var progress = new SpectreTaskProgress();
         var grid = new Grid([60], [60], [
            [progress.WithFrame(title: "Progress")]
        ]);

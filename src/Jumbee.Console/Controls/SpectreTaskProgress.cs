@@ -10,10 +10,10 @@ using Spectre.Console.Rendering;
 /// <summary>
 /// A Spectre.Console Progress widget.
 /// </summary>
-public class SpectreProgress : Control
+public class SpectreTaskProgress : Control
 {
     #region Constructors
-    public SpectreProgress()
+    public SpectreTaskProgress()
     {
         Progress = new Progress(ansiConsole);
     }
@@ -30,6 +30,8 @@ public class SpectreProgress : Control
 
     public Task<T> StartAsync<T>(Func<ProgressContext, Task<T>> action) => Progress.StartAsync(action);
 
+    public Progress AddColumns(params ProgressColumn[] columns) => Progress.Columns(columns);
+    
     // LiveDisplay will update console buffer
     protected override void Render() { }
 
