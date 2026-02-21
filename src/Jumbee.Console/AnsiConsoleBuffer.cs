@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using ConsoleGUI.Api;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
 using Spectre.Console;
@@ -45,6 +44,11 @@ public class AnsiConsoleBuffer : IAnsiConsole, IAnsiConsoleInput, IAnsiConsoleOu
     public RenderPipeline Pipeline => _pipeline;
     internal int CursorX => _cursorX;
     internal int CursorY => _cursorY;
+    internal Offset Margin
+    {
+        get => _margin;
+        set => _margin = value;
+    }
     #endregion
 
     #region Methods
@@ -169,12 +173,12 @@ public class AnsiConsoleBuffer : IAnsiConsole, IAnsiConsoleInput, IAnsiConsoleOu
         _cursorY += dy;      
     }
 
-    private bool IsValidPosition(Position position)
-    {
-        return position.X >= 0 && position.X < _console.Size.Width &&
-               position.Y >= 0 && position.Y < _console.Size.Height;
-    }
-
+    private bool IsValidPosition(Position position) =>
+       position.X >= 0 + _margin.Left && 
+       position.X < _console.Size.Width - _margin.Right &&
+       position.Y >= 0  + _margin.Top && 
+       position.Y < _console.Size.Height - _margin.Bottom;
+    
     #region IAnsiConsoleInput implementation 
     bool IAnsiConsoleInput.IsKeyAvailable() => throw new NotSupportedException();
 
@@ -244,6 +248,7 @@ public class AnsiConsoleBuffer : IAnsiConsole, IAnsiConsoleInput, IAnsiConsoleOu
     private readonly Profile _profile;
     private int _cursorX;
     private int _cursorY;
+    private Offset _margin = new Offset();
     private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
     #endregion
 }

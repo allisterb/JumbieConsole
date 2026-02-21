@@ -31,12 +31,21 @@ public class SpectreTaskProgress : Control
     public Task<T> StartAsync<T>(Func<ProgressContext, Task<T>> action) => Progress.StartAsync(action);
 
     public Progress AddColumns(params ProgressColumn[] columns) => Progress.Columns(columns);
+
+    // Add a right margin to console if frame present
+    protected override void Control_OnInitialization()
+    {
+        if (HasLayout && HasFrame)
+        {
+            ansiConsole.Margin = new ConsoleGUI.Space.Offset(0, 0, 1, 0);
+        }
+    }
     
-    // LiveDisplay will update console buffer
+    // Progress control will update console buffer
     protected override void Render() { }
 
     // Control is assumed to always require painting
-    protected override void Validate() { }
+    protected override void Validate() {}
     #endregion
 
 }

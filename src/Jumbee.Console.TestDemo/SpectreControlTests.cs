@@ -54,8 +54,15 @@ internal class SpectreControlTests
         var grid = new Grid([60], [60], [
            [progress.WithFrame(title: "Progress")]
        ]);
-        var t = UI.Start(grid); 
-        progress.Start(ctx =>
+        var t = UI.Start(grid);
+        progress.AddColumns(
+            new TaskDescriptionColumn(),
+            new ProgressBarColumn(),
+            new DownloadedColumn(),
+            new TransferSpeedColumn(),
+            new RemainingTimeColumn()
+        )
+        .Start(ctx =>
         {
             var task1 = ctx.AddTask("Downloading images", maxValue: 125);
             var task2 = ctx.AddTask("Processing documents", maxValue: 50);

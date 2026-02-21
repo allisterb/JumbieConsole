@@ -1,11 +1,18 @@
 ﻿namespace Jumbee.Console;
 
 using System;
+using System.IO;
+using System.Threading.Tasks;
+
 
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
-using Spectre.Console;
+using NTokenizers.CSharp;
 using NTokenizers.Extensions.Spectre.Console;
+using NTokenizers.Extensions.Spectre.Console.Styles;
+using NTokenizers.Extensions.Spectre.Console.Writers;
+using NTokenizers.Markdown;
+using Spectre.Console;
 
 /// <summary>
 /// A text editor control with syntax highlighting for supported languages.
@@ -18,6 +25,9 @@ public class TextEditor : Control
         this._language = language;
         this._showCursor = showCursor;
         this._blinkCursor = blinkCursor;
+        this.csWriter = new CSharpWriter(ansiConsole, CSharpStyles.Default);
+        this.mdInlineWriter = new MarkdownInlineWriter(ansiConsole);
+        this.csWrite = (v) => new CSharpWriter(ansiConsole, CSharpStyles.Default).Parse(new CSharpTokenizer(), v);
         this.write = GetLanguageWriter(language);
     }
     #endregion
@@ -194,6 +204,7 @@ public class TextEditor : Control
                 {
                     input = input.Insert(_caretPosition++, inputEvent.Key.KeyChar.ToString());
                     newInput = true;
+
                     UpdateDesiredColumn();
                     inputEvent.Handled = true;
                 }
@@ -316,9 +327,12 @@ public class TextEditor : Control
     protected Action<string> GetLanguageWriter(Language language) => language switch
     {
         Language.None => ansiConsole.Write,
-        Language.CSharp => ansiConsole.WriteCSharp,
+        Language.CSharp => (s) => csWriter.Parse(csTokenizer, s),
+
         Language.Sql => ansiConsole.WriteSql,
-        Language.Markdown => ansiConsole.WriteMarkdownInline,
+        Language.Markdown => ansiConsole.WriteMarkdown,
+        //Language.Markdown => ansiConsole.WriteMarkdownInline, //(s) => mdInlineWriter.Parse(mdTokenizer, s),
+        //Language.Markdown => WriteMarkdown,
         Language.Json => ansiConsole.WriteJson,
         Language.Html => ansiConsole.WriteHtml,
         Language.Css => ansiConsole.WriteCss,
@@ -327,6 +341,9 @@ public class TextEditor : Control
         Language.Yaml => ansiConsole.WriteYaml,
         _ => throw new NotImplementedException()
     };
+
+    private void WriteMarkdown(string s) => mdInlineWriter.Parse(mdTokenizer, s);
+
     #endregion
 
     #region Fields
@@ -339,6 +356,12 @@ public class TextEditor : Control
     private bool newInput;
     private int _caretPosition = 0;
     private Action<string> write;
+    private CSharpTokenizer csTokenizer = new();
+    private CSharpWriter csWriter;
+    private MarkdownTokenizer mdTokenizer = new();
+    private MarkdownInlineWriter mdInlineWriter;
+    private Action<string> csWrite;
+
     #endregion
 
     #region Types

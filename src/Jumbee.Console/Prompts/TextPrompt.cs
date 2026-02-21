@@ -90,12 +90,11 @@ public class TextPrompt : Prompt
     #endregion
 
     #region Methods       
-    protected override void Initialize()
+    protected override void Control_OnInitialization()
     {
-        base.Initialize();
         RenderPrompt();
-    }
-
+    }   
+    
     protected override void Render()
     {
         if (newInput)

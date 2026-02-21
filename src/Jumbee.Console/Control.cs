@@ -74,7 +74,11 @@ public abstract class Control : CControl, IFocusable, IDisposable
 
     public int ActualHeight => Size.Height;
 
+    public bool HasLayout => ActualWidth > 0 && ActualHeight > 0;
+
     public ControlFrame? Frame { get; set; }
+
+    public bool HasFrame => Frame is not null;
 
     public bool Focusable { get; set; } = true;
 
