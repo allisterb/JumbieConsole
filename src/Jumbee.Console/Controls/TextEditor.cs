@@ -3,7 +3,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-
+using RazorConsole.Core;
 
 using ConsoleGUI.Input;
 using ConsoleGUI.Space;
@@ -13,6 +13,8 @@ using NTokenizers.Extensions.Spectre.Console.Styles;
 using NTokenizers.Extensions.Spectre.Console.Writers;
 using NTokenizers.Markdown;
 using Spectre.Console;
+using RazorConsole.Core.Rendering.Syntax;
+using ColorCode;
 
 /// <summary>
 /// A text editor control with syntax highlighting for supported languages.
@@ -24,11 +26,7 @@ public class TextEditor : Control
     {
         this._language = language;
         this._showCursor = showCursor;
-        this._blinkCursor = blinkCursor;
-        this.csWriter = new CSharpWriter(ansiConsole, CSharpStyles.Default);
-        this.mdInlineWriter = new MarkdownInlineWriter(ansiConsole);
-        this.csWrite = (v) => new CSharpWriter(ansiConsole, CSharpStyles.Default).Parse(new CSharpTokenizer(), v);
-        this.write = GetLanguageWriter(language);
+        this._blinkCursor = blinkCursor;        
     }
     #endregion
 
@@ -87,7 +85,7 @@ public class TextEditor : Control
         if (newInput)
         {
             ansiConsole.Clear(true);
-            write(input);
+            WriteText(_language, input);
             newInput = false;
         }
         RenderCursor();
@@ -95,7 +93,7 @@ public class TextEditor : Control
     
     protected void RenderCursor()
     {
-        var pos = CalculateCursorPosition(_caretPosition);
+        var pos = GetCursorPosition(caretPosition);
         ansiConsole.SetCursorPosition(pos.x, pos.y);        
         if (IsFocused && _showCursor)
         {
@@ -124,7 +122,7 @@ public class TextEditor : Control
         if (!string.IsNullOrEmpty(input))
         {
             ansiConsole.Clear(true);
-            write(input);
+            WriteText(_language, input);
             Validate();
         }        
     }
@@ -134,17 +132,17 @@ public class TextEditor : Control
         switch (inputEvent.Key.Key)
         {
             case ConsoleKey.LeftArrow:
-                if (_caretPosition > 0)
+                if (caretPosition > 0)
                 {
-                    _caretPosition--;
+                    caretPosition--;
                     UpdateDesiredColumn();
                 }
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.RightArrow:
-                if (_caretPosition < input.Length)
+                if (caretPosition < input.Length)
                 {
-                    _caretPosition++;
+                    caretPosition++;
                     UpdateDesiredColumn();
                 }
                 inputEvent.Handled = true;
@@ -176,25 +174,25 @@ public class TextEditor : Control
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.Backspace:
-                if (_caretPosition > 0)
+                if (caretPosition > 0)
                 {
-                    input = input.Remove(--_caretPosition, 1);
+                    input = input.Remove(--caretPosition, 1);
                     newInput = true;
                     UpdateDesiredColumn();
                     inputEvent.Handled = true;
                 }
                 break;
             case ConsoleKey.Delete:
-                if (_caretPosition < input.Length)
+                if (caretPosition < input.Length)
                 {
-                    input = input.Remove(_caretPosition, 1);
+                    input = input.Remove(caretPosition, 1);
                     newInput = true;
                     UpdateDesiredColumn();
                     inputEvent.Handled = true;
                 }
                 break;
             case ConsoleKey.Enter:
-                input = input.Insert(_caretPosition++, "\n");
+                input = input.Insert(caretPosition++, "\n");
                 newInput = true;
                 UpdateDesiredColumn();
                 inputEvent.Handled = true;
@@ -202,7 +200,7 @@ public class TextEditor : Control
             default:
                 if (!char.IsControl(inputEvent.Key.KeyChar))
                 {
-                    input = input.Insert(_caretPosition++, inputEvent.Key.KeyChar.ToString());
+                    input = input.Insert(caretPosition++, inputEvent.Key.KeyChar.ToString());
                     newInput = true;
 
                     UpdateDesiredColumn();
@@ -210,15 +208,15 @@ public class TextEditor : Control
                 }
                 break;
         }
-        EnsureCursorVisible();
+        AutoScroll();
         Invalidate();
     }
 
-    private void EnsureCursorVisible()
+    private void AutoScroll()
     {
         if (Frame != null)
         {
-            var (x, y) = CalculateCursorPosition(_caretPosition);
+            var (x, y) = GetCursorPosition(caretPosition);
             
             int top = Frame.Top;
             int viewportHeight = Frame.ViewportSize.Height;
@@ -236,37 +234,37 @@ public class TextEditor : Control
 
     private void UpdateDesiredColumn()
     {
-        var pos = CalculateCursorPosition(_caretPosition);
+        var pos = GetCursorPosition(caretPosition);
         _desiredColumn = pos.x;
     }
 
     private void MoveCaretVertically(int direction)
     {
-        var (currentX, currentY) = CalculateCursorPosition(_caretPosition);
+        var (currentX, currentY) = GetCursorPosition(caretPosition);
         var targetY = Math.Max(0, currentY + direction);
         
-        _caretPosition = GetCaretIndex(targetY, _desiredColumn);
+        caretPosition = GetCaretIndex(targetY, _desiredColumn);
     }
     
     private void MoveCaretHome()
     {
-        int i = _caretPosition;
+        int i = caretPosition;
         while (i > 0 && input[i-1] != '\n')
         {
             i--;
         }
-        _caretPosition = i;
+        caretPosition = i;
     }
 
     private void MoveCaretEnd()
     {
-         while (_caretPosition < input.Length && input[_caretPosition] != '\n')
+         while (caretPosition < input.Length && input[caretPosition] != '\n')
          {
-             _caretPosition++;
+             caretPosition++;
          }
     }
 
-    private (int x, int y) CalculateCursorPosition(int caret)
+    private (int x, int y) GetCursorPosition(int caret)
     {
         int x = 0;
         int y = 0;
@@ -321,29 +319,43 @@ public class TextEditor : Control
         
         return i;
     }
-
-    protected bool IsValidCursorPosition => CursorX < Size.Width && CursorY < Size.Height;
-
-    protected Action<string> GetLanguageWriter(Language language) => language switch
+    
+    private void WriteText(Language language, string text)
     {
-        Language.None => ansiConsole.Write,
-        Language.CSharp => (s) => csWriter.Parse(csTokenizer, s),
-
-        Language.Sql => ansiConsole.WriteSql,
-        Language.Markdown => ansiConsole.WriteMarkdown,
-        //Language.Markdown => ansiConsole.WriteMarkdownInline, //(s) => mdInlineWriter.Parse(mdTokenizer, s),
-        //Language.Markdown => WriteMarkdown,
-        Language.Json => ansiConsole.WriteJson,
-        Language.Html => ansiConsole.WriteHtml,
-        Language.Css => ansiConsole.WriteCss,
-        Language.TypeScript => ansiConsole.WriteTypescript,
-        Language.Xml => ansiConsole.WriteXml,
-        Language.Yaml => ansiConsole.WriteYaml,
-        _ => throw new NotImplementedException()
-    };
-
-    private void WriteMarkdown(string s) => mdInlineWriter.Parse(mdTokenizer, s);
-
+        switch (language)
+        {
+            case Language.None:
+                ansiConsole.Write(text); 
+                break;
+            case Language.Markdown:
+                ansiConsole.Markup(ccFormatter.Format(text, Languages.Markdown, ccSyntaxTheme, ccSyntaxOptions));
+                break;
+            case Language.CSharp:
+                ansiConsole.Markup(ccFormatter.Format(text, Languages.CSharp, ccSyntaxTheme, ccSyntaxOptions));
+                break;
+            case Language.TypeScript:
+                ansiConsole.Markup(ccFormatter.Format(text, Languages.Typescript, ccSyntaxTheme, ccSyntaxOptions));
+                break;
+            case Language.Sql:
+                ansiConsole.Markup(ccFormatter.Format(text, Languages.Sql, ccSyntaxTheme, ccSyntaxOptions));
+                break;
+            case Language.Json:
+                ansiConsole.WriteJson(text);
+                break;
+            case Language.Html:
+                ansiConsole.Markup(ccFormatter.Format(text, Languages.Html, ccSyntaxTheme, ccSyntaxOptions));
+                break;
+            case Language.Css:
+                ansiConsole.Markup(ccFormatter.Format(text, Languages.Css, ccSyntaxTheme, ccSyntaxOptions));
+                break;
+            case Language.Xml:
+                ansiConsole.Markup(ccFormatter.Format(text, Languages.Xml, ccSyntaxTheme, ccSyntaxOptions));
+                break;
+            case Language.Yaml:
+                ansiConsole.WriteYaml(text);
+                break;
+        }
+    }
     #endregion
 
     #region Fields
@@ -354,14 +366,11 @@ public class TextEditor : Control
     private bool blinkState;
     private string input = string.Empty;
     private bool newInput;
-    private int _caretPosition = 0;
-    private Action<string> write;
-    private CSharpTokenizer csTokenizer = new();
-    private CSharpWriter csWriter;
-    private MarkdownTokenizer mdTokenizer = new();
-    private MarkdownInlineWriter mdInlineWriter;
-    private Action<string> csWrite;
+    private int caretPosition = 0;
 
+    SpectreMarkupFormatter ccFormatter = new SpectreMarkupFormatter();
+    SyntaxTheme ccSyntaxTheme = SyntaxTheme.CreateDefault();
+    SyntaxOptions ccSyntaxOptions = new SyntaxOptions() { TabWidth = 1,  };    
     #endregion
 
     #region Types
@@ -377,8 +386,6 @@ public class TextEditor : Control
         TypeScript,
         Xml,
         Yaml
-    }
-
-   
+    }   
     #endregion
 }
