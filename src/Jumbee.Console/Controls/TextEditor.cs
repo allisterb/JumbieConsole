@@ -6,12 +6,7 @@ using System.Threading.Tasks;
 using RazorConsole.Core;
 
 using ConsoleGUI.Input;
-using ConsoleGUI.Space;
-using NTokenizers.CSharp;
 using NTokenizers.Extensions.Spectre.Console;
-using NTokenizers.Extensions.Spectre.Console.Styles;
-using NTokenizers.Extensions.Spectre.Console.Writers;
-using NTokenizers.Markdown;
 using Spectre.Console;
 using RazorConsole.Core.Rendering.Syntax;
 using ColorCode;
@@ -79,7 +74,17 @@ public class TextEditor : Control
     }
     #endregion
 
-    #region Methods                   
+    #region Methods   
+    protected override void Control_OnInitialization()
+    {
+        if (!string.IsNullOrEmpty(input))
+        {
+            ansiConsole.Clear(true);
+            WriteText(_language, input);
+            Validate();
+        }
+    }
+
     protected override void Render()
     {
         if (newInput)
@@ -91,42 +96,12 @@ public class TextEditor : Control
         RenderCursor();
     }
     
-    protected void RenderCursor()
-    {
-        var pos = GetCursorPosition(caretPosition);
-        ansiConsole.SetCursorPosition(pos.x, pos.y);        
-        if (IsFocused && _showCursor)
-        {
-            if (_blinkCursor)
-            {                
-                ansiConsole.Cursor.Show(blinkState = !blinkState);
-            }
-            else
-            {
-                ansiConsole.Cursor.Show();
-            }
-        }
-        else
-        {
-            ansiConsole.Cursor.Hide();
-        }        
-    }
-
+    
     protected override void Validate()
     {
         if (!_blinkCursor) base.Validate();
     }
-
-    protected override void Control_OnInitialization()
-    {
-        if (!string.IsNullOrEmpty(input))
-        {
-            ansiConsole.Clear(true);
-            WriteText(_language, input);
-            Validate();
-        }        
-    }
-
+    
     protected override void OnInput(InputEvent inputEvent)
     {
         switch (inputEvent.Key.Key)
@@ -134,16 +109,14 @@ public class TextEditor : Control
             case ConsoleKey.LeftArrow:
                 if (caretPosition > 0)
                 {
-                    caretPosition--;
-                    UpdateDesiredColumn();
+                    caretPosition--;                    
                 }
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.RightArrow:
                 if (caretPosition < input.Length)
                 {
-                    caretPosition++;
-                    UpdateDesiredColumn();
+                    caretPosition++;                    
                 }
                 inputEvent.Handled = true;
                 break;
@@ -164,21 +137,18 @@ public class TextEditor : Control
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.Home:
-                MoveCaretHome();
-                UpdateDesiredColumn();
+                MoveCaretHome();                
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.End:
-                MoveCaretEnd();
-                UpdateDesiredColumn();
+                MoveCaretEnd();                
                 inputEvent.Handled = true;
                 break;
             case ConsoleKey.Backspace:
                 if (caretPosition > 0)
                 {
                     input = input.Remove(--caretPosition, 1);
-                    newInput = true;
-                    UpdateDesiredColumn();
+                    newInput = true;                    
                     inputEvent.Handled = true;
                 }
                 break;
@@ -186,15 +156,13 @@ public class TextEditor : Control
                 if (caretPosition < input.Length)
                 {
                     input = input.Remove(caretPosition, 1);
-                    newInput = true;
-                    UpdateDesiredColumn();
+                    newInput = true;                    
                     inputEvent.Handled = true;
                 }
                 break;
             case ConsoleKey.Enter:
                 input = input.Insert(caretPosition++, "\n");
-                newInput = true;
-                UpdateDesiredColumn();
+                newInput = true;                
                 inputEvent.Handled = true;
                 break;
             default:
@@ -202,8 +170,6 @@ public class TextEditor : Control
                 {
                     input = input.Insert(caretPosition++, inputEvent.Key.KeyChar.ToString());
                     newInput = true;
-
-                    UpdateDesiredColumn();
                     inputEvent.Handled = true;
                 }
                 break;
@@ -212,59 +178,28 @@ public class TextEditor : Control
         Invalidate();
     }
 
-    private void AutoScroll()
+    protected void RenderCursor()
     {
-        if (Frame != null)
+        var pos = GetCursorPositionFromCaret(caretPosition);
+        ansiConsole.SetCursorPosition(pos.x, pos.y);
+        if (IsFocused && _showCursor)
         {
-            var (x, y) = GetCursorPosition(caretPosition);
-            
-            int top = Frame.Top;
-            int viewportHeight = Frame.ViewportSize.Height;
-            
-            if (y < top)
+            if (_blinkCursor)
             {
-                Frame.Top = y;
+                ansiConsole.Cursor.Show(blinkState = !blinkState);
             }
-            else if (y >= top + viewportHeight)
+            else
             {
-                Frame.Top = y - viewportHeight + 1;
+                ansiConsole.Cursor.Show();
             }
+        }
+        else
+        {
+            ansiConsole.Cursor.Hide();
         }
     }
 
-    private void UpdateDesiredColumn()
-    {
-        var pos = GetCursorPosition(caretPosition);
-        _desiredColumn = pos.x;
-    }
-
-    private void MoveCaretVertically(int direction)
-    {
-        var (currentX, currentY) = GetCursorPosition(caretPosition);
-        var targetY = Math.Max(0, currentY + direction);
-        
-        caretPosition = GetCaretIndex(targetY, _desiredColumn);
-    }
-    
-    private void MoveCaretHome()
-    {
-        int i = caretPosition;
-        while (i > 0 && input[i-1] != '\n')
-        {
-            i--;
-        }
-        caretPosition = i;
-    }
-
-    private void MoveCaretEnd()
-    {
-         while (caretPosition < input.Length && input[caretPosition] != '\n')
-         {
-             caretPosition++;
-         }
-    }
-
-    private (int x, int y) GetCursorPosition(int caret)
+    private (int x, int y) GetCursorPositionFromCaret(int caret)
     {
         int x = 0;
         int y = 0;
@@ -290,36 +225,82 @@ public class TextEditor : Control
         int line = 0;
         int currentX = 0;
         int i = 0;
-        
+
         while (i < input.Length && line < targetLine)
         {
             if (input[i] == '\n') line++;
             i++;
         }
-        
+
         if (line < targetLine) return input.Length;
-        
+
         while (i < input.Length && input[i] != '\n')
         {
-            if (input[i] == '\r') 
+            if (input[i] == '\r')
             {
-                i++; 
+                i++;
                 continue;
             }
-            
+
             int w = input[i].ToString().GetCellWidth();
-            
+
             if (currentX + (w / 2.0) > targetX) break;
-            
+
             currentX += w;
             i++;
-            
+
             if (currentX >= targetX) break;
         }
-        
+
         return i;
     }
+
+    private void MoveCaretVertically(int direction)
+    {
+        var (currentX, currentY) = GetCursorPositionFromCaret(caretPosition);
+        var targetY = Math.Max(0, currentY + direction);
+        
+        caretPosition = GetCaretIndex(targetY, currentX);
+    }
     
+    private void MoveCaretHome()
+    {
+        int i = caretPosition;
+        while (i > 0 && input[i-1] != '\n')
+        {
+            i--;
+        }
+        caretPosition = i;
+    }
+
+    private void MoveCaretEnd()
+    {
+         while (caretPosition < input.Length && input[caretPosition] != '\n')
+         {
+             caretPosition++;
+         }
+    }
+
+    private void AutoScroll()
+    {
+        if (Frame != null)
+        {
+            var (x, y) = GetCursorPositionFromCaret(caretPosition);
+
+            int top = Frame.Top;
+            int viewportHeight = Frame.ViewportSize.Height;
+
+            if (y < top)
+            {
+                Frame.Top = y;
+            }
+            else if (y >= top + viewportHeight)
+            {
+                Frame.Top = y - viewportHeight + 1;
+            }
+        }
+    }
+
     private void WriteText(Language language, string text)
     {
         switch (language)
@@ -359,7 +340,6 @@ public class TextEditor : Control
     #endregion
 
     #region Fields
-    private int _desiredColumn = 0;
     private Language _language;
     private bool _showCursor;
     private bool _blinkCursor;
