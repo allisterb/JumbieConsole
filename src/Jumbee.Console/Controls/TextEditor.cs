@@ -328,7 +328,7 @@ public class TextEditor : Control
                 ansiConsole.Write(text); 
                 break;
             case Language.Markdown:
-                ansiConsole.Markup(ccFormatter.Format(text, Languages.Markdown, ccSyntaxTheme, ccSyntaxOptions));
+                ansiConsole.Write(new Markup(ccFormatter.Format(text, Languages.Markdown, ccSyntaxTheme, ccSyntaxOptions)));
                 break;
             case Language.CSharp:
                 ansiConsole.Markup(ccFormatter.Format(text, Languages.CSharp, ccSyntaxTheme, ccSyntaxOptions));
@@ -368,9 +368,9 @@ public class TextEditor : Control
     private bool newInput;
     private int caretPosition = 0;
 
-    SpectreMarkupFormatter ccFormatter = new SpectreMarkupFormatter();
+    SpectreMarkupFormatter ccFormatter = new SpectreMarkupFormatter() ;
     SyntaxTheme ccSyntaxTheme = SyntaxTheme.CreateDefault();
-    SyntaxOptions ccSyntaxOptions = new SyntaxOptions() { TabWidth = 1,  };    
+    SyntaxOptions ccSyntaxOptions = new SyntaxOptions() { TabWidth = 0,   };    
     #endregion
 
     #region Types

@@ -51,7 +51,7 @@ internal class SpectreControlTests
     public static void ProgressTests()
     {
         var progress = new SpectreTaskProgress();
-        var grid = new Grid([60], [60], [
+        var grid = new Grid([30], [90], [
            [progress.WithFrame(title: "Progress")]
        ]);
         var t = UI.Start(grid);
@@ -64,9 +64,9 @@ internal class SpectreControlTests
         )
         .Start(ctx =>
         {
-            var task1 = ctx.AddTask("Downloading images", maxValue: 125);
-            var task2 = ctx.AddTask("Processing documents", maxValue: 50);
-            var task3 = ctx.AddTask("Compiling code"); // maxValue defaults to 100
+            var task1 = ctx.AddTask("Downloading images", maxValue:625);
+            var task2 = ctx.AddTask("Processing documents", maxValue: 1550);
+            var task3 = ctx.AddTask("Compiling code", maxValue:1000); // maxValue defaults to 100
 
             while (!ctx.IsFinished)
             {

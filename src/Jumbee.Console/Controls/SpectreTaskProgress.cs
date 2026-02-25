@@ -19,6 +19,7 @@ public class SpectreTaskProgress : Control
     }
     #endregion
 
+    public override bool HandlesInput => false;
     #region Fields
     public readonly Progress Progress;
     #endregion
@@ -39,6 +40,7 @@ public class SpectreTaskProgress : Control
         {
             ansiConsole.Margin = new ConsoleGUI.Space.Offset(0, 0, 1, 0);
         }
+       
     }
     
     // Progress control will update console buffer

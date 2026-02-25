@@ -117,23 +117,23 @@ public class AnsiConsoleBuffer : IAnsiConsole, IAnsiConsoleInput, IAnsiConsoleOu
                         _cursorX = 0;
                         continue;
                     }
-
-                    if (c == '\r')
+                    else if (c == '\r')
                     {
                         _cursorX = 0;
                         continue;
                     }
-
-                    var width = c.GetCellWidth();
-                    if (width <= 0) continue; // Skip zero-width chars
-
-                    var position = new Position(_cursorX, _cursorY);
-                    if (IsValidPosition(position))
+                    else
                     {
-                        _console.Write(position, new Character(c, fg, bg, decoration));
+                        var width = c.GetCellWidth();
+                        if (width <= 0) continue; // Skip zero-width chars
+                        var position = new Position(_cursorX, _cursorY);
+                        if (IsValidPosition(position))
+                        {
+                            _console.Write(position, new Character(c, fg, bg, decoration));
+                            _cursorX += width;
+                        }
                     }
-
-                    _cursorX += width;
+                    
                 }
             }
         }
