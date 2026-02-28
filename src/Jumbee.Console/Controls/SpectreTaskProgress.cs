@@ -38,13 +38,13 @@ public class SpectreTaskProgress : Control
     {
         if (HasLayout && HasFrame)
         {
-            ansiConsole.Margin = new ConsoleGUI.Space.Offset(0, 0, 1, 0);
+            // Accomodate the frame
+            //consoleBuffer.Size = consoleBuffer.Size.SubtractWidth(2); 
         }
-       
     }
     
     // Progress control will update console buffer
-    protected override void Render() { }
+    protected override void Render() {}
 
     // Control is assumed to always require painting
     protected override void Validate() {}

@@ -21,6 +21,8 @@ public static class ControlExtensions
 
     public static Position Add(this Position position, int x, int y) => new Position(position.X + x, position.Y + y);
 
+    public static CSize SubtractWidth(this CSize size, int width) => new CSize(size.Width - width, size.Height);
+
     public static T WithWidth<T>(this T control, int width) where T : Control
     {
         control.Width = width;
