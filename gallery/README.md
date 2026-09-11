@@ -11,7 +11,7 @@
 [source](../examples/Jumbee.Console.3DSandboxDemo/)
 
 ### 3D Physics Sandbox Demo
-<img width="1904" height="975" alt="Jc_3d_7" src="https://github.com/user-attachments/assets/ebf53ded-6342-4b21-9e35-d6aa3404f185" />
+![](https://github.com/user-attachments/assets/670be3ab-169e-4dbf-9f54-38f283b0a68c)
 [source](../examples/Jumbee.Console.3DSandboxDemo/)
 
 ### Document Editing Demo
