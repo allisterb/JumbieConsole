@@ -44,6 +44,66 @@ case PasteInputEvent p: layout?.OnPaste(p.Text); break;     // paste follows the
 So **keyboard and paste enter at the root layout only**; **mouse never touches the layout tree** — it just feeds
 `ConsoleManager`, which dispatches by hit-testing.
 
+### What the legacy input source cannot deliver
+
+Which events exist at all depends on the source `UI.DefaultInputSource` picked. The ANSI path uses `VtInputSource` +
+`AnsiInputDecoder` and sees everything the terminal encodes. The legacy path (`isAnsiTerminal: false`, or any
+redirected/CI run) falls back to `ConsoleInputSource`, which is a `Console.ReadKey` loop.
+
+**Measured on cmd.exe / Win10 19045** — `Ctrl`+letter, `Ctrl+←`, `Ctrl+→` and `Ctrl+↓` all arrive intact. A bare
+`Console.ReadKey` probe reports `Key=RightArrow Char=0 Mods=Control`, exactly what `HotKeys.Ctrl(ConsoleKey.RightArrow)`
+builds, and a live `--legacy` session records `Ctrl+↓` reaching the hotkey table. So a dead `Ctrl`+arrow on legacy is
+worth checking against the leaf ring (§ global focus navigation) before suspecting the decoder.
+
+One known gap, from .NET rather than the console: `Console.ReadKey` on Windows filters `Alt` combined with
+`PageUp`…`DownArrow` as an Alt+NumPad sequence, which would cost the whole **Alt tier** (§ modifier-key convention),
+including `TabPanel` tab switching. *Not yet confirmed by measurement here* — read it as a thing to test, not a
+finding.
+
+### The VT input source can fail silently, and `Start` now catches it
+
+`ConsoleManager.AnsiEnabled` (output) and the input source are **independent knobs**, and they can disagree. `Start`
+probes the output handle and downgrades `isAnsiTerminal` on refusal, but the source is `input ?? DefaultInputSource(…)`
+— so a **caller-supplied** source bypasses that decision entirely. Worse, a caller writing
+`UI.Start(root, input: new VtInputSource(…))` constructs it *in the argument list*, so it has already reconfigured
+the terminal before `Start` runs its probe.
+
+That matters because `VtInputSource` does not fail loudly. Its `SetConsoleMode` can be refused — a legacy console
+refuses VT on both handles — and the reader carries on regardless. The console only encodes arrows, function keys,
+mouse and paste as VT sequences **when that mode is set**, so those keys then produce *no bytes at all*, while plain
+characters and `Ctrl`+letter (real control characters) still arrive. The app comes up looking perfectly healthy and
+navigates for nothing. Measured on a legacy cmd.exe: six seconds of `Ctrl+→` yielded zero bytes; the only byte the
+reader ever saw was the `0x11` of `Ctrl+Q`.
+
+`Start` now detects exactly that state via `VtInputSource.VtModeUnavailable` (a *real* terminal that refused — as
+opposed to the test-seam source, which has no `TerminalInputMode` because it deliberately never touches a terminal)
+and swaps in `ConsoleInputSource`, which is what works there. Mouse and hover are then unavailable, which is
+inherent: such a console cannot report them.
+
+**Swapping the source is not enough on its own, and the reason is worth remembering: `Dispose` cannot take back a
+read.** `ReaderLoop` keeps one outstanding `_stdin.ReadAsync`, and a console read cannot be cancelled — `Dispose`
+ends the thread, but the read stays pending on the console handle for the life of the process. A replacement
+`ConsoleInputSource` (which uses `ReadConsoleInput`) then shares one input queue with that orphan, and keys
+**alternate between the two readers**: roughly every other press disappears. The giveaway in the field is a hotkey
+that works on the second press — `Ctrl+Q` needing two goes. On top of that the console is still in cooked mode (there
+was nothing to restore, the `SetConsoleMode` having failed), so conhost's line editor consumes arrows as
+line-editing commands before `ReadConsoleInput` ever sees them.
+
+So the constructor **does not start the reader at all** when `VtModeUnavailable` — never issuing the read leaves
+nothing to orphan. It also skips the mouse/paste/focus enable sequences in that state: with VT processing off they
+are printed rather than obeyed, spraying `[?1003h[?1006h…` across the screen and enabling nothing. `Dispose` is
+symmetric and skips the disable sequence it never sent.
+
+To debug this layer, set `JUMBEE_INPUT_LOG` to a file: `VtInputSource` then logs its startup state (`raw=` is whether
+VT input mode applied) and the raw stdin bytes of every read. Zero bytes for a keypress that the terminal *should*
+encode is the signature of the failure described below.
+
+It is not free — every read is a separate open/append/close — so `UI.Start` and `UI.Stop` announce it on **stderr**,
+the shutdown notice reporting how many bytes the run wrote. Two notices rather than one because neither alone is
+reliable: the startup one is the only warning that precedes the cost, but the UI paints over it immediately (and a
+console with no alternate screen to restore just clears it), while the shutdown one is written after the terminal has
+been handed back and therefore always survives. Nothing is printed when the variable is unset.
+
 ## 2. The focus model
 
 Focus is **single and global**. Every `Control` self-registers in `UI`'s control list via its `UI.Paint`
@@ -153,7 +213,13 @@ cheaply available — but the layout structure already encodes the spatial arran
   composite cell is a **no-op** (enter/leave those with the arrows).
 
 A leaf is an interactive, laid-out control (`Focusable && HandlesInput && HasLayout`) — so display-only controls,
-adornments, and frames/composite *wrappers* are skipped or descended-through. Remap by re-registering
+adornments, and frames/composite *wrappers* are skipped or descended-through. An **interactive** adornment is not
+skipped, though, and that surprises people: `SplitDivider` is `Focusable` + `HandlesInput` (that is how you resize a
+split from the keyboard), so it is a leaf like any other. A `SplitPanel`'s ring is therefore
+`Tree · divider · host · divider · editor` — **`Ctrl+arrow` is leaf-to-leaf, not pane-to-pane, and crossing a split
+takes two presses.** Worth knowing when it looks like the key did nothing: the first press landed on a 1-cell divider
+whose only focus cue is a recolour to `IStyleTheme.Hover`, a background-only style that flattens to plain black on a
+16-colour legacy console. Remap by re-registering
 `HotKeys.CtrlLeft/Right/Up/Down`/`CtrlN`/`CtrlP`. Caveat: a couple of layouts (`TabPanel`, `Overlay`) **flatten**
 their indexer for routing, so as a *root* their `Ctrl+arrows` follow that flattened order rather than a spatial grid
 (uncommon — the root is normally a `Grid`/stack/dock, whose indexer is spatial). Sparse `Grid` cells are tolerated

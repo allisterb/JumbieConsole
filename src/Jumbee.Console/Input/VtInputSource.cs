@@ -46,7 +46,15 @@ public sealed class VtInputSource : IInputSource, IDisposable
             : Console.OpenStandardInput();
         Log($"start win={OperatingSystem.IsWindows()} fd={_mode.InputFd} owns={_mode.OwnsInputFd} raw={_mode.RawModeApplied} stream={_stdin.GetType().Name}");
         _reader = new Thread(ReaderLoop) { IsBackground = true, Name = "Jumbee.VtInput" };
-        _reader.Start();
+        // Do not read at all if the terminal refused VT input mode: this source cannot work there (see
+        // VtModeUnavailable), and starting the loop would do ACTIVE HARM that outlives it. The loop keeps one
+        // outstanding _stdin.ReadAsync, and a console read cannot be cancelled — Dispose ends the thread but the
+        // read stays pending on the console handle for the life of the process. The replacement source
+        // (ConsoleInputSource, via ReadConsoleInput) then competes with that orphan for one input queue: keys
+        // alternate between them, so roughly every other press vanishes, and with the console still in cooked mode
+        // conhost's line editor consumes the arrows outright. Never issuing the read leaves nothing to orphan.
+        if (!VtModeUnavailable) _reader.Start();
+        else Log("VT input mode unavailable — reader not started (source is unusable; expect UI.Start to replace it)");
     }
 
     // Test seam: runs the reader loop over an arbitrary stream without touching the real terminal's input mode, so
@@ -63,6 +71,20 @@ public sealed class VtInputSource : IInputSource, IDisposable
     #endregion
 
     #region Methods
+    /// <summary>
+    /// <see langword="true"/> when this source is attached to a real terminal that <b>refused</b> VT input mode —
+    /// the state in which it cannot work and must not be used.
+    /// </summary>
+    /// <remarks>
+    /// The failure is silent and badly asymmetric: the reader still gets bytes, so the source looks alive, but the
+    /// console only encodes arrows, function keys, mouse and paste as VT sequences <em>when the mode is set</em>.
+    /// Without it those keys produce no bytes whatsoever, while plain characters and Ctrl+letter — real control
+    /// characters — arrive as usual. The app therefore comes up looking fine and navigates with nothing.
+    /// <para>Requires a <see cref="TerminalInputMode"/> to have been attempted at all, so the test-seam constructor —
+    /// which deliberately never touches a terminal — is never reported as unusable.</para>
+    /// </remarks>
+    internal bool VtModeUnavailable => _mode is not null && !_mode.RawModeApplied;
+
     /// <inheritdoc/>
     public bool TryRead(out TerminalInputEvent? evt)
     {
@@ -157,6 +179,43 @@ public sealed class VtInputSource : IInputSource, IDisposable
         try { File.AppendAllText(LogPath, $"{DateTime.Now:HH:mm:ss.fff} {msg}{Environment.NewLine}"); } catch { }
     }
 
+    /// <summary>
+    /// Announces on stderr that input logging is on, so a forgotten <c>JUMBEE_INPUT_LOG</c> can't quietly cost every
+    /// run. A no-op when the variable is unset.
+    /// </summary>
+    /// <param name="starting">
+    /// <see langword="true"/> for the notice before the UI takes the screen, <see langword="false"/> for the one
+    /// after it gives it back — which also reports how much the run wrote.
+    /// </param>
+    /// <remarks>
+    /// Both notices are needed and neither is redundant. The startup one is the only warning that arrives before the
+    /// cost is paid, but it is easily missed: the UI paints over it a moment later, and on a console with no
+    /// alternate screen to restore it is simply cleared. The shutdown one is written after the terminal has been
+    /// handed back, so it always survives — and the byte count is what actually conveys the cost, since the log is
+    /// appended to on every read (each one an open/write/close).
+    /// </remarks>
+    internal static void AnnounceLogging(bool starting)
+    {
+        if (LogPath is null) return;
+
+        try
+        {
+            if (starting)
+            {
+                Console.Error.WriteLine($"jumbee: input logging is ON — appending every input read to {LogPath}. " +
+                                        "Unset JUMBEE_INPUT_LOG to turn it off.");
+            }
+            else
+            {
+                var size = new FileInfo(LogPath) is { Exists: true } f ? $"{f.Length:N0} bytes" : "no data";
+                Console.Error.WriteLine($"jumbee: input logging was ON (JUMBEE_INPUT_LOG) — wrote {size} to {LogPath}.");
+            }
+
+            Console.Error.Flush();
+        }
+        catch { /* diagnostics must never break startup or shutdown */ }
+    }
+
     /// <summary>Stops the reader thread and restores the console mode (disabling mouse/paste/focus reporting).</summary>
     public void Dispose()
     {
@@ -245,8 +304,15 @@ internal sealed class TerminalInputMode : IDisposable
             }
         }
 
-        Console.Out.Write(enableSeq);
-        Console.Out.Flush();
+        // Only ask for mouse/paste/focus reporting if the terminal can actually interpret the request. On Windows a
+        // console that refused VT input mode has VT processing off, so these sequences are PRINTED rather than
+        // obeyed — a burst of `[?1003h[?1006h…` across the user's screen, and nothing enabled in return.
+        _reportingEnabled = !OperatingSystem.IsWindows() || _modeChanged;
+        if (_reportingEnabled)
+        {
+            Console.Out.Write(enableSeq);
+            Console.Out.Flush();
+        }
 
         // Safety net: restore the terminal even on an abrupt exit (e.g. Ctrl+C ends the process before Stop runs),
         // otherwise it is left in mouse-reporting mode.
@@ -261,8 +327,12 @@ internal sealed class TerminalInputMode : IDisposable
         _disposed = true;
         AppDomain.CurrentDomain.ProcessExit -= OnProcessExit;
 
-        try { Console.Out.Write(_disableSeq); Console.Out.Flush(); }
-        catch { /* best effort */ }
+        // Symmetric with the enable above: nothing was turned on, so turning it off would only print more garbage.
+        if (_reportingEnabled)
+        {
+            try { Console.Out.Write(_disableSeq); Console.Out.Flush(); }
+            catch { /* best effort */ }
+        }
 
         if (_modeChanged) SetConsoleMode(_stdinHandle, _originalMode);
         if (_termiosChanged) tcsetattr(_inputFd, TCSANOW, _savedTermios!);
@@ -290,6 +360,7 @@ internal sealed class TerminalInputMode : IDisposable
     private readonly IntPtr _stdinHandle;
     private readonly uint _originalMode;
     private readonly bool _modeChanged;
+    private readonly bool _reportingEnabled;   // the enable sequence was actually emitted, so Dispose must undo it
     private readonly string _disableSeq;
     private bool _disposed;
 

@@ -37,6 +37,11 @@ public static class UI
     public static Task Start(ILayout layout, int width = 110, int height = 25, int fps = 10, bool isAnsiTerminal = true, IConsole? console = null, IInputSource? input = null, bool useAlternateScreen = true)
     {
         if (isRunning) return runCompletion.Task;
+        // Before anything is drawn: say so if input logging is on. It costs a file append per read, and an env var
+        // set during a debugging session is easy to leave behind. Paired with the shutdown notice in Stop, which is
+        // the one that reliably survives (this one is painted over, and cleared outright where there is no alternate
+        // screen to restore).
+        VtInputSource.AnnounceLogging(starting: true);
         ProcessMetrics.Start();
         // Complete each frame's record when its terminal write lands — off the UI thread, and after the loop has
         // moved on, which is why the ordinal travels with the write rather than being inferred from position.
@@ -127,6 +132,24 @@ public static class UI
             ConsoleManager.Console = new AnsiTerminalConsole();
         }
         inputSource = input ?? DefaultInputSource(isAnsiTerminal);
+        // A VT input source that the terminal REFUSED to put into VT mode cannot work, and fails in the worst
+        // possible way: it still reads bytes, so it looks alive, but the console only encodes arrows, function keys,
+        // mouse and paste as VT sequences when that mode is set. Everything navigational silently produces nothing
+        // while Ctrl+letter keeps working, so the app looks fine and moves for no key.
+        //
+        // The default source already avoids this (DefaultInputSource only builds a VtInputSource on a terminal we
+        // believe speaks ANSI), but a CALLER-SUPPLIED one bypasses that decision entirely — and a caller constructing
+        // `new VtInputSource(...)` in Start's own argument list has already configured the terminal before this
+        // method ran, so it cannot have consulted the probe above. That is the real case: a legacy console refuses VT
+        // on both handles, rendering correctly falls back to the Win32 path, and input is left holding a source that
+        // eats every arrow. Swap it for the keyboard-only source, which is what works there (no mouse — the console
+        // cannot report it).
+        if (inputSource is VtInputSource { VtModeUnavailable: true } unusable)
+        {
+            unusable.Dispose();   // restores the console mode and undoes the mouse/paste/focus enable it emitted
+            inputSource = new ConsoleInputSource();
+        }
+
         ConsoleManager.Setup();
         ConsoleManager.Resize(new Size(width, height));
         // Wrap the app's root in a UI-owned system overlay so global modals (the F1 help dialog, and any future
@@ -286,6 +309,7 @@ public static class UI
                     inputEventArgs.InputEvent = inputEvent;
                     layout?.OnInput(inputEventArgs);
                 }
+
                 break;
             case MouseInputEvent m:
                 ConsoleManager.MousePosition = new Position(m.X, m.Y);
@@ -362,6 +386,9 @@ public static class UI
         RestoreBuiltInHotKeys();
         MouseButton = TerminalMouseButton.None;   // clear transient input state so it can't leak into a later session
         ProcessMetrics.Stop();
+        // The terminal is ours to write to again (restored above), so this notice lands on the screen the user is
+        // left looking at — and reports what the run actually cost.
+        VtInputSource.AnnounceLogging(starting: false);
         runCompletion.TrySetResult();
     }
 
@@ -470,6 +497,8 @@ public static class UI
 
     /// <summary>Moves focus one cell left/right/up/down in the root layout's 2-D grid (wraps; skips empties). Bound
     /// to <c>Ctrl+Left/Right/Up/Down</c> by default.</summary>
+    /// <remarks>Steps one focusable <em>leaf</em>, which is not always one pane: an interactive adornment such as a
+    /// <c>SplitPanel</c> divider is a leaf too, so crossing a split takes two presses.</remarks>
     public static void FocusLeft() => MoveSpatialFocus(0, -1);
     /// <summary>Moves focus one cell right in the root layout's 2-D grid. Bound to <c>Ctrl+Right</c> by default.</summary>
     public static void FocusRight() => MoveSpatialFocus(0, +1);

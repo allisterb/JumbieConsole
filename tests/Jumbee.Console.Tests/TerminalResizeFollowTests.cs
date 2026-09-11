@@ -83,7 +83,12 @@ public class TerminalResizeFollowTests
         finally
         {
             UI.Stop();
+            UI.RestoreBuiltInHotKeys();
             System.Console.SetOut(previousOut);
+            // Wait for the UI thread AND the dispatcher to actually be down. Stop() returns before they are, and
+            // the next test's Start then races a session that is still tearing down -- which surfaces as an
+            // unrelated test failing somewhere later in the run.
+            UiTestHarness.EnsureStopped();
         }
     }
 
